@@ -15,11 +15,11 @@ source activate base
 set -o nounset
 
 # Install mamba
-conda install mamba -n base conda-forge -y
+conda install mamba -n base -c conda-forge -y
 
 # Create conda env for production
-mamba remove --name lunch -all -y
-mamba env create -n lunch --file
+mamba remove --name lunch --all -y
+mamba env create -n lunch --file ci/requirements-1prod.yml
 
 set +o nounset
 source activate lunch

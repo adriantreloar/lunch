@@ -3,14 +3,15 @@
 # Install the conda environment in ~/miniconda3, if it does not exist already
 # And source it
 
-CONDA_PREFIX_DEFAULT=$HOME/miniconda
+CONDA_PREFIX_DEFAULT=$HOME/miniconda3
 
 function install_conda() {
-  echo "Downloading miniconda"
+  echo "Downloading miniconda3"
   # Install miniconda build environment
   case $(uname -s) in
     Linux*)
       MINICONDA_PKG=https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+      ;;
     *)
       echo "Unknown host type: $uname( -s)"
       exit 1
@@ -20,12 +21,12 @@ function install_conda() {
   curl ${MINICONDA_PKG} -o /tmp/miniconda.sh
 
   echo "Installing miniconda3"
-  bash tmp/miniconda.sh -b -p ${CONDA_PREFIX_DEFAULT}
+  bash /tmp/miniconda.sh -b -p ${CONDA_PREFIX_DEFAULT}
   rm -f /tmp/miniconda.sh
 
-  echo "Updating conda packages"
+  echo "Updating/installing conda packages"
   set +o nounset
-  source ${CONDA_PREFIX_DEFAULT}/bin/actvate root
+  source ${CONDA_PREFIX_DEFAULT}/bin/activate root
   set -o nounset
   conda update -c pkgs/main -y conda
   conda list
@@ -35,12 +36,12 @@ function install_conda() {
   conda install mamba -n base -c conda-forge -y
 }
 
-if [[ ! -e ${CONDA_PREFIX_DEFAULT}]]
+if [[ ! -e ${CONDA_PREFIX_DEFAULT} ]]
 then
   install_conda
 else
   set +o nounset
-  source ${CONDA_PREFIX_DEFAULT}/bin/actvate root
+  source ${CONDA_PREFIX_DEFAULT}/bin/activate root
   set -o nounset
 fi
 

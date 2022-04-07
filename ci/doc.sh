@@ -9,7 +9,7 @@ set -o pipefail
 cd "$( dirname "${BASH_SOURCE[0]}" )/.."
 export PYTHONPATH=$PWD
 
-rm -rf build/doctrees build/html
-sphinx-build -j auto -b html -d build/doctrees doc build/html
+rm -rf doc/build/doctrees doc/build/html
+sphinx-build -j auto -b html doc/source doc/build
 
-echo "Documentation generated at file://$PWD/build/html/index.html"
+echo "Documentation generated at file://$PWD/doc/build/html/index.html"

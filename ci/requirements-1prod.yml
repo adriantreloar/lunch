@@ -1,0 +1,21 @@
+channels:
+  # Use conda forge. Downgrade to anaconda later for stability
+  - conda-forge
+  - anaconda
+dependencies:
+  - python = 3.9
+  - pip
+
+  # Runtime dependencies
+  - aiohttp
+  - click
+  - dask
+  - distributed
+  - jsonschema
+  - numpy
+  - uvloop
+  - yaml
+
+  # packages not available in conda
+  - pip:
+      - tatsu

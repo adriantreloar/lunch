@@ -1,0 +1,26 @@
+name: lunch
+channels:
+  # Use conda forge. Downgrade to anaconda later for stability
+  - conda-forge
+  - anaconda
+dependencies:
+  - python = 3.9
+  - pip
+
+  # Development dependencies
+  - coverage
+  - flake8 = 3.8
+  - isort
+  - mypy
+  - pytest
+  - pytest-asyncio
+  - pytest-rerunfailures
+  - pytest-timeout
+  - recursive_diff
+  - sphinx
+  - sphinx-argparse
+  - sphinx_rtd_theme
+
+  # packages not available in conda
+  - pip:
+      - flake8-junit-report

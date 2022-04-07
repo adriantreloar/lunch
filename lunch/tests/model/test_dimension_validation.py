@@ -1,14 +1,16 @@
 import pytest
-from model.dimensions import validator
+import os
+
+from lunch.model.dimensions import validator
 import yaml
 
-test_can_contain_name_key():
+def test_can_contain_name_key():
     dimension = {"name": "Department"}
 
     validator.validate(dimension)
 
 
-test_department_dimension_validates():
+def test_department_dimension_validates():
     with open(os.path.join("test_data", "department_dimension.yaml")) as f:
         dimension = yaml.safe_load(f)
 

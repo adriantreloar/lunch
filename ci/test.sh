@@ -25,7 +25,7 @@ set +o pipefail
 black -t py38 --check . 2>&1 | grep 'would reformat' > build/junit/black.txt || true
 set -o pipefail
 flake8_junit build/junit/black.txt build/junit/black.xml.tmp
-sed 's/name="flake8"/name="black"' build/junit/black.xml.tmp > build/junit/black.xml
+sed 's/name="flake8"/name="black"/' build/junit/black.xml.tmp > build/junit/black.xml
 rm build/junit/black.xml.tmp
 echo
 
@@ -35,7 +35,7 @@ mypy --install-types --non-interactive lunch | grep -v 'Success:' \
   | grep -v "Installing" > build/junit/mypy.txt || true
 flake8_junit build/junit/mypy.txt build/junit/mypy.xml.tmp
 echo
-sed 's/name="flake8"/name="mypy"' build/junit/mypy.xml.tmp > build/junit/mypy.xml
+sed 's/name="flake8"/name="mypy"/' build/junit/mypy.xml.tmp > build/junit/mypy.xml
 rm build/junit/mypy.xml.tmp
 echo
 

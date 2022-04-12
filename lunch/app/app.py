@@ -4,9 +4,28 @@ class App:
     def __init__(self):
         pass
 
-    def save(self, data, checker=None, persistor=None, reconciler=None, version_controller=None):
+    # Parse args and config
+    # Set up:
 
-        # We want to default to the apps checker, persistor etc.
+    # Persistence
 
-        # We want to return a reference to the saved data, or a version,
-        pass
+    # Caches
+
+    # Storage
+    # Version Storage (if any - for tests will be in memory, a served version manager needs network setup)
+    # Reference Data Storage
+    # Cube Data Storage
+    # Other data storage
+
+    # Validators, Transformers
+
+    # Managers
+    # Version Manager (needs version storage)
+    # Model manager (needs version manager, model storage)
+    # Reference Data Manager (needs model manager, version manager, reference data storage)
+    # Data Operation manager - queries refer to reference data as well as models
+    # Cube Data manager (needs model_manager, reference data manager, version manager, cube data storage)
+    # Website Manager (needs model_manager, reference data manager, data op manager, version manager, website storage)
+    #
+
+    # Set up server(s)

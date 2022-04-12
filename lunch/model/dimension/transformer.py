@@ -1,5 +1,4 @@
-
-class Dimensions:
+class DimensionTransformer:
     """ Static methods to get dimension information from raw data
 
     The dimension_data is given to these functions at a given version

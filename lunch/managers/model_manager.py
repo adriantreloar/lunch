@@ -8,6 +8,7 @@ from lunch.storage.model_store import ModelStore
 from lunch.model.dimension.structure_validator import StructureValidator as DimensionStructureValidator
 from lunch.model.dimension.comparer import Comparer as DimensionComparer
 
+
 class ModelManager(Conductor):
 
     def __init__(self,
@@ -31,58 +32,74 @@ class ModelManager(Conductor):
 
 async def _get_dimension(
         dimension: dict,
-        version: Version,
-        storage: ModelStore
-        ):
+        version: int,
+        version_manager: VersionManager,
+        storage: ModelStore,
+):
     """
 
     :param dimension:
     :param version:
+    :param version_manager:
     :param storage:
     :return:
     """
 
     raise NotImplementedError()
 
+
 async def _update_dimension(
         dimension: dict,
-        last_known_version: Version,
+        read_version: int,
+        write_version: int,
         dimension_structure_validator: DimensionStructureValidator,
         dimension_comparer: DimensionComparer,
         version_manager: VersionManager,
         storage: ModelStore
-        ):
+):
     """
 
     :param dimension:
-    :param last_known_version:
+    :param read_version:
     :param dimension_structure_validator:
     :param dimension_comparer:
     :param version_manager:
     :param storage:
     :return:
     """
+    full_read_version: Version = await version_manager.get_full_version(read_version)
 
     # This could throw a validation error
     dimension_structure_validator.validate(data=dimension)
 
-    previous_dimension= await _get_dimension(name=dimension.name, version=last_known_version, storage=storage)
+    previous_dimension = await _get_dimension(name=dimension.name, version=read_version,
+                                              version_manager=version_manager, storage=storage)
     comparison = dimension_comparer.compare(dimension, previous_dimension)
 
+    full_write_version = None
+
+    # Only check and put the data if there is actually something to update
     if comparison:
-        with await version_manager.write_model_version(last_known_version=last_known_version) as version:
 
-            # TODO - check references - if we have made deletions we'll need to know
-            #  e.g. a deletion to an attribute
-            #  we could check later (e.g. when using a DataOperation or Query)
-            #  but do we really want to know we've broken
-            #  something at that point?
-            # Pass the comparison into the reference check, and check references at the write version
-            # Referred objects will be in
+        if not write_version:
+            with await version_manager.write_model_version(last_known_version=full_read_version) as version:
+                await _check_and_put(dimension, version, storage)
+        else:
+            full_write_version = await version_manager.get_full_version(write_version)
 
-            storage.put_dimension(dimension, version)
+            await _check_and_put(dimension, full_write_version, storage)
 
         # TODO - notify changes - here? Or elsewhere?
 
-        storage.cache_dimension(dimension, version)
+
+async def _check_and_put(dimension: dict, version: Version, storage: ModelStore):
+    # TODO - check references - if we have made deletions we'll need to know
+    #  e.g. a deletion to an attribute
+    #  we could check later (e.g. when using a DataOperation or Query)
+    #  but do we really want to know we've broken
+    #  something at that point?
+    # Pass the comparison into the reference check, and check references at the write version
+    # Referred objects will be in
+
+    storage.put_dimension(dimension, version)
 

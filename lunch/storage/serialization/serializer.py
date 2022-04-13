@@ -1,7 +1,9 @@
-from lunch.base_classes.transformer import Transformer
+from lunch.base_classes.conductor import Conductor
+from lunch.storage.persistence.persistor import Persistor
 
-
-class Serializer(Transformer):
+class Serializer(Conductor):
     """Base class for serializers.
     """
-    pass
+
+    def __init__(self, persistor: Persistor):
+        self._persistor = persistor

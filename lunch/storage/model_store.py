@@ -11,10 +11,9 @@ class ModelStore(Store):
     """
     pass
 
-    def __init__(self, serializer: ModelSerializer, cache: ModelCache,  persistor: ModelPersistor):
+    def __init__(self, serializer: ModelSerializer, cache: ModelCache):
         self._serializer = serializer
         self._cache = cache
-        self._persistor = persistor
 
     async def get_dimension(self, name: str, version: Version) -> dict:
         """
@@ -23,7 +22,7 @@ class ModelStore(Store):
         :param version:
         :return:
         """
-        return await _get_dimension(name=name, version=version, serializer=self._serializer, cache=self._cache, persistor=self._persistor)
+        return await _get_dimension(name=name, version=version, serializer=self._serializer, cache=self._cache)
 
     async def put_dimension(self, dimension: dict, version: Version):
         """
@@ -32,22 +31,35 @@ class ModelStore(Store):
         :param version:
         :return:
         """
-        await _put_dimension(dimension=dimension, version=version, serializer=self._serializer, cache=self._cache, persistor=self._persistor)
+        await _put_dimension(dimension=dimension, version=version, serializer=self._serializer, cache=self._cache)
 
-    async def cache_dimension(self, dimension: dict, version: Version):
+    async def abort_write(self, version: Version):
         """
+        Clear out half written data in the cache and in the store for an aborted write version
 
-        :param dimension:
-        :param version:
+        :param version: Write version that has been aborted
         :return:
         """
-        await _put_dimension(dimension=dimension, version=version, serializer=self._serializer, cache=self._cache, persistor=self._persistor)
+        await _abort_write(version=version, serializer=self._serializer, cache=self._cache)
 
-async def _get_dimension(name:str, version: Version, serializer: ModelSerializer, cache: ModelCache,  persistor : ModelPersistor):
-    raise NotImplementedError()
 
-async def _put_dimension(dimension:dict, version: Version, serializer: ModelSerializer, cache: ModelCache,  persistor : ModelPersistor):
-    raise NotImplementedError()
+async def _get_dimension(name:str, version: Version, serializer: ModelSerializer, cache: ModelCache):
+    try:
+        return await cache.get_dimension(name, version)
+    except KeyError:
+        dimension = await serializer.get_dimension(name, version)
+        await cache.put_dimension(dimension, version)
+        return dimension
 
-async def _cache_dimension(dimension: dict, version: Version, serializer: ModelSerializer, cache: ModelCache):
-    raise NotImplementedError()
+
+async def _put_dimension(dimension:dict, version: Version, serializer: ModelSerializer, cache: ModelCache):
+
+    # Note - we cache as we put, so that later puts in a transaction can validate against cached data
+    await serializer.put_dimension(dimension, version)
+    await cache.put_dimension(dimension, version)
+
+
+async def _abort_write(version: Version, serializer: ModelSerializer, cache: ModelCache):
+    # Clear out half written data in the cache and in the store (in the background)
+    await cache.abort_write(version)
+    await serializer.abort_write(version)

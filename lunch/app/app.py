@@ -8,6 +8,7 @@ class App:
     # Set up:
 
     # Persistence
+    # Serializers
 
     # Caches
 
@@ -15,7 +16,7 @@ class App:
     # Version Storage (if any - for tests will be in memory, a served version manager needs network setup)
     # Reference Data Storage
     # Cube Data Storage
-    # Other data storage
+    # Website data storage
 
     # Validators, Transformers
 

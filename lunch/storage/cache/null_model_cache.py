@@ -1,10 +1,8 @@
-from lunch.storage.cache.cache import Cache
+from lunch.storage.cache.model_cache import ModelCache
 from lunch.mvcc.version import Version
 
-class ModelCache(Cache):
-    """
-
-    """
+class NullModelCache(ModelCache):
+    """ModelCache which does nothing - thus we'll always end up going to the Serializer"""
 
     async def get_dimension(self, name: str, version: Version) -> dict:
         """
@@ -13,7 +11,7 @@ class ModelCache(Cache):
         :param version:
         :return:
         """
-        raise NotImplementedError("Abstract")
+        raise KeyError((name, version))
 
     async def put_dimension(self, dimension: dict, version: Version):
         """
@@ -22,7 +20,7 @@ class ModelCache(Cache):
         :param version:
         :return:
         """
-        raise NotImplementedError("Abstract")
+        pass
 
     async def abort_write(self, version: Version):
         """
@@ -31,4 +29,4 @@ class ModelCache(Cache):
         :param version: Write version that has been aborted
         :return:
         """
-        raise NotImplementedError("Abstract")
+        pass

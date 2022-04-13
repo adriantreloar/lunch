@@ -1,4 +1,7 @@
-class DimensionTransformer:
+from lunch.base_classes.transformer import Transformer
+
+
+class DimensionTransformer(Transformer):
     """ Static methods to get dimension information from raw data
 
     The dimension_data is given to these functions at a given version

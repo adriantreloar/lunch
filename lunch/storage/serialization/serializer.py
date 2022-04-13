@@ -1,3 +1,4 @@
+from lunch.base_classes.transformer import Transformer
 
 
 class Serializer(Transformer):

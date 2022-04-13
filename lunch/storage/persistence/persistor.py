@@ -1,5 +1,6 @@
+from lunch.base_classes.stateful import Stateful
 
-class Persistor:
+class Persistor(Stateful):
     """ Base persistence class"""
 
     def persist(self, data):

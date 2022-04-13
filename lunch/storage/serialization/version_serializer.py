@@ -1,5 +1,5 @@
 from serializer import Serializer
 
 
-class ModelSerializer(Serializer):
+class VersionSerializer(Serializer):
     pass

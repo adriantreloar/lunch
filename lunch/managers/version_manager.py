@@ -28,7 +28,7 @@ class VersionManager(Conductor):
             raise
         else:
             # Commit can also throw an exception
-            await self._conductor.commit(version=version, storage=self._storage)
+            await _commit(version=version, storage=self._storage)
 
     @asynccontextmanager
     async def read_version(self):

@@ -1,6 +1,6 @@
-from lunch.base_classes.stateful import Stateful
+from lunch.base_classes.conductor import Conductor
 
-class Persistor(Stateful):
+class Persistor(Conductor):
     """ Base persistence class"""
 
     def persist(self, data):

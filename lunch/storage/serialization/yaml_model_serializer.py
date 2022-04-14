@@ -18,7 +18,7 @@ class YamlModelSerializer(ModelSerializer):
         :param version: Full version of the dimension we are getting
         :return: Dictionary containing the dimension
         """
-        _get_dimension(name, version, self._persistor)
+        return await _get_dimension(name, version, self._persistor)
 
     async def put_dimension(self, dimension: dict, version: Version):
         """
@@ -27,7 +27,7 @@ class YamlModelSerializer(ModelSerializer):
         :param version:
         :return:
         """
-        _put_dimension(dimension, version, self._persistor)
+        return await _put_dimension(dimension, version, self._persistor)
 
 
 async def _get_dimension(name: str, version: Version, persistor: LocalFileModelPersistor):

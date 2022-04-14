@@ -1,7 +1,7 @@
-from lunch.base_classes.owner_conductor import OwnerConductor
+from lunch.base_classes.conductor import Conductor
 
 
-class Store(OwnerConductor):
+class Store(Conductor):
     """ Base storage class
 
     Storage manages a cache and persistence

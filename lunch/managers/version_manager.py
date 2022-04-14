@@ -14,13 +14,13 @@ class VersionManager(Conductor):
         self._storage = storage
 
     @asynccontextmanager
-    async def write_model_version(self, last_known_version: Version):
+    async def write_model_version(self, read_version: Version):
         """
         Context manager for ModelVersion, to ensure that the version is aborted in case of exception
 
         :param last_known_version:
         """
-        version = await _begin_write_model(last_known_version=last_known_version, storage=self._storage)
+        version = await _begin_write_model(read_version=read_version, storage=self._storage)
         try:
             yield version
         except:
@@ -51,7 +51,8 @@ async def _begin_read(storage: VersionStore) -> Version:
     :return: The latest version
     :raises:
     """
-    raise NotImplementedError()
+    return await storage.begin_read()
+
 
 async def _end_read(version: Version, storage: VersionStore) -> Version:
     """
@@ -60,13 +61,14 @@ async def _end_read(version: Version, storage: VersionStore) -> Version:
     :return: The latest version
     :raises:
     """
-    raise NotImplementedError()
+    return await storage.end_read(version)
 
 
-async def _begin_write_model(last_known_version: Version, storage: VersionStore) -> Version:
+
+async def _begin_write_model(read_version: Version, storage: VersionStore) -> Version:
     """
     """
-    raise NotImplementedError()
+    return await storage.begin_write_model(read_version)
 
 
 async def _commit(version: Version, storage: VersionStore) -> Version:
@@ -76,7 +78,7 @@ async def _commit(version: Version, storage: VersionStore) -> Version:
     :return: The latest version
     :raises:
     """
-    raise NotImplementedError()
+    return await storage.commit(version)
 
 
 async def _abort(version: Version, storage: VersionStore) -> Version:
@@ -86,6 +88,6 @@ async def _abort(version: Version, storage: VersionStore) -> Version:
     :return: The latest version
     :raises:
     """
-    raise NotImplementedError()
+    return await storage.abort(version)
 
 

@@ -13,20 +13,24 @@ class ModelManager(Conductor):
 
     def __init__(self,
                  dimension_structure_validator: DimensionStructureValidator,
+                 dimension_comparer: DimensionComparer,
                  version_manager: VersionManager,
                  storage: ModelStore
                  ):
         self._storage = storage
         self._version_manager = version_manager
+        self._dimension_comparer=dimension_comparer
         self._dimension_structure_validator = dimension_structure_validator
 
-    async def update_dimension(self, dimension: dict, last_known_version: int):
-        _update_dimension(
-            dimension,
-            last_known_version,
-            self._dimension_structure_validator,
-            self._version_manager,
-            self._storage
+    async def update_dimension(self, dimension: dict, read_version: int, write_version: int):
+        return await _update_dimension(
+            dimension=dimension,
+            read_version=read_version,
+            write_version=write_version,
+            dimension_structure_validator=self._dimension_structure_validator,
+            dimension_comparer=self._dimension_comparer,
+            version_manager=self._version_manager,
+            storage=self._storage
         )
 
 
@@ -82,7 +86,7 @@ async def _update_dimension(
     if comparison:
 
         if not write_version:
-            with await version_manager.write_model_version(last_known_version=full_read_version) as version:
+            with await version_manager.write_model_version(read_version=full_read_version) as version:
                 await _check_and_put(dimension, version, storage)
         else:
             full_write_version = await version_manager.get_full_version(write_version)
@@ -101,5 +105,5 @@ async def _check_and_put(dimension: dict, version: Version, storage: ModelStore)
     # Pass the comparison into the reference check, and check references at the write version
     # Referred objects will be in
 
-    storage.put_dimension(dimension, version)
+    return await storage.put_dimension(dimension, version)
 

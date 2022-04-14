@@ -1,5 +1,19 @@
 from serializer import Serializer
-
+from lunch.mvcc.version import Version
 
 class VersionSerializer(Serializer):
-    pass
+
+    async def begin_read(self) -> Version:
+        raise NotImplementedError("Abstract")
+
+    async def end_read(self, version: Version) -> Version:
+        raise NotImplementedError("Abstract")
+
+    async def begin_write(self, read_version: Version, model=False, reference=False, cube=False, operations=False, website=False) -> Version:
+        raise NotImplementedError("Abstract")
+
+    async def abort(self, version: Version) -> Version:
+        raise NotImplementedError("Abstract")
+
+    async def commit(self, version: Version) -> Version:
+        raise NotImplementedError("Abstract")

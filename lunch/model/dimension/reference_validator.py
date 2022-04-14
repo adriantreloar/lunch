@@ -1,7 +1,8 @@
-from lunch.base_classes.conductor import PureConductor
+from lunch.base_classes.conductor import Conductor
+from lunch.managers.model_manager import ModelManager
 
 
-class ReferenceValidator(PureConductor):
+class ReferenceValidator(Conductor):
     """ Dynamic methods to check referential integrity of a dimension
     """
 

@@ -33,10 +33,10 @@ class LocalFileModelPersistor(ModelPersistor):
         """
         self._directory = directory
 
-    def index_file(self, version: int) -> str:
+    def index_file(self, version: int) -> Path:
         return _index_file(directory=self._directory, version=version)
 
-    def dimension_file(self, name: str, version: int) -> str:
+    def dimension_file(self, name: str, version: int) -> Path:
         return _dimension_file(directory=self._directory, name=name, version=version)
 
     @contextmanager
@@ -64,10 +64,10 @@ class LocalFileModelPersistor(ModelPersistor):
             yield f
 
 
-def _index_file(directory: Path, version: int) -> str:
+def _index_file(directory: Path, version: int) -> Path:
     return directory.joinpath(f"{version}/_index.yaml")
 
 
-def _dimension_file(directory: Path, name: str, version: int) -> str:
+def _dimension_file(directory: Path, name: str, version: int) -> Path:
     return directory.joinpath(f"{version}/{slugify(name)}.yaml")
 

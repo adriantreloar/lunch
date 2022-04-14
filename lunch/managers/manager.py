@@ -1,6 +1,6 @@
-from lunch.base_classes.owner_conductor import OwnerConductor
+from lunch.base_classes.conductor import Conductor
 
-class Manager(OwnerConductor):
+class Manager(Conductor):
     """ Base class for Managers.
 
     When a server gets asked to do something, it will route the request to the appropriate Manager.

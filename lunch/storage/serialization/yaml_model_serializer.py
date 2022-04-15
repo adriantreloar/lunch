@@ -32,13 +32,13 @@ class YamlModelSerializer(ModelSerializer):
 
 async def _get_dimension(name: str, version: Version, persistor: LocalFileModelPersistor):
     with await persistor.open_dimension_file_read(name=name, version=version.model_version) as stream:
-        d = await yaml.load(stream)
+        d = await yaml.safe_load(stream)
     return d
 
 
 async def _put_dimension(dimension: dict, version: Version, persistor: LocalFileModelPersistor):
     with await persistor.open_dimension_file_write(name=dimension["name"], version=version.model_version) as stream:
-        await yaml.dump(dimension, stream)
+        await yaml.safe_dump(dimension, stream)
 
 
 

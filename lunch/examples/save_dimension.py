@@ -1,4 +1,5 @@
 import asyncio
+import os
 
 from lunch.storage.persistence.local_file_version_persistor import LocalFileVersionPersistor
 from lunch.storage.persistence.local_file_model_persistor import LocalFileModelPersistor
@@ -30,8 +31,8 @@ async def main():
     dimension_reference_validator = DimensionReferenceValidator()
 
     # Persistence
-    version_persistor = LocalFileVersionPersistor(directory=Path("~/PycharmProjects/lunch/example_output"))
-    model_persistor = LocalFileModelPersistor(directory=Path("~/PycharmProjects/lunch/example_output/model"))
+    version_persistor = LocalFileVersionPersistor(directory=Path("/home/treloarja/PycharmProjects/lunch/example_output"))
+    model_persistor = LocalFileModelPersistor(directory=Path("/home/treloarja/PycharmProjects/lunch/example_output/model"))
 
     # Serializers
     version_serializer = YamlVersionSerializer(persistor=version_persistor, transformer=version_transformer)

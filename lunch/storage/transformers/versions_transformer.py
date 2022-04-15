@@ -68,7 +68,7 @@ class VersionsTransformer(Transformer):
         return versions_dict_out, write_version_full
 
     @staticmethod
-    async def commit_version_in_versions(versions_dict: dict, version: Version) -> Version:
+    def commit_version_in_versions(versions_dict: dict, version: Version) -> Version:
 
         versions_dict_out = versions_dict.copy()
 
@@ -78,7 +78,7 @@ class VersionsTransformer(Transformer):
         return versions_dict_out
 
     @staticmethod
-    async def abort_version_in_versions(versions_dict: dict, version: Version) -> Version:
+    def abort_version_in_versions(versions_dict: dict, version: Version) -> Version:
 
         versions_dict_out = versions_dict.copy()
 
@@ -88,16 +88,16 @@ class VersionsTransformer(Transformer):
         return versions_dict_out
 
     @staticmethod
-    async def get_max_readable_version(versions_dict: dict) -> Version:
+    def get_max_readable_version(versions_dict: dict) -> Version:
         try:
             max_version = max(filter(lambda v: v["committed"], versions_dict["versions"].items()),
                               key=lambda v: v["version"])
             return max_version
-        except KeyError:
+        except (KeyError, TypeError, ValueError):
             return Version(version=0, model_version=0,reference_data_version=0,cube_data_version=0,operations_version=0,website_version=0)
 
     @staticmethod
-    async def increment_readers_in_versions(versions_dict: dict, version: Version) -> Version:
+    def increment_readers_in_versions(versions_dict: dict, version: Version) -> Version:
         """
         When doing reads we must increment the number of readers, to prevent live versions being vacuumed
 

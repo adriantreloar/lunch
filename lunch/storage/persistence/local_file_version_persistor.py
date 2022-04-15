@@ -17,6 +17,10 @@ class LocalFileVersionPersistor(ModelPersistor):
         """
         self._directory = directory
 
+        # Initialise the file if it doesn't exist
+        with self.open_version_file_write() as f:
+            pass
+
     def version_file(self) -> Path:
         return _version_file(directory=self._directory)
 
@@ -27,9 +31,9 @@ class LocalFileVersionPersistor(ModelPersistor):
             yield f
 
     @contextmanager
-    async def open_version_file_write(self):
+    def open_version_file_write(self):
         file_path = self.version_file()
-        with open(file_path, 'wb') as f:
+        with open(file_path, mode='wb') as f:
             yield f
 
 def _version_file(directory: Path) -> Path:

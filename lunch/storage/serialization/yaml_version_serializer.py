@@ -48,13 +48,17 @@ async def _begin_read(lock: Lock, persistor: LocalFileVersionPersistor, transfor
     async with lock:
 
         with persistor.open_version_file_read() as stream:
-            version_dict = await yaml.load(stream)
+            version_dict = yaml.safe_load(stream)
+
+        # The first time we read there may be no versions
+        if version_dict is None:
+            version_dict = {"versions": {0: {"version":Version(version=0, model_version=0, reference_data_version=0, cube_data_version=0, operations_version=0, website_version=0), "readers":0, "committed":True, "status":"readable"}}}
 
         read_version = transformer.get_max_readable_version(version_dict)
-        version_dict, write_version = transformer.increment_readers_in_versions(version_dict, read_version)
+        version_dict = transformer.increment_readers_in_versions(version_dict, read_version)
 
         with persistor.open_version_file_write() as stream:
-            await yaml.dump(version_dict, stream)
+            yaml.safe_dump(version_dict, stream)
 
         return write_version
 
@@ -66,12 +70,12 @@ async def _end_read(lock: Lock, read_version: Version, persistor: LocalFileVersi
     async with lock:
 
         with persistor.open_version_file_read() as stream:
-            version_dict = await yaml.load(stream)
+            version_dict = yaml.safe_load(stream)
 
         version_dict, write_version = transformer.decrement_readers_in_versions(version_dict, read_version)
 
         with persistor.open_version_file_write() as stream:
-            await yaml.dump(version_dict, stream)
+            yaml.safe_dump(version_dict, stream)
 
         return write_version
 
@@ -83,35 +87,35 @@ async def _begin_write(lock: Lock, read_version: Version, persistor: LocalFileVe
     async with lock:
 
         with persistor.open_version_file_read() as stream:
-            version_dict = await yaml.load(stream)
+            version_dict = yaml.safe_load(stream)
 
         version_dict, write_version = transformer.start_new_write_version_in_versions(version_dict, read_version, model, reference, cube, operations, website)
 
         with persistor.open_version_file_write() as stream:
-            await yaml.dump(version_dict, stream)
+            yaml.safe_dump(version_dict, stream)
 
         return write_version
 
 async def _abort(lock: Lock, version: Version, persistor: LocalFileVersionPersistor, transformer: VersionsTransformer) -> Version:
     async with lock:
         with persistor.open_version_file_read() as stream:
-            version_dict = await yaml.load(stream)
+            version_dict = yaml.safe_load(stream)
 
         version_dict, latest_read_version = transformer.abort_version_in_versions(version_dict, version)
 
         with persistor.open_version_file_write() as stream:
-            await yaml.dump(version_dict, stream)
+            yaml.safe_dump(version_dict, stream)
 
         return latest_read_version
 
 async def _commit(lock: Lock, version: Version, persistor: LocalFileVersionPersistor, transformer: VersionsTransformer) -> Version:
     async with lock:
         with persistor.open_version_file_read() as stream:
-            version_dict = await yaml.load(stream)
+            version_dict = yaml.safe_load(stream)
 
         version_dict, latest_read_version = transformer.commit_version_in_versions(version_dict, version)
 
         with persistor.open_version_file_write() as stream:
-            await yaml.dump(version_dict, stream)
+            yaml.safe_dump(version_dict, stream)
 
         return latest_read_version

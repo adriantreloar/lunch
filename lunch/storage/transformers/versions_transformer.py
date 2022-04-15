@@ -63,24 +63,68 @@ class VersionsTransformer(Transformer):
             versions_dict_out["versions"] = {}
             versions = {}
 
-        versions[write_version_int] = {"committed": False, "status": "writing", "version": write_version_full}
+        versions[write_version_int] = {"committed": False, "status": "writing", "version": write_version_full, "readers": 0}
 
         return versions_dict_out, write_version_full
 
     @staticmethod
-    async def commit_version_in_versions(versions_dict: dict, version: Version):
+    async def commit_version_in_versions(versions_dict: dict, version: Version) -> Version:
 
         versions_dict_out = versions_dict.copy()
 
-        versions_dict_out["versions"][version.version]= {"committed": True, "status": "readable", "version": versions_dict["versions"][version.version]["version"]}
+        committing_version = versions_dict_out["versions"][version.version]
+        committing_version.update({"committed": True, "status": "readable"})
 
         return versions_dict_out
 
     @staticmethod
-    async def abort_version_in_versions(versions_dict: dict, version: Version):
+    async def abort_version_in_versions(versions_dict: dict, version: Version) -> Version:
 
         versions_dict_out = versions_dict.copy()
 
-        versions_dict_out["versions"][version.version]= {"committed": False, "status": "aborted", "version": versions_dict["versions"][version.version]["version"]}
+        aborting_version = versions_dict_out["versions"][version.version]
+        aborting_version.update({"committed": False, "status": "aborted"})
+
+        return versions_dict_out
+
+    @staticmethod
+    async def get_max_readable_version(versions_dict: dict) -> Version:
+        try:
+            max_version = max(filter(lambda v: v["committed"], versions_dict["versions"].items()),
+                              key=lambda v: v["version"])
+            return max_version
+        except KeyError:
+            return Version(version=0, model_version=0,reference_data_version=0,cube_data_version=0,operations_version=0,website_version=0)
+
+    @staticmethod
+    async def increment_readers_in_versions(versions_dict: dict, version: Version) -> Version:
+        """
+        When doing reads we must increment the number of readers, to prevent live versions being vacuumed
+
+        :param versions_dict:
+        :param version:
+        :return:
+        """
+        versions_dict_out = versions_dict.copy()
+
+        incrementing_version = versions_dict_out["versions"][version.version]
+        incrementing_version["readers"] += 1
+
+        return versions_dict_out
+
+
+    @staticmethod
+    async def decrement_readers_in_versions(versions_dict: dict, version: Version) -> Version:
+        """
+        When finishing reads we must decrement the number of readers, to allow old versions to be vacuumed
+
+        :param versions_dict:
+        :param version:
+        :return:
+        """
+        versions_dict_out = versions_dict.copy()
+
+        decrementing_version = versions_dict_out["versions"][version.version]
+        decrementing_version["readers"] -= 1
 
         return versions_dict_out

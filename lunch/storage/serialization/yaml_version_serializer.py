@@ -50,7 +50,7 @@ async def _begin_read(lock: Lock, persistor: LocalFileVersionPersistor, transfor
         with persistor.open_version_file_read() as stream:
             version_dict = await yaml.load(stream)
 
-        read_version = transformer.get_max_readable_version()
+        read_version = transformer.get_max_readable_version(version_dict)
         version_dict, write_version = transformer.increment_readers_in_versions(version_dict, read_version)
 
         with persistor.open_version_file_write() as stream:

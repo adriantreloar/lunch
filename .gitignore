@@ -2,3 +2,6 @@
 /logs/
 /UNKNOWN.egg-info/
 /.coverage
+/example_output/
+/.mypy_cache/
+/.pytest_cache/

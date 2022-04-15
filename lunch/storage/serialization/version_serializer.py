@@ -1,4 +1,4 @@
-from serializer import Serializer
+from lunch.storage.serialization.serializer import Serializer
 from lunch.mvcc.version import Version
 
 class VersionSerializer(Serializer):

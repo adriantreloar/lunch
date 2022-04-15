@@ -34,8 +34,6 @@ class VersionManager(Conductor):
     async def read_version(self):
         """
         Context manager for Version read, to ensure that the version is flagged as released in case of exception
-
-        :param last_known_version:
         """
         version = await _begin_read(storage=self._storage)
         try:

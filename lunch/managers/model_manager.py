@@ -6,7 +6,7 @@ from lunch.managers.version_manager import VersionManager
 from lunch.mvcc.version import Version
 from lunch.storage.model_store import ModelStore
 from lunch.model.dimension.structure_validator import StructureValidator as DimensionStructureValidator
-from lunch.model.dimension.comparer import Comparer as DimensionComparer
+from lunch.model.dimension.comparer import DimensionComparer
 
 
 class ModelManager(Conductor):

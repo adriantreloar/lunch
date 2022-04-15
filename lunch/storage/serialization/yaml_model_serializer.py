@@ -9,7 +9,7 @@ class YamlModelSerializer(ModelSerializer):
     """
 
     def __init__(self, persistor: LocalFileModelPersistor):
-        super.__init__(persistor)
+        self._persistor = persistor
 
     async def get_dimension(self, name: str, version: Version) -> dict:
         """

@@ -5,5 +5,4 @@ class Serializer(Conductor):
     """Base class for serializers.
     """
 
-    def __init__(self, persistor: Persistor):
-        self._persistor = persistor
+    pass

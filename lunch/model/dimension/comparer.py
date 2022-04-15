@@ -1,7 +1,7 @@
 from lunch.base_classes.transformer import Transformer
 
 
-class Comparer(Transformer):
+class DimensionComparer(Transformer):
     """ Static methods to compare two dimension dictionaries
     """
 

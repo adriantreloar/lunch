@@ -1,6 +1,5 @@
 from lunch.base_classes.transformer import Transformer
-from lunch.mvcc.version import Version
-
+from lunch.mvcc.version import Version, version_from_dict, version_to_dict
 
 class VersionsTransformer(Transformer):
     """
@@ -23,7 +22,7 @@ class VersionsTransformer(Transformer):
             return Version(version=0, model_version=0, reference_data_version=0, cube_data_version=0, operations_version=0, website_version=0)
 
         max_key = max(versions.keys())
-        return versions[max_key]
+        return version_from_dict(versions[max_key]["version"])
 
     @staticmethod
     def start_new_write_version_in_versions(versions_dict: dict, read_version: Version, model: bool, reference: bool, cube: bool, operations: bool, website: bool) -> tuple[dict, Version]:
@@ -63,12 +62,12 @@ class VersionsTransformer(Transformer):
             versions_dict_out["versions"] = {}
             versions = {}
 
-        versions[write_version_int] = {"committed": False, "status": "writing", "version": write_version_full, "readers": 0}
+        versions[write_version_int] = {"committed": False, "status": "writing", "version": version_to_dict(write_version_full), "readers": 0}
 
         return versions_dict_out, write_version_full
 
     @staticmethod
-    def commit_version_in_versions(versions_dict: dict, version: Version) -> Version:
+    def commit_version_in_versions(versions_dict: dict, version: Version) -> dict:
 
         versions_dict_out = versions_dict.copy()
 
@@ -78,7 +77,7 @@ class VersionsTransformer(Transformer):
         return versions_dict_out
 
     @staticmethod
-    def abort_version_in_versions(versions_dict: dict, version: Version) -> Version:
+    def abort_version_in_versions(versions_dict: dict, version: Version) -> dict:
 
         versions_dict_out = versions_dict.copy()
 
@@ -89,11 +88,11 @@ class VersionsTransformer(Transformer):
 
     @staticmethod
     def get_max_readable_version(versions_dict: dict) -> Version:
-        try:
-            max_version = max(filter(lambda v: v["committed"], versions_dict["versions"].items()),
-                              key=lambda v: v["version"])
-            return max_version
-        except (KeyError, TypeError, ValueError):
+        if versions_dict:
+            max_version = max(filter(lambda v: v["committed"], versions_dict["versions"].values()),
+                              key=lambda v: v["version"]["version"])
+            return version_from_dict(max_version["version"])
+        else:
             return Version(version=0, model_version=0,reference_data_version=0,cube_data_version=0,operations_version=0,website_version=0)
 
     @staticmethod
@@ -114,7 +113,7 @@ class VersionsTransformer(Transformer):
 
 
     @staticmethod
-    async def decrement_readers_in_versions(versions_dict: dict, version: Version) -> Version:
+    def decrement_readers_in_versions(versions_dict: dict, version: Version) -> Version:
         """
         When finishing reads we must decrement the number of readers, to allow old versions to be vacuumed
 

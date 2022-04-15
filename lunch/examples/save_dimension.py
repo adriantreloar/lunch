@@ -54,7 +54,7 @@ async def main():
                                  version_manager=version_manager
                                  )
 
-    my_dim = {"name":"MyDim"}
+    my_dim = {"name":"MyDim", "thing":"thing"}
     async with version_manager.read_version() as read_version:
         async with version_manager.write_model_version(read_version=read_version) as write_version:
             await model_manager.update_dimension(my_dim, read_version=read_version, write_version=write_version)

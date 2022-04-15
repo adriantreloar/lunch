@@ -27,13 +27,13 @@ class LocalFileVersionPersistor(ModelPersistor):
     @contextmanager
     def open_version_file_read(self):
         file_path = self.version_file()
-        with open(file_path, 'rb') as f:
+        with open(file_path, 'r') as f:
             yield f
 
     @contextmanager
     def open_version_file_write(self):
         file_path = self.version_file()
-        with open(file_path, mode='wb') as f:
+        with open(file_path, mode='w') as f:
             yield f
 
 def _version_file(directory: Path) -> Path:

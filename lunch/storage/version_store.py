@@ -41,7 +41,7 @@ class VersionStore(Store):
         :param version:
         :return: The latest version
         """
-        raise NotImplementedError("TODO")
+        return await _commit(version=version, serializer=self._serializer, cache=self._cache)
 
     async def commit(self, version: Version) -> Version:
         """
@@ -49,7 +49,7 @@ class VersionStore(Store):
         :param version:
         :return: The latest version
         """
-        raise NotImplementedError("TODO")
+        return await _commit(version=version, serializer=self._serializer, cache=self._cache)
 
 async def _begin_read(serializer: VersionSerializer,  cache: VersionCache) -> Version:
     """
@@ -88,7 +88,8 @@ async def _begin_write_model(read_version: Version, serializer: VersionSerialize
     :return: Full write version
     """
 
-    return await serializer.begin_write(read_version=read_version, model=True, reference=False, cube=False, operations=False, website=False)
+    v = await serializer.begin_write(read_version=read_version, model=True, reference=False, cube=False, operations=False, website=False)
+    return v
 
     # TODO
     #  What do we cache and how?

@@ -20,3 +20,8 @@ class VersionCache(Cache):
     async def delete(self, version: Version):
         raise NotImplementedError("Abstract")
 
+    async def increment_readers(self, version: Version):
+        raise NotImplementedError("Abstract")
+
+    async def decrement_readers(self, version: Version):
+        raise NotImplementedError("Abstract")

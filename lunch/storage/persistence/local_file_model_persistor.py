@@ -1,3 +1,4 @@
+import os.path
 from contextlib import contextmanager
 from pathlib import Path
 from lunch.storage.persistence.model_persistor import ModelPersistor
@@ -54,13 +55,14 @@ class LocalFileModelPersistor(ModelPersistor):
     @contextmanager
     def open_dimension_file_read(self, name: str, version: int):
         file_path = self.dimension_file(name, version)
-        with open(file_path, 'rb') as f:
+        with open(file_path, 'r') as f:
             yield f
 
     @contextmanager
     def open_dimension_file_write(self, name: str, version: int):
         file_path = self.dimension_file(name, version)
-        with open(file_path, 'wb') as f:
+        Path(os.path.dirname(file_path)).mkdir(parents=True, exist_ok=True)
+        with open(file_path, 'w') as f:
             yield f
 
 

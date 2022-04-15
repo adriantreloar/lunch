@@ -11,4 +11,4 @@ class DimensionComparer(Transformer):
         Create a report detailing the differences between two dimensions
         """
 
-        raise NotImplementedError()
+        return {"changes":"changes"}

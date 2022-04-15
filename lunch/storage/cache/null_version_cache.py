@@ -19,3 +19,9 @@ class NullVersionCache(VersionCache):
 
     async def delete(self, version: Version):
         pass
+
+    async def increment_readers(self, version: Version):
+        pass
+
+    async def decrement_readers(self, version: Version):
+        pass

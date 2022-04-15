@@ -35,9 +35,8 @@ class ModelManager(Conductor):
 
 
 async def _get_dimension(
-        dimension: dict,
-        version: int,
-        version_manager: VersionManager,
+        name: str,
+        version: Version,
         storage: ModelStore,
 ):
     """
@@ -49,13 +48,13 @@ async def _get_dimension(
     :return:
     """
 
-    raise NotImplementedError()
+    return await storage.get_dimension(name=name, version=version)
 
 
 async def _update_dimension(
         dimension: dict,
-        read_version: int,
-        write_version: int,
+        read_version: Version,
+        write_version: Version,
         dimension_structure_validator: DimensionStructureValidator,
         dimension_comparer: DimensionComparer,
         version_manager: VersionManager,
@@ -71,13 +70,11 @@ async def _update_dimension(
     :param storage:
     :return:
     """
-    full_read_version: Version = await version_manager.get_full_version(read_version)
 
     # This could throw a validation error
     dimension_structure_validator.validate(data=dimension)
 
-    previous_dimension = await _get_dimension(name=dimension.name, version=read_version,
-                                              version_manager=version_manager, storage=storage)
+    previous_dimension = await _get_dimension(name=dimension["name"], version=read_version, storage=storage)
     comparison = dimension_comparer.compare(dimension, previous_dimension)
 
     full_write_version = None
@@ -85,13 +82,11 @@ async def _update_dimension(
     # Only check and put the data if there is actually something to update
     if comparison:
 
-        if not write_version:
-            with await version_manager.write_model_version(read_version=full_read_version) as version:
+        if not write_version.version:
+            with await version_manager.write_model_version(read_version=read_version) as version:
                 await _check_and_put(dimension, version, storage)
         else:
-            full_write_version = await version_manager.get_full_version(write_version)
-
-            await _check_and_put(dimension, full_write_version, storage)
+            await _check_and_put(dimension, write_version, storage)
 
         # TODO - notify changes - here? Or elsewhere?
 

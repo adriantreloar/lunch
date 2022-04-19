@@ -24,7 +24,7 @@ class VersionManager(Conductor):
         )
         try:
             yield version
-        except:
+        except Exception:
             await _abort(version=version, storage=self._storage)
             raise
         else:

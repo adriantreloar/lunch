@@ -1,5 +1,4 @@
 import asyncio
-import os
 from pathlib import Path
 
 from lunch.managers.model_manager import ModelManager

@@ -1,5 +1,3 @@
-import re
-import unicodedata
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -17,7 +15,7 @@ class LocalFileVersionPersistor(ModelPersistor):
         self._directory = directory
 
         # Initialise the file if it doesn't exist
-        with self.open_version_file_write() as f:
+        with self.open_version_file_write():
             pass
 
     def version_file(self) -> Path:

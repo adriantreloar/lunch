@@ -1,6 +1,5 @@
-
-class Transformer():
-    """ A base class, for classes which transform data.
+class Transformer:
+    """A base class, for classes which transform data.
 
     Transformers should contain only static functions.
     Transformers are stateless.
@@ -13,4 +12,5 @@ class Transformer():
 
     e.g. assert Transformer.reverse("foo") == "oof"
     """
+
     pass

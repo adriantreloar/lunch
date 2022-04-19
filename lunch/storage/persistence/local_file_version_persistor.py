@@ -1,14 +1,13 @@
+import re
+import unicodedata
 from contextlib import contextmanager
 from pathlib import Path
+
 from lunch.storage.persistence.model_persistor import ModelPersistor
-import unicodedata
-import re
+
 
 class LocalFileVersionPersistor(ModelPersistor):
-    """ Hands out open files for file serializers to write to
-
-
-    """
+    """Hands out open files for file serializers to write to"""
 
     def __init__(self, directory: Path):
         """
@@ -27,17 +26,15 @@ class LocalFileVersionPersistor(ModelPersistor):
     @contextmanager
     def open_version_file_read(self):
         file_path = self.version_file()
-        with open(file_path, 'r') as f:
+        with open(file_path, "r") as f:
             yield f
 
     @contextmanager
     def open_version_file_write(self):
         file_path = self.version_file()
-        with open(file_path, mode='w') as f:
+        with open(file_path, mode="w") as f:
             yield f
+
 
 def _version_file(directory: Path) -> Path:
     return directory.joinpath(f"_version.yaml")
-
-
-

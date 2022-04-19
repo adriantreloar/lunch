@@ -1,6 +1,7 @@
 from lunch.base_classes.transformer import Transformer
 from lunch.mvcc.version import Version, version_from_dict, version_to_dict
 
+
 class VersionsTransformer(Transformer):
     """
     Transform version storage dictionaries, when using a very basic read-transform-write
@@ -19,13 +20,28 @@ class VersionsTransformer(Transformer):
         try:
             versions = versions_dict["versions"]
         except KeyError:
-            return Version(version=0, model_version=0, reference_data_version=0, cube_data_version=0, operations_version=0, website_version=0)
+            return Version(
+                version=0,
+                model_version=0,
+                reference_data_version=0,
+                cube_data_version=0,
+                operations_version=0,
+                website_version=0,
+            )
 
         max_key = max(versions.keys())
         return version_from_dict(versions[max_key]["version"])
 
     @staticmethod
-    def start_new_write_version_in_versions(versions_dict: dict, read_version: Version, model: bool, reference: bool, cube: bool, operations: bool, website: bool) -> tuple[dict, Version]:
+    def start_new_write_version_in_versions(
+        versions_dict: dict,
+        read_version: Version,
+        model: bool,
+        reference: bool,
+        cube: bool,
+        operations: bool,
+        website: bool,
+    ) -> tuple[dict, Version]:
         """
 
         :param versions_dict: dictionary from the versions file - state of the read and write versions
@@ -41,18 +57,25 @@ class VersionsTransformer(Transformer):
         max_version = VersionsTransformer.get_max_version(versions_dict)
         write_version_int = max_version.version + 1
         model_version = write_version_int if model else read_version.model_version
-        reference_data_version = write_version_int if reference else read_version.reference_data_version
-        cube_data_version = write_version_int if cube else read_version.cube_data_version
-        operations_version = write_version_int if operations else read_version.operations_version
+        reference_data_version = (
+            write_version_int if reference else read_version.reference_data_version
+        )
+        cube_data_version = (
+            write_version_int if cube else read_version.cube_data_version
+        )
+        operations_version = (
+            write_version_int if operations else read_version.operations_version
+        )
         website_version = write_version_int if website else read_version.website_version
 
-        write_version_full = Version(version=write_version_int,
-                model_version=model_version,
-                reference_data_version=reference_data_version,
-                cube_data_version=cube_data_version,
-                operations_version=operations_version,
-                website_version=website_version
-                )
+        write_version_full = Version(
+            version=write_version_int,
+            model_version=model_version,
+            reference_data_version=reference_data_version,
+            cube_data_version=cube_data_version,
+            operations_version=operations_version,
+            website_version=website_version,
+        )
 
         versions_dict_out = versions_dict.copy()
 
@@ -62,7 +85,12 @@ class VersionsTransformer(Transformer):
             versions_dict_out["versions"] = {}
             versions = {}
 
-        versions[write_version_int] = {"committed": False, "status": "writing", "version": version_to_dict(write_version_full), "readers": 0}
+        versions[write_version_int] = {
+            "committed": False,
+            "status": "writing",
+            "version": version_to_dict(write_version_full),
+            "readers": 0,
+        }
 
         return versions_dict_out, write_version_full
 
@@ -89,11 +117,20 @@ class VersionsTransformer(Transformer):
     @staticmethod
     def get_max_readable_version(versions_dict: dict) -> Version:
         if versions_dict:
-            max_version = max(filter(lambda v: v["committed"], versions_dict["versions"].values()),
-                              key=lambda v: v["version"]["version"])
+            max_version = max(
+                filter(lambda v: v["committed"], versions_dict["versions"].values()),
+                key=lambda v: v["version"]["version"],
+            )
             return version_from_dict(max_version["version"])
         else:
-            return Version(version=0, model_version=0,reference_data_version=0,cube_data_version=0,operations_version=0,website_version=0)
+            return Version(
+                version=0,
+                model_version=0,
+                reference_data_version=0,
+                cube_data_version=0,
+                operations_version=0,
+                website_version=0,
+            )
 
     @staticmethod
     def increment_readers_in_versions(versions_dict: dict, version: Version) -> Version:
@@ -110,7 +147,6 @@ class VersionsTransformer(Transformer):
         incrementing_version["readers"] += 1
 
         return versions_dict_out
-
 
     @staticmethod
     def decrement_readers_in_versions(versions_dict: dict, version: Version) -> Version:

@@ -2,13 +2,13 @@ from lunch.base_classes.conductor import Conductor
 
 
 class Store(Conductor):
-    """ Base storage class
+    """Base storage class
 
     Storage manages a cache and persistence
     """
 
     def persist(self, data):
-        """ Do we want a separate serialiser?
+        """Do we want a separate serialiser?
 
         Some persistence (e.g. parquet) needs to know file locations etc.
 

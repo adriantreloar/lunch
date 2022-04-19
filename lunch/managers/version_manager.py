@@ -3,13 +3,12 @@ from __future__ import annotations
 from contextlib import asynccontextmanager
 
 from lunch.base_classes.conductor import Conductor
-
-from lunch.mvcc.version import Version
 from lunch.errors.edit_conflict_errors import EditConflictError
+from lunch.mvcc.version import Version
 from lunch.storage.version_store import VersionStore
 
-class VersionManager(Conductor):
 
+class VersionManager(Conductor):
     def __init__(self, storage: VersionStore):
         self._storage = storage
 
@@ -20,7 +19,9 @@ class VersionManager(Conductor):
 
         :param last_known_version:
         """
-        version = await _begin_write_model(read_version=read_version, storage=self._storage)
+        version = await _begin_write_model(
+            read_version=read_version, storage=self._storage
+        )
         try:
             yield version
         except:
@@ -62,10 +63,8 @@ async def _end_read(version: Version, storage: VersionStore) -> Version:
     return await storage.end_read(version)
 
 
-
 async def _begin_write_model(read_version: Version, storage: VersionStore) -> Version:
-    """
-    """
+    """ """
     return await storage.begin_write_model(read_version)
 
 
@@ -87,5 +86,3 @@ async def _abort(version: Version, storage: VersionStore) -> Version:
     :raises:
     """
     return await storage.abort(version)
-
-

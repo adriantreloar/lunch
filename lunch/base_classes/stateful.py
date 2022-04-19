@@ -1,6 +1,5 @@
-
-class Stateful():
-    """ A base class, for classes which hold state, such as caches.
+class Stateful:
+    """A base class, for classes which hold state, such as caches.
 
     Statefuls may call other classes to do transformations, but must not do any transformations.
     Statefuls should hold state.
@@ -10,4 +9,5 @@ class Stateful():
 
     By limiting the number of Statefuls, we avoid Object Oriented Programming, which mixes state and function.
     """
+
     pass

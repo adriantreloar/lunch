@@ -1,5 +1,6 @@
-from lunch.storage.cache.model_cache import ModelCache
 from lunch.mvcc.version import Version
+from lunch.storage.cache.model_cache import ModelCache
+
 
 class NullModelCache(ModelCache):
     """ModelCache which does nothing - thus we'll always end up going to the Serializer"""

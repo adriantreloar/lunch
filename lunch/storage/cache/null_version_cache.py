@@ -1,5 +1,6 @@
-from lunch.storage.cache.version_cache import VersionCache
 from lunch.mvcc.version import Version
+from lunch.storage.cache.version_cache import VersionCache
+
 
 class NullVersionCache(VersionCache):
     """

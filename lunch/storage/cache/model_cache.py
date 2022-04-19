@@ -1,10 +1,9 @@
-from lunch.storage.cache.cache import Cache
 from lunch.mvcc.version import Version
+from lunch.storage.cache.cache import Cache
+
 
 class ModelCache(Cache):
-    """
-
-    """
+    """ """
 
     async def get_dimension(self, name: str, version: Version) -> dict:
         """

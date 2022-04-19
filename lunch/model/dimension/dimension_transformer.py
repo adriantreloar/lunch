@@ -2,7 +2,7 @@ from lunch.base_classes.transformer import Transformer
 
 
 class DimensionTransformer(Transformer):
-    """ Static methods to get dimension information from raw data
+    """Static methods to get dimension information from raw data
 
     The dimension_data is given to these functions at a given version
     """
@@ -21,7 +21,7 @@ class DimensionTransformer(Transformer):
 
     @staticmethod
     def parse_element_ids(element_ids, dimension_number, dimension_data, parser):
-        """ Parse each element in the list of ids, and then parse the elements in the formulae of those elements
+        """Parse each element in the list of ids, and then parse the elements in the formulae of those elements
         Pass in the parser object. We do it this way (rather than passing the data to the parser),
         because we assume the reference data classes know more about the structure of the data than the parser class.
         return:

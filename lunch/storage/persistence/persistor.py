@@ -1,10 +1,11 @@
 from lunch.base_classes.conductor import Conductor
 
+
 class Persistor(Conductor):
-    """ Base persistence class"""
+    """Base persistence class"""
 
     def persist(self, data):
-        """ Do we want a separate serialiser?
+        """Do we want a separate serialiser?
 
         Some persistence (e.g. parquet) needs to know file locations etc.
 

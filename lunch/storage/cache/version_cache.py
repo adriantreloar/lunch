@@ -1,10 +1,9 @@
-from lunch.storage.cache.cache import Cache
 from lunch.mvcc.version import Version
+from lunch.storage.cache.cache import Cache
+
 
 class VersionCache(Cache):
-    """
-
-    """
+    """ """
 
     async def get_full_version(self, version: int) -> Version:
         """

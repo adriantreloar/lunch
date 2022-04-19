@@ -1,3 +1,2 @@
-
 class EditConflictError(Exception):
     pass

@@ -1,19 +1,23 @@
-from lunch.storage.store import Store
-from lunch.storage.serialization.version_serializer import VersionSerializer
-from lunch.storage.cache.version_cache import VersionCache
 from lunch.mvcc.version import Version
+from lunch.storage.cache.version_cache import VersionCache
+from lunch.storage.serialization.version_serializer import VersionSerializer
+from lunch.storage.store import Store
+
 
 class VersionStore(Store):
-    """ Manage storage for the Model (dimensions, schemas etc.)
+    """Manage storage for the Model (dimensions, schemas etc.)
     Like all stores, manage persistence and cache
     """
+
     pass
 
-    def __init__(self, serializer: VersionSerializer,  cache : VersionCache):
+    def __init__(self, serializer: VersionSerializer, cache: VersionCache):
         self._serializer = serializer
         self._cache = cache
 
-    async def begin_read(self,) -> Version:
+    async def begin_read(
+        self,
+    ) -> Version:
         """
         Start a read, incrementing the number of readers for the returned version
         :return:
@@ -41,7 +45,9 @@ class VersionStore(Store):
         :param version:
         :return: The latest version
         """
-        return await _commit(version=version, serializer=self._serializer, cache=self._cache)
+        return await _commit(
+            version=version, serializer=self._serializer, cache=self._cache
+        )
 
     async def commit(self, version: Version) -> Version:
         """
@@ -49,9 +55,12 @@ class VersionStore(Store):
         :param version:
         :return: The latest version
         """
-        return await _commit(version=version, serializer=self._serializer, cache=self._cache)
+        return await _commit(
+            version=version, serializer=self._serializer, cache=self._cache
+        )
 
-async def _begin_read(serializer: VersionSerializer,  cache: VersionCache) -> Version:
+
+async def _begin_read(serializer: VersionSerializer, cache: VersionCache) -> Version:
     """
 
     :param serializer:
@@ -64,7 +73,10 @@ async def _begin_read(serializer: VersionSerializer,  cache: VersionCache) -> Ve
     await cache.increment_readers(current_version)
     return current_version
 
-async def _end_read(version: Version, serializer: VersionSerializer,  cache: VersionCache) -> Version:
+
+async def _end_read(
+    version: Version, serializer: VersionSerializer, cache: VersionCache
+) -> Version:
     """
 
     :param version:
@@ -79,7 +91,10 @@ async def _end_read(version: Version, serializer: VersionSerializer,  cache: Ver
     await cache.decrement_readers(version)
     return current_version
 
-async def _begin_write_model(read_version: Version, serializer: VersionSerializer,  cache: VersionCache) -> Version:
+
+async def _begin_write_model(
+    read_version: Version, serializer: VersionSerializer, cache: VersionCache
+) -> Version:
     """
 
     :param read_version:
@@ -88,14 +103,24 @@ async def _begin_write_model(read_version: Version, serializer: VersionSerialize
     :return: Full write version
     """
 
-    v = await serializer.begin_write(read_version=read_version, model=True, reference=False, cube=False, operations=False, website=False)
+    v = await serializer.begin_write(
+        read_version=read_version,
+        model=True,
+        reference=False,
+        cube=False,
+        operations=False,
+        website=False,
+    )
     return v
 
     # TODO
     #  What do we cache and how?
     #  Do we cache uncommitted versions, marked as such?
 
-async def _abort(version: Version, serializer: VersionSerializer,  cache: VersionCache) -> Version:
+
+async def _abort(
+    version: Version, serializer: VersionSerializer, cache: VersionCache
+) -> Version:
     """
 
     :param read_version:
@@ -108,7 +133,10 @@ async def _abort(version: Version, serializer: VersionSerializer,  cache: Versio
     await cache.delete(version)
     return current_version
 
-async def _commit(version: Version, serializer: VersionSerializer,  cache: VersionCache) -> Version:
+
+async def _commit(
+    version: Version, serializer: VersionSerializer, cache: VersionCache
+) -> Version:
     """
 
     :param version:

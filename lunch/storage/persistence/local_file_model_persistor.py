@@ -1,9 +1,11 @@
 import os.path
+import re
+import unicodedata
 from contextlib import contextmanager
 from pathlib import Path
+
 from lunch.storage.persistence.model_persistor import ModelPersistor
-import unicodedata
-import re
+
 
 def slugify(value, allow_unicode=False):
     """
@@ -15,17 +17,19 @@ def slugify(value, allow_unicode=False):
     """
     value = str(value)
     if allow_unicode:
-        value = unicodedata.normalize('NFKC', value)
+        value = unicodedata.normalize("NFKC", value)
     else:
-        value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore').decode('ascii')
-    value = re.sub(r'[^\w\s-]', '', value.lower())
-    return re.sub(r'[-\s]+', '-', value).strip('-_')
+        value = (
+            unicodedata.normalize("NFKD", value)
+            .encode("ascii", "ignore")
+            .decode("ascii")
+        )
+    value = re.sub(r"[^\w\s-]", "", value.lower())
+    return re.sub(r"[-\s]+", "-", value).strip("-_")
+
 
 class LocalFileModelPersistor(ModelPersistor):
-    """ Hands out open files for file serializers to write to
-
-
-    """
+    """Hands out open files for file serializers to write to"""
 
     def __init__(self, directory: Path):
         """
@@ -43,26 +47,26 @@ class LocalFileModelPersistor(ModelPersistor):
     @contextmanager
     def open_index_file_read(self, version: int):
         file_path = self.index_file(version)
-        with open(file_path, 'rb') as f:
+        with open(file_path, "rb") as f:
             yield f
 
     @contextmanager
     async def open_index_file_write(self, version: int):
         file_path = self.index_file(version)
-        with open(file_path, 'wb') as f:
+        with open(file_path, "wb") as f:
             yield f
 
     @contextmanager
     def open_dimension_file_read(self, name: str, version: int):
         file_path = self.dimension_file(name, version)
-        with open(file_path, 'r') as f:
+        with open(file_path, "r") as f:
             yield f
 
     @contextmanager
     def open_dimension_file_write(self, name: str, version: int):
         file_path = self.dimension_file(name, version)
         Path(os.path.dirname(file_path)).mkdir(parents=True, exist_ok=True)
-        with open(file_path, 'w') as f:
+        with open(file_path, "w") as f:
             yield f
 
 
@@ -72,4 +76,3 @@ def _index_file(directory: Path, version: int) -> Path:
 
 def _dimension_file(directory: Path, name: str, version: int) -> Path:
     return directory.joinpath(f"{version}/{slugify(name)}.yaml")
-

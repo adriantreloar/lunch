@@ -1,28 +1,29 @@
-from lunch.managers.version_manager import VersionManager
 from lunch.base_classes.conductor import Conductor
-from lunch.storage.model_store import ModelStore
-from lunch.model.dimension.structure_validator import StructureValidator as DimensionStructureValidator
 from lunch.managers.version_manager import VersionManager
+from lunch.model.dimension.comparer import DimensionComparer
+from lunch.model.dimension.structure_validator import (
+    StructureValidator as DimensionStructureValidator,
+)
 from lunch.mvcc.version import Version
 from lunch.storage.model_store import ModelStore
-from lunch.model.dimension.structure_validator import StructureValidator as DimensionStructureValidator
-from lunch.model.dimension.comparer import DimensionComparer
 
 
 class ModelManager(Conductor):
-
-    def __init__(self,
-                 dimension_structure_validator: DimensionStructureValidator,
-                 dimension_comparer: DimensionComparer,
-                 version_manager: VersionManager,
-                 storage: ModelStore
-                 ):
+    def __init__(
+        self,
+        dimension_structure_validator: DimensionStructureValidator,
+        dimension_comparer: DimensionComparer,
+        version_manager: VersionManager,
+        storage: ModelStore,
+    ):
         self._storage = storage
         self._version_manager = version_manager
-        self._dimension_comparer=dimension_comparer
+        self._dimension_comparer = dimension_comparer
         self._dimension_structure_validator = dimension_structure_validator
 
-    async def update_dimension(self, dimension: dict, read_version: int, write_version: int):
+    async def update_dimension(
+        self, dimension: dict, read_version: int, write_version: int
+    ):
         return await _update_dimension(
             dimension=dimension,
             read_version=read_version,
@@ -30,14 +31,14 @@ class ModelManager(Conductor):
             dimension_structure_validator=self._dimension_structure_validator,
             dimension_comparer=self._dimension_comparer,
             version_manager=self._version_manager,
-            storage=self._storage
+            storage=self._storage,
         )
 
 
 async def _get_dimension(
-        name: str,
-        version: Version,
-        storage: ModelStore,
+    name: str,
+    version: Version,
+    storage: ModelStore,
 ):
     """
 
@@ -52,13 +53,13 @@ async def _get_dimension(
 
 
 async def _update_dimension(
-        dimension: dict,
-        read_version: Version,
-        write_version: Version,
-        dimension_structure_validator: DimensionStructureValidator,
-        dimension_comparer: DimensionComparer,
-        version_manager: VersionManager,
-        storage: ModelStore
+    dimension: dict,
+    read_version: Version,
+    write_version: Version,
+    dimension_structure_validator: DimensionStructureValidator,
+    dimension_comparer: DimensionComparer,
+    version_manager: VersionManager,
+    storage: ModelStore,
 ):
     """
 
@@ -74,7 +75,9 @@ async def _update_dimension(
     # This could throw a validation error
     dimension_structure_validator.validate(data=dimension)
 
-    previous_dimension = await _get_dimension(name=dimension["name"], version=read_version, storage=storage)
+    previous_dimension = await _get_dimension(
+        name=dimension["name"], version=read_version, storage=storage
+    )
     comparison = dimension_comparer.compare(dimension, previous_dimension)
 
     full_write_version = None
@@ -83,7 +86,9 @@ async def _update_dimension(
     if comparison:
 
         if not write_version.version:
-            with await version_manager.write_model_version(read_version=read_version) as version:
+            with await version_manager.write_model_version(
+                read_version=read_version
+            ) as version:
                 await _check_and_put(dimension, version, storage)
         else:
             await _check_and_put(dimension, write_version, storage)
@@ -101,4 +106,3 @@ async def _check_and_put(dimension: dict, version: Version, storage: ModelStore)
     # Referred objects will be in
 
     return await storage.put_dimension(dimension, version)
-

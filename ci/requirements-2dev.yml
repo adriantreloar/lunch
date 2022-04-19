@@ -8,6 +8,7 @@ dependencies:
   - pip
 
   # Development dependencies
+  - black
   - coverage
   - flake8 = 3.8
   - isort

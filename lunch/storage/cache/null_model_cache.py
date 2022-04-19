@@ -5,7 +5,7 @@ from lunch.storage.cache.model_cache import ModelCache
 class NullModelCache(ModelCache):
     """ModelCache which does nothing - thus we'll always end up going to the Serializer"""
 
-    async def get_dimension(self, name: str, version: Version) -> dict:
+    async def get_dimension_id(self, name: str, version: Version) -> dict:
         """
 
         :param name:
@@ -13,6 +13,15 @@ class NullModelCache(ModelCache):
         :return:
         """
         raise KeyError((name, version))
+
+    async def get_dimension(self, id: int, version: Version) -> dict:
+        """
+
+        :param id:
+        :param version:
+        :return:
+        """
+        raise KeyError((id, version))
 
     async def put_dimension(self, dimension: dict, version: Version):
         """
@@ -30,4 +39,10 @@ class NullModelCache(ModelCache):
         :param version: Write version that has been aborted
         :return:
         """
+        pass
+
+    async def get_max_dimension_id(self, version: Version):
+        raise KeyError(version)
+
+    async def put_dimension_id(self, dimension_id: int, name: str, version: Version):
         pass

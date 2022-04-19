@@ -4,8 +4,20 @@ from lunch.storage.serialization.serializer import Serializer
 
 
 class ModelSerializer(Serializer):
-    async def get_dimension(self, name: str, version: Version) -> dict:
+    async def get_dimension_id(self, name: str, version: Version) -> int:
         raise NotImplementedError("Abstract")
 
-    async def put_dimension(self, dimension: dict, version: Version):
+    async def get_dimension(self, id_: int, version: Version) -> dict:
+        raise NotImplementedError("Abstract")
+
+    async def put_dimension(self, dimension: dict, version: Version) -> dict:
+        raise NotImplementedError("Abstract")
+
+    async def get_dimension_index(self, version: Version) -> dict:
+        raise NotImplementedError("Abstract")
+
+    async def put_dimension_index(self, dimension_index: dict, version: Version):
+        raise NotImplementedError("Abstract")
+
+    async def get_max_dimension_id(self, version) -> int:
         raise NotImplementedError("Abstract")

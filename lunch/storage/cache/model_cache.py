@@ -31,3 +31,11 @@ class ModelCache(Cache):
         :return:
         """
         raise NotImplementedError("Abstract")
+
+    async def get_max_dimension_id(self, version):
+        raise NotImplementedError("Abstract")
+
+    async def put_dimension_id(self, dimension_id: int, name: str, version: Version):
+        raise NotImplementedError("Abstract")
+
+    # TODO - get_dimension_index, put_dimension_index

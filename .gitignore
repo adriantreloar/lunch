@@ -5,3 +5,4 @@
 /example_output/
 /.mypy_cache/
 /.pytest_cache/
+/doc/build/

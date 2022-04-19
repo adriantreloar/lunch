@@ -1,9 +1,8 @@
 from lunch.base_classes.conductor import Conductor
 from lunch.managers.version_manager import VersionManager
 from lunch.model.dimension.comparer import DimensionComparer
-from lunch.model.dimension.structure_validator import (
-    StructureValidator as DimensionStructureValidator,
-)
+from lunch.model.dimension.dimension_transformer import DimensionTransformer
+from lunch.model.dimension.structure_validator import StructureValidator as DimensionStructureValidator
 from lunch.mvcc.version import Version
 from lunch.storage.model_store import ModelStore
 
@@ -35,21 +34,35 @@ class ModelManager(Conductor):
         )
 
 
-async def _get_dimension(
+async def _get_dimension_id(
     name: str,
     version: Version,
     storage: ModelStore,
-):
+) -> dict:
     """
 
-    :param dimension:
+    :param name:
     :param version:
-    :param version_manager:
     :param storage:
     :return:
     """
 
-    return await storage.get_dimension(name=name, version=version)
+    return await storage.get_dimension_id(name=name, version=version)
+
+async def _get_dimension(
+    id_: int,
+    version: Version,
+    storage: ModelStore,
+) -> dict:
+    """
+
+    :param id_:
+    :param version:
+    :param storage:
+    :return:
+    """
+
+    return await storage.get_dimension(id_=id_, version=version)
 
 
 async def _update_dimension(
@@ -74,13 +87,23 @@ async def _update_dimension(
 
     # This could throw a validation error
     dimension_structure_validator.validate(data=dimension)
+    dimension_id = 0
+    try:
+        dimension_id = DimensionTransformer.get_id_from_dimension(dimension)
+    except KeyError:
+        dimension_name = DimensionTransformer.get_name_from_dimension(dimension)
 
-    previous_dimension = await _get_dimension(
-        name=dimension["name"], version=read_version, storage=storage
-    )
+        try:
+            dimension_id = await _get_dimension_id(name=dimension_name, version=read_version, storage=storage)
+
+            previous_dimension = await _get_dimension(
+                id_=dimension_id, version=read_version, storage=storage
+            )
+        except KeyError:
+            # There was no previous dimension
+            previous_dimension = {}
+
     comparison = dimension_comparer.compare(dimension, previous_dimension)
-
-    full_write_version = None
 
     # Only check and put the data if there is actually something to update
     if comparison:
@@ -88,15 +111,15 @@ async def _update_dimension(
         if not write_version.version:
             with await version_manager.write_model_version(
                 read_version=read_version
-            ) as version:
-                await _check_and_put(dimension, version, storage)
+            ) as new_write_version:
+                await _check_and_put(dimension=dimension, read_version=read_version, write_version=new_write_version, storage=storage)
         else:
-            await _check_and_put(dimension, write_version, storage)
+            await _check_and_put(dimension=dimension, read_version=read_version, write_version=write_version, storage=storage)
 
         # TODO - notify changes - here? Or elsewhere?
 
 
-async def _check_and_put(dimension: dict, version: Version, storage: ModelStore):
+async def _check_and_put(dimension: dict, read_version: Version, write_version: Version, storage: ModelStore):
     # TODO - check references - if we have made deletions we'll need to know
     #  e.g. a deletion to an attribute
     #  we could check later (e.g. when using a DataOperation or Query)
@@ -105,4 +128,4 @@ async def _check_and_put(dimension: dict, version: Version, storage: ModelStore)
     # Pass the comparison into the reference check, and check references at the write version
     # Referred objects will be in
 
-    return await storage.put_dimension(dimension, version)
+    return await storage.put_dimension(dimension, read_version=read_version, write_version=write_version)

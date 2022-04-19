@@ -38,41 +38,80 @@ class LocalFileModelPersistor(ModelPersistor):
         """
         self._directory = directory
 
-    def index_file(self, version: int) -> Path:
-        return _index_file(directory=self._directory, version=version)
+    def dimension_index_file(self, version: int) -> Path:
+        return _dimension_index_file(directory=self._directory, version=version)
 
-    def dimension_file(self, name: str, version: int) -> Path:
-        return _dimension_file(directory=self._directory, name=name, version=version)
+    def dimension_file(self, id_: int, version: int) -> Path:
+        return _dimension_file(directory=self._directory, id_=id_, version=version)
 
-    @contextmanager
-    def open_index_file_read(self, version: int):
-        file_path = self.index_file(version)
-        with open(file_path, "rb") as f:
-            yield f
+    def fact_index_file(self, version: int) -> Path:
+        return _fact_index_file(directory=self._directory, version=version)
 
-    @contextmanager
-    async def open_index_file_write(self, version: int):
-        file_path = self.index_file(version)
-        with open(file_path, "wb") as f:
-            yield f
+    def fact_file(self, id_: int, version: int) -> Path:
+        return _fact_file(directory=self._directory, id_=id_, version=version)
 
     @contextmanager
-    def open_dimension_file_read(self, name: str, version: int):
-        file_path = self.dimension_file(name, version)
+    def open_dimension_index_file_read(self, version: int):
+        file_path = self.dimension_index_file(version)
         with open(file_path, "r") as f:
             yield f
 
     @contextmanager
-    def open_dimension_file_write(self, name: str, version: int):
-        file_path = self.dimension_file(name, version)
+    def open_dimension_index_file_write(self, version: int):
+        file_path = self.dimension_index_file(version)
+        with open(file_path, "w") as f:
+            yield f
+
+    @contextmanager
+    def open_dimension_file_read(self, id_: int, version: int):
+        file_path = self.dimension_file(id_, version)
+        with open(file_path, "r") as f:
+            yield f
+
+    @contextmanager
+    def open_dimension_file_write(self, id_: int, version: int):
+        file_path = self.dimension_file(id_, version)
+        Path(os.path.dirname(file_path)).mkdir(parents=True, exist_ok=True)
+        with open(file_path, "w") as f:
+            yield f
+
+    @contextmanager
+    def open_fact_index_file_read(self, version: int):
+        file_path = self.fact_index_file(version)
+        with open(file_path, "r") as f:
+            yield f
+
+    @contextmanager
+    def open_fact_index_file_write(self, version: int):
+        file_path = self.fact_index_file(version)
+        with open(file_path, "w") as f:
+            yield f
+
+    @contextmanager
+    def open_fact_file_read(self, id_: int, version: int):
+        file_path = self.fact_file(id_, version)
+        with open(file_path, "r") as f:
+            yield f
+
+    @contextmanager
+    def open_fact_file_write(self, name: str, version: int):
+        file_path = self.fact_file(name, version)
         Path(os.path.dirname(file_path)).mkdir(parents=True, exist_ok=True)
         with open(file_path, "w") as f:
             yield f
 
 
-def _index_file(directory: Path, version: int) -> Path:
-    return directory.joinpath(f"{version}/_index.yaml")
+def _dimension_index_file(directory: Path, version: int) -> Path:
+    return directory.joinpath(f"{version}/_dimension_index.yaml")
 
 
-def _dimension_file(directory: Path, name: str, version: int) -> Path:
-    return directory.joinpath(f"{version}/{slugify(name)}.yaml")
+def _dimension_file(directory: Path, id_: int, version: int) -> Path:
+    return directory.joinpath(f"{version}/{id_}.yaml")
+
+
+def _fact_index_file(directory: Path, version: int) -> Path:
+    return directory.joinpath(f"{version}/_fact_index.yaml")
+
+
+def _fact_file(directory: Path, id_: int, version: int) -> Path:
+    return directory.joinpath(f"{version}/{id_}.yaml")

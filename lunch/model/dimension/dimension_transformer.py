@@ -27,3 +27,50 @@ class DimensionTransformer(Transformer):
         return:
             an element_id: parse tree dictionary
         """
+
+        pass
+
+    @staticmethod
+    def get_id_from_dimension(dimension: dict) -> int:
+        """
+
+        :param dimension: A metadata dimension dictionary
+        :return: integer id
+        """
+        return dimension["id_"]
+
+    @staticmethod
+    def add_id_to_dimension(dimension: dict, id_: int) -> dict:
+        out_dimension = dimension.copy()
+        out_dimension["id_"] = id_
+        return out_dimension
+
+    @staticmethod
+    def get_name_from_dimension(dimension: dict) -> str:
+        """
+
+        :param dimension: A metadata dimension dictionary
+        :return: name
+        """
+        return dimension["name"]
+
+    @staticmethod
+    def add_name_to_dimension(dimension: dict, name: str) -> dict:
+        out_dimension = dimension.copy()
+        out_dimension["name"] = name
+        return out_dimension
+
+    @staticmethod
+    def get_model_version_from_dimension(dimension: dict) -> int:
+        """
+
+        :param dimension: A metadata dimension dictionary
+        :return: name
+        """
+        return dimension["model_version"]
+
+    @staticmethod
+    def add_model_version_to_dimension(dimension: dict, model_version: int) -> dict:
+        out_dimension = dimension.copy()
+        out_dimension["model_version"] = model_version
+        return out_dimension

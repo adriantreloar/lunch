@@ -78,12 +78,11 @@ class VersionsTransformer(Transformer):
         )
 
         versions_dict_out = versions_dict.copy()
-
         try:
             versions = versions_dict_out["versions"]
         except KeyError:
             versions_dict_out["versions"] = {}
-            versions = {}
+            versions = versions_dict_out["versions"]
 
         versions[write_version_int] = {
             "committed": False,

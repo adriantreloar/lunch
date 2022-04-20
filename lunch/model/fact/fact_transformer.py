@@ -2,8 +2,7 @@ from lunch.base_classes.transformer import Transformer
 
 
 class FactTransformer(Transformer):
-    """Static methods to get fact information from raw fact dictionary
-    """
+    """Static methods to get fact information from raw fact dictionary"""
 
     @staticmethod
     def get_id_from_fact(fact: dict) -> int:

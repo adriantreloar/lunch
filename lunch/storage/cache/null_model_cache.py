@@ -6,30 +6,21 @@ class NullModelCache(ModelCache):
     """ModelCache which does nothing - thus we'll always end up going to the Serializer"""
 
     async def get_dimension_id(self, name: str, version: Version) -> dict:
-        """
-
-        :param name:
-        :param version:
-        :return:
-        """
         raise KeyError((name, version))
 
-    async def get_dimension(self, id: int, version: Version) -> dict:
-        """
-
-        :param id:
-        :param version:
-        :return:
-        """
+    async def get_dimension(self, id_: int, version: Version) -> dict:
         raise KeyError((id, version))
 
     async def put_dimension(self, dimension: dict, version: Version):
-        """
+        pass
 
-        :param dimension:
-        :param version:
-        :return:
-        """
+    async def get_fact_id(self, name: str, version: Version) -> dict:
+        raise KeyError((name, version))
+
+    async def get_fact(self, id_: int, version: Version) -> dict:
+        raise KeyError((id, version))
+
+    async def put_fact(self, fact: dict, version: Version):
         pass
 
     async def abort_write(self, version: Version):
@@ -45,4 +36,10 @@ class NullModelCache(ModelCache):
         raise KeyError(version)
 
     async def put_dimension_id(self, dimension_id: int, name: str, version: Version):
+        pass
+
+    async def get_max_fact_id(self, version):
+        raise KeyError(version)
+
+    async def put_fact_id(self, fact_id: int, name: str, version: Version):
         pass

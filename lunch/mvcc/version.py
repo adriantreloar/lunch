@@ -1,5 +1,7 @@
 from mypy.types import Any
+
 from lunch.errors.validation_errors import VersionInternalsValidationError
+
 
 class Version:
     def __init__(
@@ -35,10 +37,19 @@ class Version:
             return False
         if self.version != other.version:
             return False
-        if self.model_version != other.model_version or self.reference_data_version != other.reference_data_version or self.cube_data_version != other.cube_data_version or self.operations_version != other.operations_version or self.website_version != other.website_version:
-            raise VersionInternalsValidationError(f"Two versions with the same version have incompatible sub-versions {self}, {other}")
+        if (
+            self.model_version != other.model_version
+            or self.reference_data_version != other.reference_data_version
+            or self.cube_data_version != other.cube_data_version
+            or self.operations_version != other.operations_version
+            or self.website_version != other.website_version
+        ):
+            raise VersionInternalsValidationError(
+                f"Two versions with the same version have incompatible sub-versions {self}, {other}"
+            )
 
         return True
+
 
 def version_to_dict(version: Version) -> dict:
     return {

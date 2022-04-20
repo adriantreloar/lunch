@@ -21,3 +21,21 @@ class ModelSerializer(Serializer):
 
     async def get_max_dimension_id(self, version) -> int:
         raise NotImplementedError("Abstract")
+
+    async def get_fact_id(self, name: str, version: Version) -> int:
+        raise NotImplementedError("Abstract")
+
+    async def get_fact(self, id_: int, version: Version) -> dict:
+        raise NotImplementedError("Abstract")
+
+    async def put_fact(self, fact: dict, version: Version) -> dict:
+        raise NotImplementedError("Abstract")
+
+    async def get_fact_index(self, version: Version) -> dict:
+        raise NotImplementedError("Abstract")
+
+    async def put_fact_index(self, fact_index: dict, version: Version):
+        raise NotImplementedError("Abstract")
+
+    async def get_max_fact_id(self, version) -> int:
+        raise NotImplementedError("Abstract")

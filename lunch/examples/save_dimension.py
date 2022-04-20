@@ -4,14 +4,20 @@ from pathlib import Path
 from lunch.managers.model_manager import ModelManager
 from lunch.managers.version_manager import VersionManager
 from lunch.model.dimension.dimension_comparer import DimensionComparer
+from lunch.model.dimension.dimension_reference_validator import (
+    DimensionReferenceValidator as DimensionReferenceValidator,
+)
+from lunch.model.dimension.dimension_structure_validator import (
+    DimensionStructureValidator as DimensionStructureValidator,
+)
 from lunch.model.dimension.dimension_transformer import DimensionTransformer
-from lunch.model.dimension.dimension_reference_validator import DimensionReferenceValidator as DimensionReferenceValidator
-from lunch.model.dimension.dimension_structure_validator import DimensionStructureValidator as DimensionStructureValidator
 from lunch.storage.cache.null_model_cache import NullModelCache
 from lunch.storage.cache.null_version_cache import NullVersionCache
 from lunch.storage.model_store import ModelStore
 from lunch.storage.persistence.local_file_model_persistor import LocalFileModelPersistor
-from lunch.storage.persistence.local_file_version_persistor import LocalFileVersionPersistor
+from lunch.storage.persistence.local_file_version_persistor import (
+    LocalFileVersionPersistor,
+)
 from lunch.storage.serialization.yaml_model_serializer import YamlModelSerializer
 from lunch.storage.serialization.yaml_version_serializer import YamlVersionSerializer
 from lunch.storage.transformers.versions_transformer import VersionsTransformer
@@ -32,7 +38,9 @@ async def main():
         directory=Path("/home/treloarja/PycharmProjects/lunch/example_output/dimension")
     )
     model_persistor = LocalFileModelPersistor(
-        directory=Path("/home/treloarja/PycharmProjects/lunch/example_output/dimension/model")
+        directory=Path(
+            "/home/treloarja/PycharmProjects/lunch/example_output/dimension/model"
+        )
     )
 
     # Serializers
@@ -55,6 +63,12 @@ async def main():
         storage=model_store,
         dimension_comparer=dimension_comparer,
         dimension_structure_validator=dimension_structure_validator,
+        dimension_reference_validator=dimension_reference_validator,
+        dimension_transformer=dimension_transformer,
+        fact_comparer=None,
+        fact_structure_validator=None,
+        fact_reference_validator=None,
+        fact_transformer=None,
         version_manager=version_manager,
     )
 

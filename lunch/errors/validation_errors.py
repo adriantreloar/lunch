@@ -18,6 +18,7 @@ class DimensionValidationError(ValidationError):
 
     pass
 
+
 class FactValidationError(ValidationError):
     """Exception raised when the structure of a fact metadata dict doesn't validate"""
 

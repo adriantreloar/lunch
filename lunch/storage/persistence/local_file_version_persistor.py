@@ -35,4 +35,4 @@ class LocalFileVersionPersistor(ModelPersistor):
 
 
 def _version_file(directory: Path) -> Path:
-    return directory.joinpath(f"_version.yaml")
+    return directory.joinpath("_version.yaml")

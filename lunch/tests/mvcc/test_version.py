@@ -1,6 +1,8 @@
+import pytest
+
 from lunch.errors.validation_errors import VersionInternalsValidationError
 from lunch.mvcc.version import Version
-import pytest
+
 
 def test_version_equality():
     assert Version(
@@ -34,6 +36,7 @@ def test_version_equality():
         operations_version=0,
         website_version=0,
     )
+
 
 def test_version_equality_mismatch_raises_error():
     """

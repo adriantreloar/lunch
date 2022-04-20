@@ -1,8 +1,7 @@
-from lunch.base_classes.conductor import Conductor
-from lunch.managers.model_manager import ModelManager
+from lunch.base_classes.transformer import Transformer
 
 
-class DimensionReferenceValidator(Conductor):
+class DimensionReferenceValidator(Transformer):
     """Static methods to check referential integrity of a dimension (model)
 
     Note, there aren't currently any references from dimension (model)
@@ -11,6 +10,6 @@ class DimensionReferenceValidator(Conductor):
     """
 
     @staticmethod
-    def validate(data: dict, model_manager: ModelManager) -> bool:
+    def validate(data: dict) -> bool:
         """ """
         pass

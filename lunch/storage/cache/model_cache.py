@@ -5,22 +5,16 @@ from lunch.storage.cache.cache import Cache
 class ModelCache(Cache):
     """ """
 
-    async def get_dimension(self, name: str, version: Version) -> dict:
-        """
-
-        :param name:
-        :param version:
-        :return:
-        """
+    async def get_dimension(self, id_: int, version: Version) -> dict:
         raise NotImplementedError("Abstract")
 
     async def put_dimension(self, dimension: dict, version: Version):
-        """
+        raise NotImplementedError("Abstract")
 
-        :param dimension:
-        :param version:
-        :return:
-        """
+    async def get_fact(self, id_: int, version: Version) -> dict:
+        raise NotImplementedError("Abstract")
+
+    async def put_fact(self, fact: dict, version: Version):
         raise NotImplementedError("Abstract")
 
     async def abort_write(self, version: Version):
@@ -36,6 +30,12 @@ class ModelCache(Cache):
         raise NotImplementedError("Abstract")
 
     async def put_dimension_id(self, dimension_id: int, name: str, version: Version):
+        raise NotImplementedError("Abstract")
+
+    async def get_max_fact_id(self, version):
+        raise NotImplementedError("Abstract")
+
+    async def put_fact_id(self, fact_id: int, name: str, version: Version):
         raise NotImplementedError("Abstract")
 
     # TODO - get_dimension_index, put_dimension_index

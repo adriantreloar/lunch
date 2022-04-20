@@ -94,24 +94,24 @@ class LocalFileModelPersistor(ModelPersistor):
             yield f
 
     @contextmanager
-    def open_fact_file_write(self, name: str, version: int):
-        file_path = self.fact_file(name, version)
+    def open_fact_file_write(self, id_: int, version: int):
+        file_path = self.fact_file(id_, version)
         Path(os.path.dirname(file_path)).mkdir(parents=True, exist_ok=True)
         with open(file_path, "w") as f:
             yield f
 
 
 def _dimension_index_file(directory: Path, version: int) -> Path:
-    return directory.joinpath(f"{version}/_dimension_index.yaml")
+    return directory.joinpath(f"{version}/dimension.index.yaml")
 
 
 def _dimension_file(directory: Path, id_: int, version: int) -> Path:
-    return directory.joinpath(f"{version}/{id_}.yaml")
+    return directory.joinpath(f"{version}/dimension.{id_}.yaml")
 
 
 def _fact_index_file(directory: Path, version: int) -> Path:
-    return directory.joinpath(f"{version}/_fact_index.yaml")
+    return directory.joinpath(f"{version}/fact.index.yaml")
 
 
 def _fact_file(directory: Path, id_: int, version: int) -> Path:
-    return directory.joinpath(f"{version}/{id_}.yaml")
+    return directory.joinpath(f"{version}/fact.{id_}.yaml")

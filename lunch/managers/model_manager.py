@@ -1,8 +1,17 @@
 from lunch.base_classes.conductor import Conductor
 from lunch.managers.version_manager import VersionManager
 from lunch.model.dimension.dimension_comparer import DimensionComparer
+from lunch.model.dimension.dimension_reference_validator import (
+    DimensionReferenceValidator,
+)
+from lunch.model.dimension.dimension_structure_validator import (
+    DimensionStructureValidator,
+)
 from lunch.model.dimension.dimension_transformer import DimensionTransformer
-from lunch.model.dimension.dimension_structure_validator import DimensionStructureValidator as DimensionStructureValidator
+from lunch.model.fact.fact_comparer import FactComparer
+from lunch.model.fact.fact_reference_validator import FactReferenceValidator
+from lunch.model.fact.fact_structure_validator import FactStructureValidator
+from lunch.model.fact.fact_transformer import FactTransformer
 from lunch.mvcc.version import Version
 from lunch.storage.model_store import ModelStore
 
@@ -12,13 +21,25 @@ class ModelManager(Conductor):
         self,
         dimension_structure_validator: DimensionStructureValidator,
         dimension_comparer: DimensionComparer,
+        dimension_reference_validator: DimensionReferenceValidator,
+        dimension_transformer: DimensionTransformer,
+        fact_structure_validator: FactStructureValidator,
+        fact_comparer: FactComparer,
+        fact_reference_validator: FactReferenceValidator,
+        fact_transformer: FactTransformer,
         version_manager: VersionManager,
         storage: ModelStore,
     ):
         self._storage = storage
         self._version_manager = version_manager
-        self._dimension_comparer = dimension_comparer
         self._dimension_structure_validator = dimension_structure_validator
+        self._dimension_comparer = dimension_comparer
+        self._dimension_reference_validator = dimension_reference_validator
+        self._dimension_transformer = dimension_transformer
+        self._fact_structure_validator = fact_structure_validator
+        self._fact_comparer = fact_comparer
+        self._fact_reference_validator = fact_reference_validator
+        self._fact_transformer = fact_transformer
 
     async def update_dimension(
         self, dimension: dict, read_version: int, write_version: int
@@ -29,6 +50,19 @@ class ModelManager(Conductor):
             write_version=write_version,
             dimension_structure_validator=self._dimension_structure_validator,
             dimension_comparer=self._dimension_comparer,
+            dimension_transformer=self._dimension_transformer,
+            version_manager=self._version_manager,
+            storage=self._storage,
+        )
+
+    async def update_fact(self, fact: dict, read_version: int, write_version: int):
+        return await _update_fact(
+            fact=fact,
+            read_version=read_version,
+            write_version=write_version,
+            fact_structure_validator=self._fact_structure_validator,
+            fact_comparer=self._fact_comparer,
+            fact_transformer=self._fact_transformer,
             version_manager=self._version_manager,
             storage=self._storage,
         )
@@ -39,30 +73,31 @@ async def _get_dimension_id(
     version: Version,
     storage: ModelStore,
 ) -> dict:
-    """
-
-    :param name:
-    :param version:
-    :param storage:
-    :return:
-    """
-
     return await storage.get_dimension_id(name=name, version=version)
+
 
 async def _get_dimension(
     id_: int,
     version: Version,
     storage: ModelStore,
 ) -> dict:
-    """
-
-    :param id_:
-    :param version:
-    :param storage:
-    :return:
-    """
-
     return await storage.get_dimension(id_=id_, version=version)
+
+
+async def _get_fact_id(
+    name: str,
+    version: Version,
+    storage: ModelStore,
+) -> dict:
+    return await storage.get_fact_id(name=name, version=version)
+
+
+async def _get_fact(
+    id_: int,
+    version: Version,
+    storage: ModelStore,
+) -> dict:
+    return await storage.get_fact(id_=id_, version=version)
 
 
 async def _update_dimension(
@@ -71,30 +106,24 @@ async def _update_dimension(
     write_version: Version,
     dimension_structure_validator: DimensionStructureValidator,
     dimension_comparer: DimensionComparer,
+    dimension_transformer: DimensionTransformer,
     version_manager: VersionManager,
     storage: ModelStore,
 ):
-    """
-
-    :param dimension:
-    :param read_version:
-    :param dimension_structure_validator:
-    :param dimension_comparer:
-    :param version_manager:
-    :param storage:
-    :return:
-    """
 
     # This could throw a validation error
     dimension_structure_validator.validate(data=dimension)
-    dimension_id = 0
+
     try:
-        dimension_id = DimensionTransformer.get_id_from_dimension(dimension)
+        # The dimension may already have the id - if it is being edited
+        dimension_transformer.get_id_from_dimension(dimension)
     except KeyError:
-        dimension_name = DimensionTransformer.get_name_from_dimension(dimension)
+        dimension_name = dimension_transformer.get_name_from_dimension(dimension)
 
         try:
-            dimension_id = await _get_dimension_id(name=dimension_name, version=read_version, storage=storage)
+            dimension_id = await _get_dimension_id(
+                name=dimension_name, version=read_version, storage=storage
+            )
 
             previous_dimension = await _get_dimension(
                 id_=dimension_id, version=read_version, storage=storage
@@ -112,14 +141,84 @@ async def _update_dimension(
             with await version_manager.write_model_version(
                 read_version=read_version
             ) as new_write_version:
-                await _check_and_put(dimension=dimension, read_version=read_version, write_version=new_write_version, storage=storage)
+                await _check_and_put_dimension(
+                    dimension=dimension,
+                    read_version=read_version,
+                    write_version=new_write_version,
+                    storage=storage,
+                )
         else:
-            await _check_and_put(dimension=dimension, read_version=read_version, write_version=write_version, storage=storage)
+            await _check_and_put_dimension(
+                dimension=dimension,
+                read_version=read_version,
+                write_version=write_version,
+                storage=storage,
+            )
 
         # TODO - notify changes - here? Or elsewhere?
 
 
-async def _check_and_put(dimension: dict, read_version: Version, write_version: Version, storage: ModelStore):
+async def _update_fact(
+    fact: dict,
+    read_version: Version,
+    write_version: Version,
+    fact_structure_validator: FactStructureValidator,
+    fact_comparer: FactComparer,
+    fact_transformer: FactTransformer,
+    version_manager: VersionManager,
+    storage: ModelStore,
+):
+
+    # This could throw a validation error
+    fact_structure_validator.validate(data=fact)
+
+    try:
+        # The fact may already have the id - if it is being edited
+        fact_transformer.get_id_from_fact(fact)
+    except KeyError:
+        fact_name = fact_transformer.get_name_from_fact(fact)
+
+        try:
+            fact_id = await _get_fact_id(
+                name=fact_name, version=read_version, storage=storage
+            )
+
+            previous_fact = await _get_fact(
+                id_=fact_id, version=read_version, storage=storage
+            )
+        except KeyError:
+            # There was no previous fact
+            previous_fact = {}
+
+    comparison = fact_comparer.compare(fact, previous_fact)
+
+    # Only check and put the data if there is actually something to update
+    if comparison:
+
+        if not write_version.version:
+            with await version_manager.write_model_version(
+                read_version=read_version
+            ) as new_write_version:
+                await _check_and_put_fact(
+                    fact=fact,
+                    read_version=read_version,
+                    write_version=new_write_version,
+                    storage=storage,
+                )
+        else:
+            await _check_and_put_fact(
+                fact=fact,
+                read_version=read_version,
+                write_version=write_version,
+                storage=storage,
+            )
+
+        # TODO - notify changes - here? Or elsewhere?
+
+
+async def _check_and_put_dimension(
+    dimension: dict, read_version: Version, write_version: Version, storage: ModelStore
+):
     # TODO - check references - if we have made deletions we'll need to know
     #  e.g. a deletion to an attribute
     #  we could check later (e.g. when using a DataOperation or Query)
@@ -128,4 +227,18 @@ async def _check_and_put(dimension: dict, read_version: Version, write_version: 
     # Pass the comparison into the reference check, and check references at the write version
     # Referred objects will be in
 
-    return await storage.put_dimension(dimension, read_version=read_version, write_version=write_version)
+    return await storage.put_dimension(
+        dimension, read_version=read_version, write_version=write_version
+    )
+
+
+async def _check_and_put_fact(
+    fact: dict, read_version: Version, write_version: Version, storage: ModelStore
+):
+    # TODO - check references - if we have made deletions we'll need to know
+    # Pass the comparison into the reference check, and check references at the write version
+    # Referred objects will be in
+
+    return await storage.put_fact(
+        fact, read_version=read_version, write_version=write_version
+    )

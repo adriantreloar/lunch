@@ -5,19 +5,13 @@ from lunch.managers.model_manager import ModelManager
 from lunch.managers.version_manager import VersionManager
 from lunch.model.dimension.comparer import DimensionComparer
 from lunch.model.dimension.dimension_transformer import DimensionTransformer
-from lunch.model.dimension.reference_validator import (
-    ReferenceValidator as DimensionReferenceValidator,
-)
-from lunch.model.dimension.structure_validator import (
-    StructureValidator as DimensionStructureValidator,
-)
+from lunch.model.dimension.reference_validator import ReferenceValidator as DimensionReferenceValidator
+from lunch.model.dimension.structure_validator import StructureValidator as DimensionStructureValidator
 from lunch.storage.cache.null_model_cache import NullModelCache
 from lunch.storage.cache.null_version_cache import NullVersionCache
 from lunch.storage.model_store import ModelStore
 from lunch.storage.persistence.local_file_model_persistor import LocalFileModelPersistor
-from lunch.storage.persistence.local_file_version_persistor import (
-    LocalFileVersionPersistor,
-)
+from lunch.storage.persistence.local_file_version_persistor import LocalFileVersionPersistor
 from lunch.storage.serialization.yaml_model_serializer import YamlModelSerializer
 from lunch.storage.serialization.yaml_version_serializer import YamlVersionSerializer
 from lunch.storage.transformers.versions_transformer import VersionsTransformer
@@ -35,10 +29,10 @@ async def main():
 
     # Persistence
     version_persistor = LocalFileVersionPersistor(
-        directory=Path("/home/treloarja/PycharmProjects/lunch/example_output")
+        directory=Path("/home/treloarja/PycharmProjects/lunch/example_output/dimension")
     )
     model_persistor = LocalFileModelPersistor(
-        directory=Path("/home/treloarja/PycharmProjects/lunch/example_output/model")
+        directory=Path("/home/treloarja/PycharmProjects/lunch/example_output/dimension/model")
     )
 
     # Serializers

@@ -2,7 +2,7 @@ import pathlib
 import pytest
 import yaml
 
-from lunch.model.dimension.structure_validator import StructureValidator as dim_valid
+from lunch.model.dimension.dimension_structure_validator import DimensionStructureValidator as dim_valid
 from lunch.errors.validation_errors import DimensionValidationError
 
 def test_can_contain_name_key():

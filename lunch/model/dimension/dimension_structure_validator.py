@@ -2,7 +2,7 @@ from lunch.base_classes.transformer import Transformer
 from lunch.errors.validation_errors import DimensionValidationError
 
 
-class StructureValidator(Transformer):
+class DimensionStructureValidator(Transformer):
     """Static methods to check the internal structure of dimension dictionaries"""
 
     @staticmethod

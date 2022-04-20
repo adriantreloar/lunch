@@ -1,8 +1,8 @@
 from lunch.base_classes.conductor import Conductor
 from lunch.managers.version_manager import VersionManager
-from lunch.model.dimension.comparer import DimensionComparer
+from lunch.model.dimension.dimension_comparer import DimensionComparer
 from lunch.model.dimension.dimension_transformer import DimensionTransformer
-from lunch.model.dimension.structure_validator import StructureValidator as DimensionStructureValidator
+from lunch.model.dimension.dimension_structure_validator import DimensionStructureValidator as DimensionStructureValidator
 from lunch.mvcc.version import Version
 from lunch.storage.model_store import ModelStore
 

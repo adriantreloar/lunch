@@ -5,8 +5,12 @@ from lunch.managers.model_manager import ModelManager
 from lunch.managers.version_manager import VersionManager
 from lunch.model.dimension.dimension_comparer import DimensionComparer
 from lunch.model.dimension.dimension_transformer import DimensionTransformer
-from lunch.model.dimension.dimension_reference_validator import DimensionReferenceValidator as DimensionReferenceValidator
-from lunch.model.dimension.dimension_structure_validator import DimensionStructureValidator as DimensionStructureValidator
+from lunch.model.dimension.dimension_reference_validator import DimensionReferenceValidator
+from lunch.model.dimension.dimension_structure_validator import DimensionStructureValidator
+from lunch.model.fact.fact_comparer import FactComparer
+from lunch.model.fact.fact_transformer import FactTransformer
+from lunch.model.fact.fact_reference_validator import FactReferenceValidator
+from lunch.model.fact.fact_structure_validator import FactStructureValidator
 from lunch.storage.cache.null_model_cache import NullModelCache
 from lunch.storage.cache.null_version_cache import NullVersionCache
 from lunch.storage.model_store import ModelStore
@@ -26,13 +30,18 @@ async def main():
     dimension_comparer = DimensionComparer()
     dimension_structure_validator = DimensionStructureValidator()
     dimension_reference_validator = DimensionReferenceValidator()
+    fact_transformer = FactTransformer()
+    fact_comparer = FactComparer()
+    fact_structure_validator = FactStructureValidator()
+    fact_reference_validator = FactReferenceValidator()
+
 
     # Persistence
     version_persistor = LocalFileVersionPersistor(
-        directory=Path("/home/treloarja/PycharmProjects/lunch/example_output/dimension")
+        directory=Path("/home/treloarja/PycharmProjects/lunch/example_output/fact")
     )
     model_persistor = LocalFileModelPersistor(
-        directory=Path("/home/treloarja/PycharmProjects/lunch/example_output/dimension/model")
+        directory=Path("/home/treloarja/PycharmProjects/lunch/example_output/fact/model")
     )
 
     # Serializers
@@ -55,16 +64,32 @@ async def main():
         storage=model_store,
         dimension_comparer=dimension_comparer,
         dimension_structure_validator=dimension_structure_validator,
+        dimension_reference_validator=dimension_reference_validator,
+        dimension_transformer=dimension_transformer,
+        fact_comparer=fact_comparer,
+        fact_structure_validator=fact_structure_validator,
+        fact_reference_validator=fact_reference_validator,
+        fact_transformer=fact_transformer,
         version_manager=version_manager,
     )
 
-    my_dim = {"name": "MyDim", "thing": "thing"}
+    d_department = {"name": "Department", "thing": "thing"}
+    d_time = {"name": "Time", "thing": "thing2"}
+
+    f_sales = {"dimensions": ["Department", "Time"], "measures": [{"name": "sales", "type": "decimal", "precision": "2"}]}
+
     async with version_manager.read_version() as read_version:
         async with version_manager.write_model_version(
             read_version=read_version
         ) as write_version:
             await model_manager.update_dimension(
-                my_dim, read_version=read_version, write_version=write_version
+                d_department, read_version=read_version, write_version=write_version
+            )
+            await model_manager.update_dimension(
+                d_time, read_version=read_version, write_version=write_version
+            )
+            await model_manager.update_fact(
+                f_sales, read_version=read_version, write_version=write_version
             )
 
 

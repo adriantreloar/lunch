@@ -14,6 +14,11 @@ class VersionInternalsValidationError(ValidationError):
 
 
 class DimensionValidationError(ValidationError):
-    """Exception raised when the structure of a dimension dict doesn't validate"""
+    """Exception raised when the structure of a dimension metadata dict doesn't validate"""
+
+    pass
+
+class FactValidationError(ValidationError):
+    """Exception raised when the structure of a fact metadata dict doesn't validate"""
 
     pass

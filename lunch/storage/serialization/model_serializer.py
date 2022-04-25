@@ -13,10 +13,16 @@ class ModelSerializer(Serializer):
     async def put_dimension(self, dimension: dict, version: Version) -> dict:
         raise NotImplementedError("Abstract")
 
-    async def get_dimension_index(self, version: Version) -> dict:
+    async def get_dimension_name_index(self, version: Version) -> dict[str,int]:
         raise NotImplementedError("Abstract")
 
-    async def put_dimension_index(self, dimension_index: dict, version: Version):
+    async def get_dimension_version_index(self, version: Version) -> dict[int,int]:
+        raise NotImplementedError("Abstract")
+
+    async def put_dimension_version_index(self, index: dict[int, int], version: Version):
+        raise NotImplementedError("Abstract")
+
+    async def put_dimension_name_index(self, index: dict[str, int], version: Version):
         raise NotImplementedError("Abstract")
 
     async def get_max_dimension_id(self, version) -> int:

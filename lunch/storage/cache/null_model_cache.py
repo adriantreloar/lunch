@@ -11,7 +11,7 @@ class NullModelCache(ModelCache):
     async def get_dimension(self, id_: int, version: Version) -> dict:
         raise KeyError((id, version))
 
-    async def put_dimension(self, dimension: dict, version: Version):
+    async def put_dimensions(self, dimension: list[dict], version: Version):
         pass
 
     async def get_fact_id(self, name: str, version: Version) -> dict:
@@ -30,6 +30,18 @@ class NullModelCache(ModelCache):
         :param version: Write version that has been aborted
         :return:
         """
+        pass
+
+    async def get_dimension_name_index(self, version: Version) -> dict[str,int]:
+        raise KeyError(version)
+
+    async def get_dimension_version_index(self, version: Version) -> dict[int,int]:
+        raise KeyError(version)
+
+    async def put_dimension_name_index(self, index: dict[str,int], version: Version):
+        pass
+
+    async def put_dimension_version_index(self, index: dict[int,int], version: Version):
         pass
 
     async def get_max_dimension_id(self, version: Version):

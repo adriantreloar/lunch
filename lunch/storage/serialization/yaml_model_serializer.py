@@ -14,16 +14,25 @@ class YamlModelSerializer(ModelSerializer):
     async def get_dimension(self, name: str, version: Version) -> dict:
         return await _get_dimension(name, version, self._persistor)
 
-    async def put_dimension(self, dimension: dict, version: Version):
-        await _put_dimension(dimension, version, self._persistor)
+    async def put_dimensions(self, dimensions: list[dict], version: Version):
+        await _put_dimensions(dimensions, version, self._persistor)
 
-    async def get_dimension_index(self, version: Version) -> dict:
-        return await _get_dimension_index(version=version, persistor=self._persistor)
+    async def get_dimension_name_index(self, version: Version) -> dict[str,int]:
+        return await _get_dimension_name_index(version=version, persistor=self._persistor)
 
-    async def put_dimension_index(self, dimension_index: dict, version: Version):
-        return await _put_dimension_index(
-            dimension_index=dimension_index, version=version, persistor=self._persistor
+    async def put_dimension_name_index(self, index: dict, version: Version):
+        return await _put_dimension_name_index(
+            index=index, version=version, persistor=self._persistor
         )
+
+    async def put_dimension_version_index(self, index: dict[int, int], version: Version):
+        return await _put_dimension_version_index(
+            index=index, version=version, persistor=self._persistor
+        )
+
+    async def get_dimension_version_index(self, version: Version) -> dict[int,int]:
+        return await _get_dimension_version_index(version=version, persistor=self._persistor)
+
 
     async def get_dimension_id(self, name: str, version: Version) -> int:
         return await _get_dimension_id(
@@ -60,10 +69,7 @@ async def _get_dimension_id(
     if not version.model_version:
         raise KeyError(name, version.model_version)
 
-    with persistor.open_dimension_index_file_read(
-        version=version.model_version
-    ) as stream:
-        d = yaml.safe_load(stream)
+    d = await _get_dimension_index(version=version, persistor=persistor)
 
     return d[name]
 
@@ -81,21 +87,23 @@ async def _get_dimension(
     return d
 
 
-async def _put_dimension(
-    dimension: dict, version: Version, persistor: LocalFileModelPersistor
+async def _put_dimensions(
+    dimensions: list[dict], version: Version, persistor: LocalFileModelPersistor
 ):
-    with persistor.open_dimension_file_write(
-        id_=dimension["id_"], version=version.model_version
-    ) as stream:
-        yaml.safe_dump(dimension, stream)
+    # TODO - this can be done in parallel perhaps
+    for dimension in dimensions:
+        with persistor.open_dimension_file_write(
+            id_=dimension["id_"], version=version.model_version
+        ) as stream:
+            yaml.safe_dump(dimension, stream)
 
 
-async def _get_dimension_index(version: Version, persistor: LocalFileModelPersistor):
+async def _get_dimension_name_index(version: Version, persistor: LocalFileModelPersistor):
     if not version.model_version:
         return {}
 
     try:
-        with persistor.open_dimension_index_file_read(
+        with persistor.open_dimension_name_index_file_read(
             version=version.model_version
         ) as stream:
             d = yaml.safe_load(stream)
@@ -104,19 +112,40 @@ async def _get_dimension_index(version: Version, persistor: LocalFileModelPersis
     return d
 
 
-async def _put_dimension_index(
-    dimension_index: dict, version: Version, persistor: LocalFileModelPersistor
+async def _put_dimension_name_index(
+    index: dict, version: Version, persistor: LocalFileModelPersistor
 ):
-    with persistor.open_dimension_index_file_write(
+    with persistor.open_dimension_name_index_file_write(
         version=version.model_version
     ) as stream:
-        yaml.safe_dump(dimension_index, stream)
+        yaml.safe_dump(index, stream)
+
+async def _put_dimension_version_index(
+    index: dict, version: Version, persistor: LocalFileModelPersistor
+):
+    with persistor.open_dimension_version_index_file_write(
+        version=version.model_version
+    ) as stream:
+        yaml.safe_dump(index, stream)
+
+async def _get_dimension_version_index(version: Version, persistor: LocalFileModelPersistor):
+    if not version.model_version:
+        return {}
+
+    try:
+        with persistor.open_dimension_version_index_file_read(
+            version=version.model_version
+        ) as stream:
+            d = yaml.safe_load(stream)
+    except FileNotFoundError:
+        raise KeyError(version)
+    return d
 
 
 async def _get_max_dimension_id(
     version: Version, persistor: LocalFileModelPersistor
 ) -> int:
-    d = await _get_dimension_index(version=version, persistor=persistor)
+    d = await _get_dimension_version_index(version=version, persistor=persistor)
     try:
         return max(d.values())
     except ValueError:
@@ -130,8 +159,7 @@ async def _get_fact_id(name: str, version: Version, persistor: LocalFileModelPer
     if not version.model_version:
         raise KeyError(name, version.model_version)
 
-    with persistor.open_fact_index_file_read(version=version.model_version) as stream:
-        d = yaml.safe_load(stream)
+    d = await _get_fact_index(version=version, persistor=persistor)
 
     return d[name]
 

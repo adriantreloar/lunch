@@ -1,10 +1,12 @@
 from lunch.model.dimension.dimension_transformer import DimensionTransformer
+from lunch.model.dimension.dimension_comparer import DimensionComparer
 from lunch.model.fact.fact_transformer import FactTransformer
 from lunch.mvcc.version import Version
 from lunch.storage.cache.model_cache import ModelCache
 from lunch.storage.persistence.model_persistor import ModelPersistor
 from lunch.storage.serialization.model_serializer import ModelSerializer
 from lunch.storage.store import Store
+from lunch.storage.transformers.dimension_index_transformer import DimensionIndexTransformer
 
 
 class ModelStore(Store):
@@ -17,6 +19,8 @@ class ModelStore(Store):
     def __init__(
         self,
         dimension_transformer: DimensionTransformer,
+        dimension_index_transformer: DimensionIndexTransformer,
+        dimension_comparer: DimensionComparer,
         fact_transformer: FactTransformer,
         serializer: ModelSerializer,
         cache: ModelCache,
@@ -24,6 +28,8 @@ class ModelStore(Store):
         self._serializer = serializer
         self._cache = cache
         self._dimension_transformer = dimension_transformer
+        self._dimension_index_transformer = dimension_index_transformer
+        self._dimension_comparer = dimension_comparer
         self._fact_transformer = fact_transformer
 
     async def get_dimension_id(self, name: str, version: Version) -> int:
@@ -44,15 +50,17 @@ class ModelStore(Store):
             id_=id_, version=version, serializer=self._serializer, cache=self._cache
         )
 
-    async def put_dimension(
-        self, dimension: dict, read_version: Version, write_version: Version
+    async def put_dimensions(
+        self, dimensions: list[dict], read_version: Version, write_version: Version
     ) -> dict:
 
-        return await _put_dimension(
-            dimension=dimension,
+        return await _put_dimensions(
+            dimensions=dimensions,
             read_version=read_version,
             write_version=write_version,
             dimension_transformer=self._dimension_transformer,
+            dimension_index_transformer=self._dimension_index_transformer,
+            dimension_comparer=self._dimension_comparer,
             serializer=self._serializer,
             cache=self._cache,
         )
@@ -106,15 +114,8 @@ async def _get_dimension_id(
     try:
         return await cache.get_dimension_id(name, version)
     except KeyError:
-        try:
-            dimension_id = await serializer.get_dimension_id(name, version)
-        except KeyError:
-            # TODO - wrap this in its own get_next_dimension_id function
-            try:
-                dimension_id = await cache.get_max_dimension_id(version)
-            except KeyError:
-                dimension_id = await serializer.get_max_dimension_id(version)
-            dimension_id += 1
+        dimension_id = await serializer.get_dimension_id(name, version)
+
         await cache.put_dimension_id(dimension_id, name, version)
         return dimension_id
 
@@ -130,50 +131,113 @@ async def _get_dimension(
         return dimension
 
 
-async def _put_dimension(
-    dimension: dict,
+async def _put_dimensions(
+    dimensions: list[dict],
     read_version: Version,
     write_version: Version,
     dimension_transformer: DimensionTransformer,
+    dimension_index_transformer: DimensionIndexTransformer,
+    dimension_comparer: DimensionComparer,
     serializer: ModelSerializer,
     cache: ModelCache,
 ) -> dict:
 
-    try:
-        dimension_transformer.get_id_from_dimension(dimension)
-    except KeyError:
-        dimension_id = await _get_dimension_id(
-            name=dimension["name"],
-            version=read_version,
-            serializer=serializer,
-            cache=cache,
-        )
-        out_dimension = dimension_transformer.add_id_to_dimension(
-            dimension, dimension_id
-        )
+    dimensions_with_ids = {}
+    dimensions_without_ids = {}
 
-    out_dimension = dimension_transformer.add_model_version_to_dimension(
-        out_dimension, write_version.model_version
-    )
+    # Check which dimensions have ids or need ids
+    for dimension in dimensions:
+        dimension_name = dimension_transformer.get_name_from_dimension(dimension)
+        try:
+            # The dimension may already have the id - if it is being edited
+            id_ = dimension_transformer.get_id_from_dimension(dimension)
+            dimensions_with_ids[dimension_name] = dimension
+        except KeyError:
+            dimensions_without_ids[dimension_name] = dimension
+
+    # Check for changes
+    dimension_names_with_changes = list(dimensions_without_ids.keys())
+    for dimension in dimensions_with_ids:
+        id_ = dimension_transformer.get_id_from_dimension(dimension)
+
+        previous_dimension = await _get_dimension(id_=id_, version=read_version, serializer=serializer, cache=cache)
+        comparison = dimension_comparer.compare(dimension, previous_dimension)
+
+        if comparison:
+            dimension_name = dimension_transformer.get_name_from_dimension(dimension)
+            dimension_names_with_changes.append(dimension_name)
+
+    # Update the dimensions without ids
+    max_dimension_id = await _get_max_dimension_id(version=read_version, serializer=serializer, cache=cache)
+    for i, (name, dimension) in enumerate(dimensions_without_ids.items()):
+        dimension_with_id = dimension_transformer.add_id_to_dimension(dimension, max_dimension_id+i+1)
+        dimensions_with_ids[name] = dimension_with_id
+
+    dimensions_with_ids_and_versions=[]
+    for name, dimension in dimensions_with_ids.items():
+        out_dimension = dimension_transformer.add_model_version_to_dimension(
+            dimension, write_version.model_version
+        )
+        dimensions_with_ids_and_versions.append(out_dimension)
+
+    dimensions_version_index_read = await _get_dimension_version_index(version=read_version, serializer=serializer, cache=cache)
+    dimensions_name_index_read = await _get_dimension_name_index(version=read_version, serializer=serializer, cache=cache)
+
+    # All the changed dimensions will be in dimensions_with_ids now
+    # All of these have a version of the write-version
+    dimensions_version_index_write = dimension_index_transformer.update_dimension_version_index(index=dimensions_version_index_read, write_version = write_version, changed_ids = [dimension["id_"] for dimension in dimensions_with_ids.values()])
+    dimensions_name_index_write = dimension_index_transformer.update_dimension_name_index(index=dimensions_name_index_read, changed_names_index = {dimension["name"]: dimension["id_"] for dimension in dimensions_with_ids.values()})
+
+    await _put_dimension_version_index(index = dimensions_version_index_write, version=write_version, serializer=serializer, cache=cache)
+    await _put_dimension_name_index(index = dimensions_name_index_write, version=write_version, serializer=serializer, cache=cache)
 
     # Note - we cache as we put, so that later puts in a transaction can validate against cached data
-    await serializer.put_dimension(out_dimension, write_version)
-    await cache.put_dimension(out_dimension, write_version)
+    await serializer.put_dimensions(dimensions_with_ids_and_versions, write_version)
+    await cache.put_dimensions(dimensions_with_ids_and_versions, write_version)
 
-    # TODO - put these in commit write?
+    #try:
+    #    dimension_index = await serializer.get_dimension_index(version=write_version)
+    #except KeyError:
+    #    dimension_index = await serializer.get_dimension_index(version=read_version)
+    #    # TODO - use a Transformer to update the index, from the dimension
+    #dimension_index[out_dimension["name"]] = out_dimension["id_"]
+
+async def _get_max_dimension_id(version: Version, serializer: ModelSerializer, cache: ModelCache) -> int:
+    if not version.version:
+        return 0
+
     try:
-        dimension_index = await serializer.get_dimension_index(version=write_version)
+        return await cache.get_max_dimension_id(version=version)
     except KeyError:
-        dimension_index = await serializer.get_dimension_index(version=read_version)
-        # TODO - use a Transformer to update the index, from the dimension
-    dimension_index[out_dimension["name"]] = out_dimension["id_"]
+        return await serializer.get_max_dimension_id(version=version)
 
-    await serializer.put_dimension_index(
-        dimension_index=dimension_index, version=write_version
-    )
-    # await cache.put_dimension_index()
-    return out_dimension
 
+async def _get_dimension_name_index(version: Version, serializer: ModelSerializer, cache: ModelCache) -> dict[str,int]:
+    if not version.version:
+        return {}
+
+    try:
+        return await cache.get_dimension_name_index(version=version)
+    except KeyError:
+        return await serializer.get_dimension_name_index(version=version)
+
+
+async def _get_dimension_version_index(version: Version, serializer: ModelSerializer, cache: ModelCache) -> dict[int, int]:
+    if not version.version:
+        return {}
+
+    try:
+        return await cache.get_dimension_version_index(version=version)
+    except KeyError:
+        return await serializer.get_dimension_version_index(version=version)
+
+async def _put_dimension_name_index(index:dict[str,int], version: Version, serializer: ModelSerializer, cache: ModelCache):
+    await serializer.put_dimension_name_index(index=index,version=version)
+    await cache.put_dimension_name_index(index=index,version=version)
+
+async def _put_dimension_version_index(index:dict[int,int], version: Version, serializer: ModelSerializer, cache: ModelCache):
+    await serializer.put_dimension_version_index(index=index, version=version)
+    await cache.put_dimension_version_index(index=index, version=version)
 
 async def _get_fact_id(
     name: str, version: Version, serializer: ModelSerializer, cache: ModelCache

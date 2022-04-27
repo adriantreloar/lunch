@@ -7,12 +7,12 @@ class DimensionIndexTransformer(Transformer):
     Transform dimension index dictionaries, when using a very basic read-transform-write serializer.
     """
 
-    @staticmethod
-    def get_max_id(dimension_index_dict: dict[str, int]) -> int:
-        try:
-            return max(dimension_index_dict.keys())
-        except KeyError:
-            return 0
+    #@staticmethod
+    #def get_max_id(dimension_index_dict: dict[str, int]) -> int:
+    #    try:
+    #        return max(dimension_index_dict.values())
+    #    except KeyError:
+    #        return 0
 
     @staticmethod
     def add_dimension_name_to_index(

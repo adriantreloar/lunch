@@ -1,13 +1,14 @@
 from lunch.model.dimension.dimension_transformer import DimensionTransformer
 from lunch.model.dimension.dimension_comparer import DimensionComparer
 from lunch.model.fact.fact_transformer import FactTransformer
-from lunch.model.fact.fact_comparer import  FactComparer
+from lunch.model.fact.fact_comparer import FactComparer
 from lunch.mvcc.version import Version
 from lunch.storage.cache.model_cache import ModelCache
 from lunch.storage.persistence.model_persistor import ModelPersistor
 from lunch.storage.serialization.model_serializer import ModelSerializer
 from lunch.storage.store import Store
 from lunch.storage.transformers.dimension_index_transformer import DimensionIndexTransformer
+from lunch.storage.transformers.fact_index_transformer import FactIndexTransformer
 
 
 class ModelStore(Store):
@@ -267,12 +268,51 @@ async def _get_fact(
         return fact
 
 
+async def _get_max_fact_id(version: Version, serializer: ModelSerializer, cache: ModelCache) -> int:
+    if not version.version:
+        return 0
+
+    try:
+        return await cache.get_max_fact_id(version=version)
+    except KeyError:
+        return await serializer.get_max_fact_id(version=version)
+
+
+async def _get_fact_name_index(version: Version, serializer: ModelSerializer, cache: ModelCache) -> dict[str,int]:
+    if not version.version:
+        return {}
+
+    try:
+        return await cache.get_fact_name_index(version=version)
+    except KeyError:
+        return await serializer.get_fact_name_index(version=version)
+
+
+async def _get_fact_version_index(version: Version, serializer: ModelSerializer, cache: ModelCache) -> dict[int, int]:
+    if not version.version:
+        return {}
+
+    try:
+        return await cache.get_fact_version_index(version=version)
+    except KeyError:
+        return await serializer.get_fact_version_index(version=version)
+
+
+async def _put_fact_name_index(index:dict[str,int], version: Version, serializer: ModelSerializer, cache: ModelCache):
+    await serializer.put_fact_name_index(index=index,version=version)
+    await cache.put_fact_name_index(index=index,version=version)
+
+async def _put_fact_version_index(index:dict[int,int], version: Version, serializer: ModelSerializer, cache: ModelCache):
+    await serializer.put_fact_version_index(index=index, version=version)
+    await cache.put_fact_version_index(index=index, version=version)
+
 async def _put_facts(
     facts: list[dict],
     read_version: Version,
     write_version: Version,
     fact_comparer: FactComparer,
-    fact_transformer: DimensionTransformer,
+    fact_transformer: FactTransformer,
+    fact_index_transformer: FactIndexTransformer,
     serializer: ModelSerializer,
     cache: ModelCache,
 ) -> dict:
@@ -295,15 +335,12 @@ async def _put_facts(
     for fact in facts_with_ids:
         id_ = fact_transformer.get_id_from_fact(fact)
 
-        previous_fact = await _get_fact(
-            id_=id_, version=read_version, storage=storage
-        )
+        previous_fact = await _get_fact(id_=id_, version=read_version, serializer=serializer, cache=cache)
         comparison = fact_comparer.compare(fact, previous_fact)
 
         if comparison:
             fact_name = fact_transformer.get_name_from_fact(fact)
             fact_names_with_changes.append(fact_name)
-
 
     # Update the facts without ids
     max_fact_id = await _get_max_fact_id(version=read_version, serializer=serializer, cache=cache)

@@ -112,43 +112,17 @@ async def _update_model(
 
     await storage.put_dimensions(read_version=read_version, write_version=write_version, dimensions=dimensions)
 
-    ## This could throw a validation error
-    #for fact in facts:
-    #    fact_structure_validator.validate(data=fact)
-    #
-    #
-    #
-    ## TODO - the fact checking code is almost identical to the dimension checking code, refactor
-    #facts_with_ids = {}
-    #facts_without_ids = {}
-    #
-    #for fact in facts:
-    #    fact_name = fact_transformer.get_name_from_fact(fact)
-    #    try:
-    #        # The fact may already have the id - if it is being edited
-    #        id_ = fact_transformer.get_id_from_fact(fact)
-    #        facts_with_ids[fact_name] = fact
-    #    except KeyError:
-    #        facts_without_ids[fact_name] = fact
-    #
-    ## Check for changes
-    #fact_names_with_changes = list(facts_without_ids.keys())
-    #for fact in facts_with_ids:
-    #    id_ = fact_transformer.get_id_from_fact(fact)
-    #
-    #    previous_fact = await _get_fact(
-    #        id_=id_, version=read_version, storage=storage
-    #    )
-    #    comparison = fact_comparer.compare(fact, previous_fact)
-    #
-    #    if comparison:
-    #        fact_name = dimension_transformer.get_name_from_fact(fact)
-    #        fact_names_with_changes.append(fact_name)
+    # This could throw a validation error
+    for fact in facts:
+        fact_structure_validator.validate(data=fact)
 
     # TODO - it would make sense to do basic validations and change detection BEFORE creating the new write version,
     #  Thus we would only have model_version flagged in the write version if we definitely needed one
     #  However, currently checks aren't done before write_version creation, so we will need to create indexes
     #  for dimensions and facts everytime
+
+    await storage.put_facts(read_version=read_version, write_version=write_version, facts=facts)
+
 
 
 

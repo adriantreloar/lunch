@@ -1,6 +1,7 @@
 from lunch.model.dimension.dimension_transformer import DimensionTransformer
 from lunch.model.dimension.dimension_comparer import DimensionComparer
 from lunch.model.fact.fact_transformer import FactTransformer
+from lunch.model.fact.fact_comparer import  FactComparer
 from lunch.mvcc.version import Version
 from lunch.storage.cache.model_cache import ModelCache
 from lunch.storage.persistence.model_persistor import ModelPersistor
@@ -22,6 +23,7 @@ class ModelStore(Store):
         dimension_index_transformer: DimensionIndexTransformer,
         dimension_comparer: DimensionComparer,
         fact_transformer: FactTransformer,
+        fact_comparer: FactComparer,
         serializer: ModelSerializer,
         cache: ModelCache,
     ):
@@ -31,6 +33,7 @@ class ModelStore(Store):
         self._dimension_index_transformer = dimension_index_transformer
         self._dimension_comparer = dimension_comparer
         self._fact_transformer = fact_transformer
+        self._fact_comparer = fact_comparer
 
     async def get_dimension_id(self, name: str, version: Version) -> int:
         """
@@ -83,15 +86,16 @@ class ModelStore(Store):
             id_=id_, version=version, serializer=self._serializer, cache=self._cache
         )
 
-    async def put_fact(
-        self, fact: dict, read_version: Version, write_version: Version
+    async def put_facts(
+        self, facts: list[dict], read_version: Version, write_version: Version
     ) -> dict:
 
-        return await _put_fact(
-            fact=fact,
+        return await _put_facts(
+            facts=facts,
             read_version=read_version,
             write_version=write_version,
             fact_transformer=self._fact_transformer,
+            fact_comparer=self._fact_comparer,
             serializer=self._serializer,
             cache=self._cache,
         )
@@ -195,12 +199,6 @@ async def _put_dimensions(
     await serializer.put_dimensions(dimensions_with_ids_and_versions, write_version)
     await cache.put_dimensions(dimensions_with_ids_and_versions, write_version)
 
-    #try:
-    #    dimension_index = await serializer.get_dimension_index(version=write_version)
-    #except KeyError:
-    #    dimension_index = await serializer.get_dimension_index(version=read_version)
-    #    # TODO - use a Transformer to update the index, from the dimension
-    #dimension_index[out_dimension["name"]] = out_dimension["id_"]
 
 async def _get_max_dimension_id(version: Version, serializer: ModelSerializer, cache: ModelCache) -> int:
     if not version.version:
@@ -269,42 +267,71 @@ async def _get_fact(
         return fact
 
 
-async def _put_fact(
-    fact: dict,
+async def _put_facts(
+    facts: list[dict],
     read_version: Version,
     write_version: Version,
+    fact_comparer: FactComparer,
     fact_transformer: DimensionTransformer,
     serializer: ModelSerializer,
     cache: ModelCache,
 ) -> dict:
 
-    try:
-        fact_transformer.get_id_from_fact(fact)
-    except KeyError:
-        fact_id = await _get_fact_id(
-            name=fact["name"], version=read_version, serializer=serializer, cache=cache
-        )
-        out_fact = fact_transformer.add_id_to_fact(fact, fact_id)
+    # TODO - the fact checking code is almost identical to the dimension checking code, refactor
+    facts_with_ids = {}
+    facts_without_ids = {}
 
-    out_fact = fact_transformer.add_model_version_to_fact(
-        out_fact, write_version.model_version
-    )
+    for fact in facts:
+        fact_name = fact_transformer.get_name_from_fact(fact)
+        try:
+            # The fact may already have the id - if it is being edited
+            id_ = fact_transformer.get_id_from_fact(fact)
+            facts_with_ids[fact_name] = fact
+        except KeyError:
+            facts_without_ids[fact_name] = fact
+
+    # Check for changes
+    fact_names_with_changes = list(facts_without_ids.keys())
+    for fact in facts_with_ids:
+        id_ = fact_transformer.get_id_from_fact(fact)
+
+        previous_fact = await _get_fact(
+            id_=id_, version=read_version, storage=storage
+        )
+        comparison = fact_comparer.compare(fact, previous_fact)
+
+        if comparison:
+            fact_name = fact_transformer.get_name_from_fact(fact)
+            fact_names_with_changes.append(fact_name)
+
+
+    # Update the facts without ids
+    max_fact_id = await _get_max_fact_id(version=read_version, serializer=serializer, cache=cache)
+    for i, (name, dimension) in enumerate(facts_without_ids.items()):
+        fact_with_id = fact_transformer.add_id_to_fact(dimension, max_fact_id+i+1)
+        facts_with_ids[name] = fact_with_id
+
+    facts_with_ids_and_versions = []
+    for name, fact in facts_with_ids.items():
+        out_fact = fact_transformer.add_model_version_to_fact(
+            fact, write_version.model_version
+        )
+        facts_with_ids_and_versions.append(out_fact)
+
+    facts_version_index_read = await _get_fact_version_index(version=read_version, serializer=serializer, cache=cache)
+    facts_name_index_read = await _get_fact_name_index(version=read_version, serializer=serializer, cache=cache)
+
+    # All the changed facts will be in facts_with_ids now
+    # All of these have a version of the write-version
+    facts_version_index_write = fact_index_transformer.update_fact_version_index(index=facts_version_index_read, write_version = write_version, changed_ids = [fact["id_"] for fact in facts_with_ids.values()])
+    facts_name_index_write = fact_index_transformer.update_fact_name_index(index=facts_name_index_read, changed_names_index = {fact["name"]: fact["id_"] for fact in facts_with_ids.values()})
+
+    await _put_fact_version_index(index = facts_version_index_write, version=write_version, serializer=serializer, cache=cache)
+    await _put_fact_name_index(index = facts_name_index_write, version=write_version, serializer=serializer, cache=cache)
 
     # Note - we cache as we put, so that later puts in a transaction can validate against cached data
-    await serializer.put_fact(out_fact, write_version)
-    await cache.put_fact(out_fact, write_version)
-
-    # TODO - put these in commit write?
-    try:
-        fact_index = await serializer.get_fact_index(version=write_version)
-    except KeyError:
-        fact_index = await serializer.get_fact_index(version=read_version)
-        # TODO - use a Transformer to update the index, from the fact
-    fact_index[out_fact["name"]] = out_fact["id_"]
-
-    await serializer.put_fact_index(fact_index=fact_index, version=write_version)
-    # await cache.put_fact_index()
-    return out_fact
+    await serializer.put_facts(facts_with_ids_and_versions, write_version)
+    await cache.put_facts(facts_with_ids_and_versions, write_version)
 
 
 async def _abort_write(

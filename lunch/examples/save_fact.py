@@ -26,6 +26,7 @@ from lunch.storage.serialization.yaml_model_serializer import YamlModelSerialize
 from lunch.storage.serialization.yaml_version_serializer import YamlVersionSerializer
 from lunch.storage.transformers.versions_transformer import VersionsTransformer
 from lunch.storage.version_store import VersionStore
+from lunch.storage.transformers.dimension_index_transformer import DimensionIndexTransformer
 
 
 async def main():
@@ -33,6 +34,7 @@ async def main():
     # Validators, Transformers
     version_transformer = VersionsTransformer()
     dimension_transformer = DimensionTransformer()
+    dimension_index_transformer = DimensionIndexTransformer()
     dimension_comparer = DimensionComparer()
     dimension_structure_validator = DimensionStructureValidator()
     dimension_reference_validator = DimensionReferenceValidator()
@@ -63,19 +65,18 @@ async def main():
 
     # Storage
     version_store = VersionStore(serializer=version_serializer, cache=version_cache)
-    model_store = ModelStore(
-        dimension_transformer=dimension_transformer,
-        fact_transformer=fact_transformer,
-        serializer=model_serializer,
-        cache=model_cache,
-    )
+    model_store = ModelStore(dimension_comparer=dimension_comparer,
+                             dimension_transformer=dimension_transformer,
+                             dimension_index_transformer=dimension_index_transformer,
+                             fact_transformer=None,
+                             serializer=model_serializer,
+                             cache=model_cache)
 
     # Managers
     version_manager = VersionManager(storage=version_store)
     model_manager = ModelManager(
-        storage=model_store,
-        dimension_comparer=dimension_comparer,
         dimension_structure_validator=dimension_structure_validator,
+        dimension_comparer=dimension_comparer,
         dimension_reference_validator=dimension_reference_validator,
         dimension_transformer=dimension_transformer,
         fact_comparer=fact_comparer,
@@ -83,6 +84,7 @@ async def main():
         fact_reference_validator=fact_reference_validator,
         fact_transformer=fact_transformer,
         version_manager=version_manager,
+        storage=model_store,
     )
 
     d_department = {"name": "Department", "thing": "thing"}
@@ -98,14 +100,8 @@ async def main():
         async with version_manager.write_model_version(
             read_version=read_version
         ) as write_version:
-            await model_manager.update_dimension(
-                d_department, read_version=read_version, write_version=write_version
-            )
-            await model_manager.update_dimension(
-                d_time, read_version=read_version, write_version=write_version
-            )
-            await model_manager.update_fact(
-                f_sales, read_version=read_version, write_version=write_version
+            await model_manager.update_model(
+                dimensions=[d_department, d_time], facts=[f_sales], read_version=read_version, write_version=write_version
             )
 
 

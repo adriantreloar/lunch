@@ -55,3 +55,18 @@ class NullModelCache(ModelCache):
 
     async def put_fact_id(self, fact_id: int, name: str, version: Version):
         pass
+
+    async def get_fact_name_index(self, version: Version) -> dict:
+        raise KeyError(version)
+
+    async def put_fact_name_index(self, index: dict, version: Version):
+        pass
+
+    async def get_fact_version_index(self, version: Version) -> dict:
+        raise KeyError(version)
+
+    async def put_fact_version_index(self, index: dict, version: Version):
+        pass
+
+    async def put_facts(self, dimensions: list[dict], version: Version):
+        pass

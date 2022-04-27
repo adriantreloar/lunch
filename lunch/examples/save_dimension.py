@@ -8,6 +8,11 @@ from lunch.model.dimension.dimension_reference_validator import DimensionReferen
 from lunch.model.dimension.dimension_structure_validator import DimensionStructureValidator
 from lunch.model.dimension.dimension_transformer import DimensionTransformer
 from lunch.storage.transformers.dimension_index_transformer import DimensionIndexTransformer
+from lunch.model.fact.fact_comparer import FactComparer
+from lunch.model.fact.fact_reference_validator import FactReferenceValidator
+from lunch.model.fact.fact_structure_validator import FactStructureValidator
+from lunch.model.fact.fact_transformer import FactTransformer
+from lunch.storage.transformers.fact_index_transformer import FactIndexTransformer
 from lunch.storage.cache.null_model_cache import NullModelCache
 from lunch.storage.cache.null_version_cache import NullVersionCache
 from lunch.storage.model_store import ModelStore
@@ -28,6 +33,11 @@ async def main():
     dimension_comparer = DimensionComparer()
     dimension_structure_validator = DimensionStructureValidator()
     dimension_reference_validator = DimensionReferenceValidator()
+    fact_transformer = FactTransformer()
+    fact_comparer = FactComparer()
+    fact_structure_validator = FactStructureValidator()
+    fact_reference_validator = FactReferenceValidator()
+    fact_index_transformer = FactIndexTransformer()
 
     # Persistence
     version_persistor = LocalFileVersionPersistor(
@@ -54,7 +64,9 @@ async def main():
     model_store = ModelStore(dimension_comparer=dimension_comparer,
                              dimension_transformer=dimension_transformer,
                              dimension_index_transformer=dimension_index_transformer,
-                             fact_transformer=None,
+                             fact_transformer=fact_transformer,
+                             fact_index_transformer=fact_index_transformer,
+                             fact_comparer=fact_comparer,
                              serializer=model_serializer,
                              cache=model_cache)
 
@@ -65,10 +77,10 @@ async def main():
         dimension_comparer=dimension_comparer,
         dimension_reference_validator=dimension_reference_validator,
         dimension_transformer=dimension_transformer,
-        fact_comparer=None,
+        fact_comparer=fact_comparer,
         fact_structure_validator=None,
         fact_reference_validator=None,
-        fact_transformer=None,
+        fact_transformer=fact_transformer,
         version_manager=version_manager,
         storage=model_store,
     )

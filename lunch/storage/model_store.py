@@ -24,6 +24,7 @@ class ModelStore(Store):
         dimension_index_transformer: DimensionIndexTransformer,
         dimension_comparer: DimensionComparer,
         fact_transformer: FactTransformer,
+        fact_index_transformer: FactIndexTransformer,
         fact_comparer: FactComparer,
         serializer: ModelSerializer,
         cache: ModelCache,
@@ -34,6 +35,7 @@ class ModelStore(Store):
         self._dimension_index_transformer = dimension_index_transformer
         self._dimension_comparer = dimension_comparer
         self._fact_transformer = fact_transformer
+        self._fact_index_transformer = fact_index_transformer
         self._fact_comparer = fact_comparer
 
     async def get_dimension_id(self, name: str, version: Version) -> int:
@@ -96,6 +98,7 @@ class ModelStore(Store):
             read_version=read_version,
             write_version=write_version,
             fact_transformer=self._fact_transformer,
+            fact_index_transformer=self._fact_index_transformer,
             fact_comparer=self._fact_comparer,
             serializer=self._serializer,
             cache=self._cache,

@@ -47,8 +47,11 @@ class LocalFileModelPersistor(ModelPersistor):
     def dimension_file(self, id_: int, version: int) -> Path:
         return _dimension_file(directory=self._directory, id_=id_, version=version)
 
-    def fact_index_file(self, version: int) -> Path:
-        return _fact_index_file(directory=self._directory, version=version)
+    def fact_name_index_file(self, version: int) -> Path:
+        return _fact_name_index_file(directory=self._directory, version=version)
+
+    def fact_version_index_file(self, version: int) -> Path:
+        return _fact_version_index_file(directory=self._directory, version=version)
 
     def fact_file(self, id_: int, version: int) -> Path:
         return _fact_file(directory=self._directory, id_=id_, version=version)
@@ -92,14 +95,26 @@ class LocalFileModelPersistor(ModelPersistor):
             yield f
 
     @contextmanager
-    def open_fact_index_file_read(self, version: int):
-        file_path = self.fact_index_file(version)
+    def open_fact_version_index_file_read(self, version: int):
+        file_path = self.fact_version_index_file(version)
         with open(file_path, "r") as f:
             yield f
 
     @contextmanager
-    def open_fact_index_file_write(self, version: int):
-        file_path = self.fact_index_file(version)
+    def open_fact_version_index_file_write(self, version: int):
+        file_path = self.fact_version_index_file(version)
+        with open(file_path, "w") as f:
+            yield f
+
+    @contextmanager
+    def open_fact_name_index_file_read(self, version: int):
+        file_path = self.fact_name_index_file(version)
+        with open(file_path, "r") as f:
+            yield f
+
+    @contextmanager
+    def open_fact_name_index_file_write(self, version: int):
+        file_path = self.fact_name_index_file(version)
         with open(file_path, "w") as f:
             yield f
 
@@ -126,10 +141,11 @@ def _dimension_version_index_file(directory: Path, version: int) -> Path:
 def _dimension_file(directory: Path, id_: int, version: int) -> Path:
     return directory.joinpath(f"{version}/dimension.{id_}.yaml")
 
+def _fact_name_index_file(directory: Path, version: int) -> Path:
+    return directory.joinpath(f"{version}/fact.name.index.yaml")
 
-def _fact_index_file(directory: Path, version: int) -> Path:
-    return directory.joinpath(f"{version}/fact.index.yaml")
-
+def _fact_version_index_file(directory: Path, version: int) -> Path:
+    return directory.joinpath(f"{version}/fact.version.index.yaml")
 
 def _fact_file(directory: Path, id_: int, version: int) -> Path:
     return directory.joinpath(f"{version}/fact.{id_}.yaml")

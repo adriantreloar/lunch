@@ -27,6 +27,7 @@ from lunch.storage.serialization.yaml_version_serializer import YamlVersionSeria
 from lunch.storage.transformers.versions_transformer import VersionsTransformer
 from lunch.storage.version_store import VersionStore
 from lunch.storage.transformers.dimension_index_transformer import DimensionIndexTransformer
+from lunch.storage.transformers.fact_index_transformer import FactIndexTransformer
 
 
 async def main():
@@ -42,6 +43,7 @@ async def main():
     fact_comparer = FactComparer()
     fact_structure_validator = FactStructureValidator()
     fact_reference_validator = FactReferenceValidator()
+    fact_index_transformer = FactIndexTransformer()
 
     # Persistence
     version_persistor = LocalFileVersionPersistor(
@@ -68,7 +70,9 @@ async def main():
     model_store = ModelStore(dimension_comparer=dimension_comparer,
                              dimension_transformer=dimension_transformer,
                              dimension_index_transformer=dimension_index_transformer,
-                             fact_transformer=None,
+                             fact_transformer=fact_transformer,
+                             fact_index_transformer=fact_index_transformer,
+                             fact_comparer=fact_comparer,
                              serializer=model_serializer,
                              cache=model_cache)
 

@@ -85,7 +85,7 @@ async def main():
         storage=model_store,
     )
 
-    my_dim = {"name": "MyDim", "thing": "thing1"}
+    my_dim = {"name": "MyDim", "attributes": [{"name":"thing1"}]}
     async with version_manager.read_version() as read_version:
         async with version_manager.write_model_version(
             read_version=read_version
@@ -94,7 +94,7 @@ async def main():
                 dimensions=[my_dim], facts=[], read_version=read_version, write_version=write_version
             )
 
-    your_dim = {"name": "YourDim", "thing": "thing2"}
+    your_dim = {"name": "YourDim", "attributes": [{"name":"thing1"}]}
     async with version_manager.read_version() as read_version:
         async with version_manager.write_model_version(
             read_version=read_version

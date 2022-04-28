@@ -91,8 +91,8 @@ async def main():
         storage=model_store,
     )
 
-    d_department = {"name": "Department", "thing": "thing"}
-    d_time = {"name": "Time", "thing": "thing2"}
+    d_department = {"name": "Department", "attributes": [{"name":"thing1"}]}
+    d_time = {"name": "Time", "attributes": [{"name":"thing1"}]}
 
     f_sales = {
         "name": "Sales",

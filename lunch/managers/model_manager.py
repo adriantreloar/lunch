@@ -107,8 +107,12 @@ async def _update_model(
 ):
 
     # This could throw a validation error
+    out_dimensions = []
     for dimension in dimensions:
         dimension_structure_validator.validate(data=dimension)
+        dimension = dimension_transformer.add_attribute_ids_to_dimension(dimension=dimension)
+        dimension_structure_validator.validate(data=dimension)
+        out_dimensions.append(dimension)
 
     await storage.put_dimensions(read_version=read_version, write_version=write_version, dimensions=dimensions)
 

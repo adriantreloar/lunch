@@ -11,7 +11,8 @@ from lunch.model.dimension.dimension_structure_validator import (
 
 def test_can_contain_name_key():
     dimension = {"name": "Department"}
-    assert dim_valid.validate(dimension)
+    dim_valid.validate(dimension)
+
 
 @pytest.mark.parametrize(
     "comment, id_",
@@ -22,7 +23,8 @@ def test_can_contain_name_key():
 )
 def test_can_contain_id(comment, id_):
     dimension = {"name": "Department", "id_": id_}
-    assert dim_valid.validate(dimension)
+    dim_valid.validate(dimension)
+
 
 @pytest.mark.parametrize(
     "comment, id_",
@@ -39,18 +41,19 @@ def test_id_must_be_int(comment, id_):
     with pytest.raises(DimensionValidationError):
         dim_valid.validate(dimension)
 
+
 @pytest.mark.parametrize(
     "comment, attributes",
     [
         ("empty_list", []),
-        ("list", [{"name":"foo"},{"id_":1}]),
+        ("list", [{"name": "foo"}, {"id_": 1}]),
         ("None", None),
     ]
 )
 def test_can_contain_attributes_key(comment, attributes):
     assert comment
     dimension = {"name": "Department", "attributes": attributes}
-    assert dim_valid.validate(dimension)
+    dim_valid.validate(dimension)
 
 
 @pytest.mark.parametrize(
@@ -82,4 +85,4 @@ def test_department_dimension_validates():
     with open(pathlib.Path(parent, "test_data", "department_dimension.yaml")) as f:
         dimension = yaml.safe_load(f)
 
-    assert dim_valid.validate(dimension)
+    dim_valid.validate(dimension)

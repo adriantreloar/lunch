@@ -46,7 +46,7 @@ def test_id_must_be_int(comment, id_):
     "comment, attributes",
     [
         ("empty_list", []),
-        ("list", [{"name": "foo"}, {"id_": 1}]),
+        ("list", [{"name": "foo", "id_": 1}, ]),
         ("None", None),
     ]
 )

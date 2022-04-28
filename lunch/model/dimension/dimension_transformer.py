@@ -73,3 +73,15 @@ class DimensionTransformer(Transformer):
         out_dimension = dimension.copy()
         out_dimension["model_version"] = model_version
         return out_dimension
+
+    @staticmethod
+    def add_attribute_ids_to_dimension(dimension: dict) ->dict:
+        out_dimension = dimension.copy()
+        if attributes := out_dimension.get("attributes"):
+            max_id = max([attribute.get("id_", 0) for attribute in attributes])
+            for attribute in attributes:
+                if "id_" not in attribute or not attribute["id_"]:
+                    attribute["id_"] = max_id + 1
+                    max_id += 1
+
+        return out_dimension

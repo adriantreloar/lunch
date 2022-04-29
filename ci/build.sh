@@ -11,7 +11,7 @@ cd "$( dirname "${BASH_SOURCE[0]}" )/.."
 source ci/deploy_conda.sh
 
 set +o nounset
-source activate base
+source ${CONDA_PREFIX}/bin/activate base
 set -o nounset
 
 # Install mamba
@@ -22,11 +22,11 @@ mamba remove --name lunch --all -y
 mamba env create -n lunch --file ci/requirements-1prod.yml
 
 set +o nounset
-source activate lunch
+source ${CONDA_PREFIX}/bin/activate lunch
 set -o nounset
 
 # Run installer
-pip install .
+pip install develop .
 
 # Snapshot and log the installed packages, in case one of the extra packages used for
 # build/dev change the versions

@@ -17,22 +17,27 @@ class YamlModelSerializer(ModelSerializer):
     async def put_dimensions(self, dimensions: list[dict], version: Version):
         await _put_dimensions(dimensions, version, self._persistor)
 
-    async def get_dimension_name_index(self, version: Version) -> dict[str,int]:
-        return await _get_dimension_name_index(version=version, persistor=self._persistor)
+    async def get_dimension_name_index(self, version: Version) -> dict[str, int]:
+        return await _get_dimension_name_index(
+            version=version, persistor=self._persistor
+        )
 
     async def put_dimension_name_index(self, index: dict, version: Version):
         return await _put_dimension_name_index(
             index=index, version=version, persistor=self._persistor
         )
 
-    async def put_dimension_version_index(self, index: dict[int, int], version: Version):
+    async def put_dimension_version_index(
+        self, index: dict[int, int], version: Version
+    ):
         return await _put_dimension_version_index(
             index=index, version=version, persistor=self._persistor
         )
 
-    async def get_dimension_version_index(self, version: Version) -> dict[int,int]:
-        return await _get_dimension_version_index(version=version, persistor=self._persistor)
-
+    async def get_dimension_version_index(self, version: Version) -> dict[int, int]:
+        return await _get_dimension_version_index(
+            version=version, persistor=self._persistor
+        )
 
     async def get_dimension_id(self, name: str, version: Version) -> int:
         return await _get_dimension_id(
@@ -55,13 +60,17 @@ class YamlModelSerializer(ModelSerializer):
         return await _get_fact_name_index(version=version, persistor=self._persistor)
 
     async def put_fact_name_index(self, index: dict, version: Version):
-        return await _put_fact_name_index(index=index, version=version, persistor=self._persistor)
+        return await _put_fact_name_index(
+            index=index, version=version, persistor=self._persistor
+        )
 
     async def get_fact_version_index(self, version: Version) -> dict:
         return await _get_fact_version_index(version=version, persistor=self._persistor)
 
     async def put_fact_version_index(self, index: dict, version: Version):
-        return await _put_fact_version_index(index=index, version=version, persistor=self._persistor)
+        return await _put_fact_version_index(
+            index=index, version=version, persistor=self._persistor
+        )
 
     async def get_fact_id(self, name: str, version: Version) -> int:
         return await _get_fact_id(name=name, version=version, persistor=self._persistor)
@@ -105,7 +114,9 @@ async def _put_dimensions(
             yaml.safe_dump(dimension, stream)
 
 
-async def _get_dimension_name_index(version: Version, persistor: LocalFileModelPersistor):
+async def _get_dimension_name_index(
+    version: Version, persistor: LocalFileModelPersistor
+):
     if not version.model_version:
         return {}
 
@@ -127,6 +138,7 @@ async def _put_dimension_name_index(
     ) as stream:
         yaml.safe_dump(index, stream)
 
+
 async def _put_dimension_version_index(
     index: dict, version: Version, persistor: LocalFileModelPersistor
 ):
@@ -135,7 +147,10 @@ async def _put_dimension_version_index(
     ) as stream:
         yaml.safe_dump(index, stream)
 
-async def _get_dimension_version_index(version: Version, persistor: LocalFileModelPersistor):
+
+async def _get_dimension_version_index(
+    version: Version, persistor: LocalFileModelPersistor
+):
     if not version.model_version:
         return {}
 
@@ -185,13 +200,17 @@ async def _put_fact(fact: dict, version: Version, persistor: LocalFileModelPersi
     ) as stream:
         yaml.safe_dump(fact, stream)
 
-async def _put_facts(facts: list[dict], version: Version, persistor: LocalFileModelPersistor):
+
+async def _put_facts(
+    facts: list[dict], version: Version, persistor: LocalFileModelPersistor
+):
     # TODO - this could be done in parallel perhaps?
     for fact in facts:
         with persistor.open_fact_file_write(
             id_=fact["id_"], version=version.model_version
         ) as stream:
             yaml.safe_dump(fact, stream)
+
 
 async def _get_fact_version_index(version: Version, persistor: LocalFileModelPersistor):
     if not version.model_version:
@@ -210,8 +229,11 @@ async def _get_fact_version_index(version: Version, persistor: LocalFileModelPer
 async def _put_fact_version_index(
     index: dict, version: Version, persistor: LocalFileModelPersistor
 ):
-    with persistor.open_fact_version_index_file_write(version=version.model_version) as stream:
+    with persistor.open_fact_version_index_file_write(
+        version=version.model_version
+    ) as stream:
         yaml.safe_dump(index, stream)
+
 
 async def _get_fact_name_index(version: Version, persistor: LocalFileModelPersistor):
     if not version.model_version:
@@ -230,8 +252,11 @@ async def _get_fact_name_index(version: Version, persistor: LocalFileModelPersis
 async def _put_fact_name_index(
     index: dict, version: Version, persistor: LocalFileModelPersistor
 ):
-    with persistor.open_fact_name_index_file_write(version=version.model_version) as stream:
+    with persistor.open_fact_name_index_file_write(
+        version=version.model_version
+    ) as stream:
         yaml.safe_dump(index, stream)
+
 
 async def _get_max_fact_id(version: Version, persistor: LocalFileModelPersistor) -> int:
     d = await _get_fact_version_index(version=version, persistor=persistor)

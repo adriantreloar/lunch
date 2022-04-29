@@ -1,5 +1,7 @@
 from lunch.mvcc.version import Version, version_from_dict, version_to_dict
-from lunch.storage.transformers.dimension_index_transformer import DimensionIndexTransformer
+from lunch.storage.transformers.dimension_index_transformer import (
+    DimensionIndexTransformer,
+)
 
 NOUGHT = Version(
     version=0,
@@ -22,11 +24,15 @@ TEN_NINE_EIGHT = Version(
 
 def test_add_name_to_empty_names_dict():
     transformer = DimensionIndexTransformer()
-    result = transformer.update_dimension_name_index(index={},changed_names_index={"Foo":1})
+    result = transformer.update_dimension_name_index(
+        index={}, changed_names_index={"Foo": 1}
+    )
     assert result == {"Foo": 1}
+
 
 def test_add_entry_to_empty_versions_dict():
     transformer = DimensionIndexTransformer()
-    result = transformer.update_dimension_version_index(index={}, write_version=TEN_NINE_EIGHT, changed_ids=[1,2,3] )
+    result = transformer.update_dimension_version_index(
+        index={}, write_version=TEN_NINE_EIGHT, changed_ids=[1, 2, 3]
+    )
     assert result == {1: 9, 2: 9, 3: 9}
-

@@ -1,11 +1,12 @@
 import asyncio
-from lunch.examples.setup_managers import version_manager, model_manager
+
+from lunch.examples.setup_managers import model_manager, version_manager
 
 
 async def main():
 
-    d_department = {"name": "Department", "attributes": [{"name":"thing1"}]}
-    d_time = {"name": "Time", "attributes": [{"name":"thing1"}]}
+    d_department = {"name": "Department", "attributes": [{"name": "thing1"}]}
+    d_time = {"name": "Time", "attributes": [{"name": "thing1"}]}
 
     f_sales = {
         "name": "Sales",
@@ -18,7 +19,10 @@ async def main():
             read_version=read_version
         ) as write_version:
             await model_manager.update_model(
-                dimensions=[d_department, d_time], facts=[f_sales], read_version=read_version, write_version=write_version
+                dimensions=[d_department, d_time],
+                facts=[f_sales],
+                read_version=read_version,
+                write_version=write_version,
             )
 
 

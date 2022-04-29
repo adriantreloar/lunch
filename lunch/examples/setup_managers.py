@@ -1,4 +1,3 @@
-import asyncio
 from pathlib import Path
 
 from lunch.managers.model_manager import ModelManager
@@ -24,11 +23,12 @@ from lunch.storage.persistence.local_file_version_persistor import (
 )
 from lunch.storage.serialization.yaml_model_serializer import YamlModelSerializer
 from lunch.storage.serialization.yaml_version_serializer import YamlVersionSerializer
+from lunch.storage.transformers.dimension_index_transformer import (
+    DimensionIndexTransformer,
+)
+from lunch.storage.transformers.fact_index_transformer import FactIndexTransformer
 from lunch.storage.transformers.versions_transformer import VersionsTransformer
 from lunch.storage.version_store import VersionStore
-from lunch.storage.transformers.dimension_index_transformer import DimensionIndexTransformer
-from lunch.storage.transformers.fact_index_transformer import FactIndexTransformer
-
 
 # Validators, Transformers
 version_transformer = VersionsTransformer()
@@ -48,9 +48,7 @@ version_persistor = LocalFileVersionPersistor(
     directory=Path("/home/treloarja/PycharmProjects/lunch/example_output")
 )
 model_persistor = LocalFileModelPersistor(
-    directory=Path(
-        "/home/treloarja/PycharmProjects/lunch/example_output/model"
-    )
+    directory=Path("/home/treloarja/PycharmProjects/lunch/example_output/model")
 )
 
 # Serializers
@@ -65,14 +63,16 @@ model_cache = NullModelCache()
 
 # Storage
 version_store = VersionStore(serializer=version_serializer, cache=version_cache)
-model_store = ModelStore(dimension_comparer=dimension_comparer,
-                         dimension_transformer=dimension_transformer,
-                         dimension_index_transformer=dimension_index_transformer,
-                         fact_transformer=fact_transformer,
-                         fact_index_transformer=fact_index_transformer,
-                         fact_comparer=fact_comparer,
-                         serializer=model_serializer,
-                         cache=model_cache)
+model_store = ModelStore(
+    dimension_comparer=dimension_comparer,
+    dimension_transformer=dimension_transformer,
+    dimension_index_transformer=dimension_index_transformer,
+    fact_transformer=fact_transformer,
+    fact_index_transformer=fact_index_transformer,
+    fact_comparer=fact_comparer,
+    serializer=model_serializer,
+    cache=model_cache,
+)
 
 # Managers
 version_manager = VersionManager(storage=version_store)
@@ -88,4 +88,3 @@ model_manager = ModelManager(
     version_manager=version_manager,
     storage=model_store,
 )
-

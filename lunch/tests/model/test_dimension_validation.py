@@ -4,7 +4,9 @@ import pytest
 import yaml
 
 from lunch.errors.validation_errors import DimensionValidationError
-from lunch.model.dimension.dimension_structure_validator import DimensionStructureValidator as dim_valid
+from lunch.model.dimension.dimension_structure_validator import (
+    DimensionStructureValidator as dim_valid,
+)
 
 
 def test_can_contain_name_key():
@@ -17,7 +19,7 @@ def test_can_contain_name_key():
     [
         ("int", 1),
         ("None", None),
-    ]
+    ],
 )
 def test_can_contain_id(comment, id_):
     dimension = {"name": "Department", "id_": id_}
@@ -32,7 +34,7 @@ def test_can_contain_id(comment, id_):
         ("empty_set", set()),
         ("empty_dict", {}),
         ("empty_string", ""),
-    ]
+    ],
 )
 def test_id_must_be_int(comment, id_):
     dimension = {"name": "Department", "id_": id_}
@@ -44,9 +46,14 @@ def test_id_must_be_int(comment, id_):
     "comment, attributes",
     [
         ("empty_list", []),
-        ("list", [{"name": "foo", "id_": 1}, ]),
+        (
+            "list",
+            [
+                {"name": "foo", "id_": 1},
+            ],
+        ),
         ("None", None),
-    ]
+    ],
 )
 def test_can_contain_attributes_key(comment, attributes):
     assert comment
@@ -63,7 +70,7 @@ def test_can_contain_attributes_key(comment, attributes):
         ("empty_set", set()),
         ("empty_dict", {}),
         ("empty_string", ""),
-    ]
+    ],
 )
 def test_attributes_key_must_be_allowed_type(comment, attributes):
     assert comment

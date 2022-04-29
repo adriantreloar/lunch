@@ -32,16 +32,18 @@ class NullModelCache(ModelCache):
         """
         pass
 
-    async def get_dimension_name_index(self, version: Version) -> dict[str,int]:
+    async def get_dimension_name_index(self, version: Version) -> dict[str, int]:
         raise KeyError(version)
 
-    async def get_dimension_version_index(self, version: Version) -> dict[int,int]:
+    async def get_dimension_version_index(self, version: Version) -> dict[int, int]:
         raise KeyError(version)
 
-    async def put_dimension_name_index(self, index: dict[str,int], version: Version):
+    async def put_dimension_name_index(self, index: dict[str, int], version: Version):
         pass
 
-    async def put_dimension_version_index(self, index: dict[int,int], version: Version):
+    async def put_dimension_version_index(
+        self, index: dict[int, int], version: Version
+    ):
         pass
 
     async def get_max_dimension_id(self, version: Version):

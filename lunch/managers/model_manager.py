@@ -42,7 +42,11 @@ class ModelManager(Conductor):
         self._fact_transformer = fact_transformer
 
     async def update_model(
-        self, dimensions: list[dict], facts: list[dict], read_version: int, write_version: int
+        self,
+        dimensions: list[dict],
+        facts: list[dict],
+        read_version: int,
+        write_version: int,
     ):
         return await _update_model(
             dimensions=dimensions,
@@ -58,6 +62,7 @@ class ModelManager(Conductor):
             version_manager=self._version_manager,
             storage=self._storage,
         )
+
 
 async def _get_dimension_id(
     name: str,
@@ -110,11 +115,15 @@ async def _update_model(
     out_dimensions = []
     for dimension in dimensions:
         dimension_structure_validator.validate(data=dimension)
-        dimension = dimension_transformer.add_attribute_ids_to_dimension(dimension=dimension)
+        dimension = dimension_transformer.add_attribute_ids_to_dimension(
+            dimension=dimension
+        )
         dimension_structure_validator.validate(data=dimension)
         out_dimensions.append(dimension)
 
-    await storage.put_dimensions(read_version=read_version, write_version=write_version, dimensions=dimensions)
+    await storage.put_dimensions(
+        read_version=read_version, write_version=write_version, dimensions=dimensions
+    )
 
     # This could throw a validation error
     for fact in facts:
@@ -125,18 +134,17 @@ async def _update_model(
     #  However, currently checks aren't done before write_version creation, so we will need to create indexes
     #  for dimensions and facts everytime
 
-    await storage.put_facts(read_version=read_version, write_version=write_version, facts=facts)
+    await storage.put_facts(
+        read_version=read_version, write_version=write_version, facts=facts
+    )
 
+    # fact_version_index_read = await storage.get_fact_version_index(version=read_version)
 
-
-
-    #fact_version_index_read = await storage.get_fact_version_index(version=read_version)
-
-    #try:
+    # try:
     #    dimension_id = await _get_dimension_id(
     #        name=dimension_name, version=write_version, storage=storage
     #    )
-    #except KeyError:
+    # except KeyError:
     #
     #    try:
     #        dimension_id = await _get_dimension_id(

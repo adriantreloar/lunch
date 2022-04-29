@@ -135,17 +135,22 @@ class LocalFileModelPersistor(ModelPersistor):
 def _dimension_name_index_file(directory: Path, version: int) -> Path:
     return directory.joinpath(f"{version}/dimension.name.index.yaml")
 
+
 def _dimension_version_index_file(directory: Path, version: int) -> Path:
     return directory.joinpath(f"{version}/dimension.version.index.yaml")
+
 
 def _dimension_file(directory: Path, id_: int, version: int) -> Path:
     return directory.joinpath(f"{version}/dimension.{id_}.yaml")
 
+
 def _fact_name_index_file(directory: Path, version: int) -> Path:
     return directory.joinpath(f"{version}/fact.name.index.yaml")
 
+
 def _fact_version_index_file(directory: Path, version: int) -> Path:
     return directory.joinpath(f"{version}/fact.version.index.yaml")
+
 
 def _fact_file(directory: Path, id_: int, version: int) -> Path:
     return directory.joinpath(f"{version}/fact.{id_}.yaml")

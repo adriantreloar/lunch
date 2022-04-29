@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 # Run all code linters
-# Always exit 0, even in the case of error
 
 # Move to the project root directory
 cd "$( dirname "${BASH_SOURCE[0]}" )/.."

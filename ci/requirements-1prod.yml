@@ -13,6 +13,7 @@ dependencies:
   - distributed
   - jsonschema
   - numpy
+  - pandas
   - uvloop
   - yaml
 

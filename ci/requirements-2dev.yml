@@ -25,3 +25,4 @@ dependencies:
   # packages not available in conda
   - pip:
       - flake8-junit-report
+      - pyinstrument

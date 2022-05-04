@@ -49,7 +49,7 @@ coverage combine
 coverage html
 
 echo "Coverage report generated at file://$PWD/htmlcov/index.html"
-cat buil/junit*.txt
+cat build/junit*.txt
 if (( $FAIL == 1))
 then
   echo "One or more tests failed"

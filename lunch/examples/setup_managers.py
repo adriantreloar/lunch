@@ -14,9 +14,11 @@ from lunch.model.fact.fact_comparer import FactComparer
 from lunch.model.fact.fact_reference_validator import FactReferenceValidator
 from lunch.model.fact.fact_structure_validator import FactStructureValidator
 from lunch.model.fact.fact_transformer import FactTransformer
+from lunch.mvcc.versions_transformer import VersionsTransformer
 from lunch.storage.cache.null_model_cache import NullModelCache
 from lunch.storage.cache.null_version_cache import NullVersionCache
 from lunch.storage.model_store import ModelStore
+from lunch.storage.reference_data_store import ReferenceDataStore
 from lunch.storage.persistence.local_file_model_persistor import LocalFileModelPersistor
 from lunch.storage.persistence.local_file_version_persistor import (
     LocalFileVersionPersistor,
@@ -27,7 +29,6 @@ from lunch.storage.transformers.dimension_index_transformer import (
     DimensionIndexTransformer,
 )
 from lunch.storage.transformers.fact_index_transformer import FactIndexTransformer
-from lunch.storage.transformers.versions_transformer import VersionsTransformer
 from lunch.storage.version_store import VersionStore
 
 # Validators, Transformers
@@ -42,6 +43,7 @@ fact_comparer = FactComparer()
 fact_structure_validator = FactStructureValidator()
 fact_reference_validator = FactReferenceValidator()
 fact_index_transformer = FactIndexTransformer()
+
 
 # Persistence
 version_persistor = LocalFileVersionPersistor(
@@ -88,3 +90,5 @@ model_manager = ModelManager(
     version_manager=version_manager,
     storage=model_store,
 )
+
+reference_data_store = ReferenceDataStore()

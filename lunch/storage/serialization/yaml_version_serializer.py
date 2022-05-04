@@ -2,12 +2,12 @@ from asyncio import Lock
 
 import yaml
 
-from lunch.mvcc.version import Version, version_from_dict, version_to_dict
+from lunch.mvcc.version import Version, version_to_dict
+from lunch.mvcc.versions_transformer import VersionsTransformer
 from lunch.storage.persistence.local_file_version_persistor import (
     LocalFileVersionPersistor,
 )
 from lunch.storage.serialization.version_serializer import VersionSerializer
-from lunch.storage.transformers.versions_transformer import VersionsTransformer
 
 
 class YamlVersionSerializer(VersionSerializer):

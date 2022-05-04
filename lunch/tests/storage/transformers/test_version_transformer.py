@@ -1,5 +1,5 @@
 from lunch.mvcc.version import Version, version_from_dict, version_to_dict
-from lunch.storage.transformers.versions_transformer import VersionsTransformer
+from lunch.mvcc.versions_transformer import VersionsTransformer
 
 NOUGHT = Version(
     version=0,

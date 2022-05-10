@@ -22,7 +22,6 @@ class ModelCache(Cache):
         Clear out half written data in the cache for an aborted write version
 
         :param version: Write version that has been aborted
-        :return:
         """
         raise NotImplementedError("Abstract")
 

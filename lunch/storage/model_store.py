@@ -18,8 +18,6 @@ class ModelStore(Store):
     Like all stores, manage persistence and cache
     """
 
-    pass
-
     def __init__(
         self,
         dimension_transformer: DimensionTransformer,

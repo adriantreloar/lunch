@@ -1,9 +1,9 @@
 from lunch.storage.persistence.persistor import Persistor
 
 
-class ReferenceDataPersistor(Persistor):
+class DimensionDataPersistor(Persistor):
     """
-    Base class for ReferenceDataPersistors
+    Base class for DimensionDataPersistors
     """
 
     pass

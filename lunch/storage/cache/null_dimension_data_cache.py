@@ -1,9 +1,9 @@
 from lunch.mvcc.version import Version
-from lunch.storage.cache.reference_data_cache import ReferenceDataCache
+from lunch.storage.cache.dimension_data_cache import DimensionDataCache
 
 
-class NullReferenceDataCache(ReferenceDataCache):
-    """ReferenceDataCache which does nothing - thus we'll always end up going to the Serializer"""
+class NullDimensionDataCache(DimensionDataCache):
+    """DimensionDataCache which does nothing - thus we'll always end up going to the Serializer"""
 
     #async def get_dimension_id(self, name: str, version: Version) -> dict:
     #    raise KeyError((name, version))

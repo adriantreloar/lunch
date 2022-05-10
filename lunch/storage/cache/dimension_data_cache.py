@@ -2,7 +2,7 @@ from lunch.mvcc.version import Version
 from lunch.storage.cache.cache import Cache
 
 
-class ReferenceDataCache(Cache):
+class DimensionDataCache(Cache):
     """ """
 
     #async def get_dimension(self, id_: int, version: Version) -> dict:

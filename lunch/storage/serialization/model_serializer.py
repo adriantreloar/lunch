@@ -1,5 +1,4 @@
 from lunch.mvcc.version import Version
-from lunch.storage.persistence.model_persistor import ModelPersistor
 from lunch.storage.serialization.serializer import Serializer
 
 

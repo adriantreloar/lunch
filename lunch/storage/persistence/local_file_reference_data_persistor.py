@@ -35,4 +35,4 @@ class LocalFileReferenceDataPersistor(ReferenceDataPersistor):
             yield f
 
 def _dimension_data_version_index_file(directory: Path, version: int) -> Path:
-    return directory.joinpath(f"{version}/dimension_data.version.index.yaml")
+    return directory.joinpath(f"{version}/dimension_data/version.index.yaml")

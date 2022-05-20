@@ -85,3 +85,18 @@ class DimensionTransformer(Transformer):
                     max_id += 1
 
         return out_dimension
+
+    @staticmethod
+    def add_default_storage(dimension: dict, default_storage: dict) -> dict:
+        """
+        Add default storage to a dimension, only if it does not already have storage set.
+        :param dimension: The dimension we are adding storage to
+        :param default_storage: The default storage - a dictionary with only storage info, under the "storage" key
+        :return: The original dimension, if no edit has been made.
+        A copy dimension with storage if no storage was found in the original dimension.
+        """
+        try:
+            dimension["storage"]
+            return dimension
+        except KeyError:
+            return {**dimension, **default_storage}

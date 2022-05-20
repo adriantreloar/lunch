@@ -46,8 +46,14 @@ def _create_dataframe_import_plan(self,
     #  or raise StopIteration once it has everything it needs
 
     # It is the model_manager's job to ensure it is handing out valid dimensions, so don't validate here
-    read_dimension = model_manager.get_dimension(name=dimension_name, version=read_version, add_default_storage=True)
-    write_dimension = model_manager.get_dimension(name=dimension_name, version=write_version, add_default_storage=True)
+    read_dimension = model_manager.get_dimension_by_name(name=dimension_name,
+                                                         version=read_version,
+                                                         add_default_storage=True
+                                                         )
+    write_dimension = model_manager.get_dimension_by_name(name=dimension_name,
+                                                          version=write_version,
+                                                          add_default_storage=True
+                                                          )
 
     # name vs. type/attributes?
     data_columns = data.columns

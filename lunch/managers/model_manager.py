@@ -14,6 +14,7 @@ from lunch.model.fact.fact_structure_validator import FactStructureValidator
 from lunch.model.fact.fact_transformer import FactTransformer
 from lunch.mvcc.version import Version
 from lunch.storage.model_store import ModelStore
+from lunch.globals.global_state import GlobalState
 
 
 class ModelManager(Conductor):
@@ -29,6 +30,7 @@ class ModelManager(Conductor):
         fact_transformer: FactTransformer,
         version_manager: VersionManager,
         storage: ModelStore,
+        global_state: GlobalState
     ):
         self._storage = storage
         self._version_manager = version_manager
@@ -40,6 +42,8 @@ class ModelManager(Conductor):
         self._fact_comparer = fact_comparer
         self._fact_reference_validator = fact_reference_validator
         self._fact_transformer = fact_transformer
+
+        self._global_state = global_state
 
     async def update_model(
         self,
@@ -63,6 +67,26 @@ class ModelManager(Conductor):
             storage=self._storage,
         )
 
+    async def get_dimension_by_name(
+        self,
+        name: str,
+        version: Version,
+        add_default_storage: bool
+    ) -> dict:
+        return await _get_dimension_by_name(name=name,
+                                           version=version,
+                                           add_default_storage=add_default_storage,
+                                           storage=self._storage,
+                                           default_dimension_storage=self._global_state.default_dimension_storage
+                                           )
+
+
+    async def get_dimension(
+        self,
+        id_: int,
+        version: Version,
+    ) -> dict:
+        return await _get_dimension(id_=id_, version=version, storage=self._storage)
 
 async def _get_dimension_id(
     name: str,
@@ -78,6 +102,23 @@ async def _get_dimension(
     storage: ModelStore,
 ) -> dict:
     return await storage.get_dimension(id_=id_, version=version)
+
+
+async def _get_dimension_by_name(
+    name: str,
+    version: Version,
+    add_default_storage: bool,
+    default_storage: dict,
+    dimension_transformer: DimensionTransformer,
+    storage: ModelStore,
+) -> dict:
+    id_ = await _get_dimension_id(name=name, version=version, storage=storage)
+    dim = await _get_dimension(id_=id_, version=version, storage=storage)
+
+    if add_default_storage:
+        dim = dimension_transformer.add_default_storage(dimension=dim, default_storage=default_storage)
+
+    return dim
 
 
 async def _get_fact_id(

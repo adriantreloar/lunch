@@ -16,13 +16,13 @@ class DimensionImportOptimiser(Conductor):
         self._model_manager = model_manager
         self._dimension_import_planner = dimension_import_planner
 
-    def create_dataframe_import_plan(self,
+    async def create_dataframe_import_plan(self,
                                      dimension_name: str,
                                      data: DataFrame,
                                      read_version: Version,
                                      write_version: Version,
                                      ):
-        return _create_dataframe_import_plan(
+        return await _create_dataframe_import_plan(
                                  dimension_name=dimension_name,
                                  data=data,
                                  read_version=read_version,
@@ -31,7 +31,7 @@ class DimensionImportOptimiser(Conductor):
                                  model_manager=self._model_manager,
                                  dimension_data_store=self._dimension_data_store)
 
-def _create_dataframe_import_plan(self,
+async def _create_dataframe_import_plan(self,
                                  dimension_name: str,
                                  data: DataFrame,
                                  read_version: Version,
@@ -46,11 +46,11 @@ def _create_dataframe_import_plan(self,
     #  or raise StopIteration once it has everything it needs
 
     # It is the model_manager's job to ensure it is handing out valid dimensions, so don't validate here
-    read_dimension = model_manager.get_dimension_by_name(name=dimension_name,
+    read_dimension = await model_manager.get_dimension_by_name(name=dimension_name,
                                                          version=read_version,
                                                          add_default_storage=True
                                                          )
-    write_dimension = model_manager.get_dimension_by_name(name=dimension_name,
+    write_dimension = await model_manager.get_dimension_by_name(name=dimension_name,
                                                           version=write_version,
                                                           add_default_storage=True
                                                           )
@@ -60,7 +60,7 @@ def _create_dataframe_import_plan(self,
 
     # TODO - Pass in rules about the capability of the engine - is the engine a grid, or local dask etc.
     #  This will influence the choices the optimiser makes
-    return dimension_import_planner.create_dataframe_import_plan(
+    return await dimension_import_planner.create_dataframe_import_plan(
                                 read_dimension=read_dimension,
                                 write_dimension=write_dimension,
                                 data_columns=data_columns,

@@ -16,8 +16,17 @@ class DimensionImportPlanner(Transformer):
                                      read_dimension_storage_instructions: dict,
                                      write_dimension_storage_instructions: dict,
                                      data_columns: dict,  # name vs. type/attributes?
+                                     dimension_storage_instructions: dict
                                      ) -> dict:
+        """
 
+        :param self:
+        :param read_dimension:
+        :param write_dimension:
+        :param read_dimension_storage_instructions: From dimension storage.
+            Allows the optimiser to know what instructions it has to work with
+        :return:
+        """
 
 
 

@@ -43,7 +43,7 @@ class ReferenceDataManager(Conductor):
                                               data: pd.DataFrame,
                                               read_version: Version,
                                               write_version: Version) -> None:
-        return _update_dimension_from_dataframe(name=name,
+        return await _update_dimension_from_dataframe(name=name,
                                                 data=data,
                                                 read_version=read_version,
                                                 write_version=write_version,
@@ -87,7 +87,7 @@ async def _update_dimension_from_dataframe(name: str,
     # Create import plan
     # We need to query storage (e.g. the indexes) for size hints, so that we can create a decent plan
     # TODO - at some point we may need statistics, to speed this sort of thing up
-    import_plan = dimension_import_optimiser.create_dataframe_import_plan(dimension_name=name,
+    import_plan = await dimension_import_optimiser.create_dataframe_import_plan(dimension_name=name,
                                                                           data=data,
                                                                           read_version=read_version,
                                                                           write_version=write_version,
@@ -97,4 +97,4 @@ async def _update_dimension_from_dataframe(name: str,
     # TODO - log import plan
 
     # Enact import plan
-    return dimension_import_enactor.enact_plan(import_plan, data, read_version, write_version, dimension_data_store)
+    return await dimension_import_enactor.enact_plan(import_plan, data, read_version, write_version, dimension_data_store)

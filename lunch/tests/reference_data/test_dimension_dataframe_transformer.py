@@ -2,7 +2,6 @@ from lunch.reference_data.transformers.dimension_dataframe_transformer import Di
 from pandas import DataFrame
 import numpy as np
 import pytest
-import asyncio
 
 @pytest.mark.asyncio
 async def test_make_dataframe():
@@ -27,10 +26,27 @@ async def test_make_dataframe():
     assert result[2].tolist() == [5,4,3,2,1]
 
 
+@pytest.mark.asyncio
 async def test_merge():
 
-    assert False
+    compare_df = DataFrame([{"a": "foo", "b": 10}, {"a": "bar", "b": 20}])
 
+    source_df = DataFrame([{"a": "bar", "b": 21}, {"a": "baz", "b": 30}])
+
+    key = ["a"]
+
+    result = DimensionDataFrameTransformer.merge(source_df=source_df,
+                                                compare_df=compare_df,
+                                                key=key)
+
+    expected = DataFrame([{"a": "foo", "b": 10},
+                          {"a": "bar", "b": 21},
+                          {"a": "baz", "b": 30}])
+
+    assert expected["a"] == result["a"]
+    assert expected["b"] == result["b"]
+
+@pytest.mark.asyncio
 async def test_columnize():
 
     assert False

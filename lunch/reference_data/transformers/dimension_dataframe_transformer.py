@@ -1,14 +1,14 @@
 from lunch.base_classes.transformer import Transformer
-from pandas import DataFrame, Series
-from numpy import dtype
+import pandas as pd
+import numpy as np
 from typing import AsyncIterable, Iterable, Any
 
 class DimensionDataFrameTransformer(Transformer):
 
     @staticmethod
     def make_dataframe(
-            columns: dict[int, Iterable], dtypes: dict[int, dtype]
-    ) -> DataFrame:
+            columns: dict[int, Iterable], dtypes: dict[int, np.dtype]
+    ) -> pd.DataFrame:
         """
 
         :param columns: dictionary of attribute id to Iterable of values, -1 for index
@@ -19,14 +19,21 @@ class DimensionDataFrameTransformer(Transformer):
 
         series = {column_id: Series(data=iterable, dtype=dtypes.get(column_id, dtype("object"))) for column_id, iterable in columns.items()}
 
-        return DataFrame(series)
+        return pd.DataFrame(series)
 
     @staticmethod
-    def merge(source_df: DataFrame, compare_df: DataFrame, key: list) -> DataFrame:
-        pass
+    def merge(source_df: pd.DataFrame, compare_df: pd.DataFrame, key: list) -> pd.DataFrame:
+        col_names = pd.Index(np.concatenate([source_df.columns, compare_df.columns])).drop_duplicates()
+
+        df = (source_df.set_index(key)
+              .combine_first(compare_df.set_index(key))
+              .reset_index()
+              .reindex(columns=col_names))
+
+        return df
 
     @staticmethod
-    def columnize(data: DataFrame) -> dict[int: Iterable]:
+    def columnize(data: pd.DataFrame) -> dict[int: Iterable]:
         # dictionary of columns? attribute_id : column/iterator
         # index is -1?
         pass

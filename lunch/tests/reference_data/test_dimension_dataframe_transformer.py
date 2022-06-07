@@ -27,7 +27,7 @@ async def test_make_dataframe():
 
 
 @pytest.mark.asyncio
-async def test_merge():
+async def test_basic_merge():
 
     compare_df = DataFrame([{"a": "foo", "b": 10}, {"a": "bar", "b": 20}])
 
@@ -39,12 +39,14 @@ async def test_merge():
                                                 compare_df=compare_df,
                                                 key=key)
 
-    expected = DataFrame([{"a": "foo", "b": 10},
-                          {"a": "bar", "b": 21},
-                          {"a": "baz", "b": 30}])
+    # NOTE - the result has been sorted by key
+    expected = DataFrame([{"a": "bar", "b": 21},
+                          {"a": "baz", "b": 30},
+                          {"a": "foo", "b": 10},
+                          ])
 
-    assert expected["a"] == result["a"]
-    assert expected["b"] == result["b"]
+    assert (expected["a"] == result["a"]).all(), (expected, result)
+    assert (expected["b"] == result["b"]).all(), (expected, result)
 
 @pytest.mark.asyncio
 async def test_columnize():

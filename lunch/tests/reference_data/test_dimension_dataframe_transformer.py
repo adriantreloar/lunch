@@ -103,9 +103,9 @@ async def test_columnize():
 
     result = DimensionDataFrameTransformer.columnize(data=source_df)
 
-    assert list(result[-1][0] == 1)
-    assert list(np.isnan(result[-1][1]))
-    assert list(result[-1][2] == 0)
+    assert list(result[-1])[0] == 1, result[-1]
+    assert np.isnan(list(result[-1])[1]), result[-1]
+    assert list(result[-1])[2] == 0, result[-1]
 
-    assert list(result[1]) == ["bar", "baz", "foo"]
-    assert list(result[2]) == [21, 30, 10]
+    assert list(result[1]) == ["bar", "baz", "foo"], result[1]
+    assert list(result[2]) == [21, 30, 10], result[2]

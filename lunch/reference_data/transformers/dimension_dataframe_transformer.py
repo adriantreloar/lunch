@@ -36,4 +36,9 @@ class DimensionDataFrameTransformer(Transformer):
     def columnize(data: pd.DataFrame) -> dict[int: Iterable]:
         # dictionary of columns? attribute_id : column/iterator
         # index is -1?
-        pass
+
+        output = {}
+        for col in data.columns:
+            output[col] = data[col].tolist()
+
+        return output

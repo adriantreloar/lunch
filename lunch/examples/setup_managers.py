@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from lunch.globals.global_state import GlobalState
 from lunch.managers.model_manager import ModelManager
 from lunch.managers.version_manager import VersionManager
 from lunch.model.dimension.dimension_comparer import DimensionComparer
@@ -18,11 +19,11 @@ from lunch.mvcc.versions_transformer import VersionsTransformer
 from lunch.storage.cache.null_model_cache import NullModelCache
 from lunch.storage.cache.null_version_cache import NullVersionCache
 from lunch.storage.model_store import ModelStore
-from lunch.storage.reference_data_store import ReferenceDataStore
 from lunch.storage.persistence.local_file_model_persistor import LocalFileModelPersistor
 from lunch.storage.persistence.local_file_version_persistor import (
     LocalFileVersionPersistor,
 )
+from lunch.storage.reference_data_store import ReferenceDataStore
 from lunch.storage.serialization.yaml_model_serializer import YamlModelSerializer
 from lunch.storage.serialization.yaml_version_serializer import YamlVersionSerializer
 from lunch.storage.transformers.dimension_index_transformer import (
@@ -30,6 +31,9 @@ from lunch.storage.transformers.dimension_index_transformer import (
 )
 from lunch.storage.transformers.fact_index_transformer import FactIndexTransformer
 from lunch.storage.version_store import VersionStore
+
+# Constant Global State
+global_state = GlobalState()
 
 # Validators, Transformers
 version_transformer = VersionsTransformer()
@@ -89,6 +93,5 @@ model_manager = ModelManager(
     fact_transformer=fact_transformer,
     version_manager=version_manager,
     storage=model_store,
+    global_state=global_state,
 )
-
-reference_data_store = ReferenceDataStore()

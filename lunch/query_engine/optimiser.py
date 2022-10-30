@@ -1,5 +1,6 @@
 from lunch.base_classes.transformer import Transformer
 
+
 class Optimiser(Transformer):
     """Each engine will have its own optimiser.
     Each optimiser knows how to turn generic parse results into particular instructions

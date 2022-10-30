@@ -11,8 +11,8 @@ class YamlModelSerializer(ModelSerializer):
     def __init__(self, persistor: LocalFileModelPersistor):
         self._persistor = persistor
 
-    async def get_dimension(self, name: str, version: Version) -> dict:
-        return await _get_dimension(name, version, self._persistor)
+    async def get_dimension(self, id_: int, version: Version) -> dict:
+        return await _get_dimension(id_, version, self._persistor)
 
     async def put_dimensions(self, dimensions: list[dict], version: Version):
         await _put_dimensions(dimensions, version, self._persistor)
@@ -47,8 +47,12 @@ class YamlModelSerializer(ModelSerializer):
     async def get_max_dimension_id(self, version) -> int:
         return await _get_max_dimension_id(version=version, persistor=self._persistor)
 
-    async def get_fact(self, name: str, version: Version) -> dict:
-        return await _get_fact(name, version, self._persistor)
+    async def get_fact(self, id_: int, version: Version) -> dict:
+        return await _get_fact(
+            id_=id_,
+            version=version,
+            persistor=self._persistor,
+        )
 
     async def put_fact(self, fact: dict, version: Version):
         await _put_fact(fact, version, self._persistor)
@@ -88,6 +92,17 @@ async def _get_dimension_id(
     d = await _get_dimension_index(version=version, persistor=persistor)
 
     return d[name]
+
+
+async def _get_dimension_index(version: Version, persistor: LocalFileModelPersistor):
+    if not version.model_version:
+        return {}
+
+    with persistor.open_dimension_name_index_file_read(
+        version=version.model_version
+    ) as stream:
+        d = yaml.safe_load(stream)
+    return d
 
 
 async def _get_dimension(

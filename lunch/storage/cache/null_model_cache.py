@@ -11,7 +11,7 @@ class NullModelCache(ModelCache):
     async def get_dimension(self, id_: int, version: Version) -> dict:
         raise KeyError((id, version))
 
-    async def put_dimensions(self, dimension: list[dict], version: Version):
+    async def put_dimensions(self, dimensions: list[dict], version: Version):
         pass
 
     async def get_fact_id(self, name: str, version: Version) -> dict:

@@ -1,4 +1,4 @@
 #!/user/bin/env python
 from setuptools import find_packages, setup
 
-setup(packages=find_packages("lunch"))
+setup(packages=find_packages(where="lunch"))

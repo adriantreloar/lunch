@@ -1,8 +1,12 @@
 import yaml
 
 from lunch.mvcc.version import Version
-from lunch.storage.persistence.local_file_reference_data_persistor import LocalFileReferenceDataPersistor
-from lunch.storage.serialization.reference_data_serializer import ReferenceDataSerializer
+from lunch.storage.persistence.local_file_reference_data_persistor import (
+    LocalFileReferenceDataPersistor,
+)
+from lunch.storage.serialization.reference_data_serializer import (
+    ReferenceDataSerializer,
+)
 
 
 class YamlReferenceDataSerializer(ReferenceDataSerializer):
@@ -18,7 +22,9 @@ class YamlReferenceDataSerializer(ReferenceDataSerializer):
             index=index, version=version, persistor=self._persistor
         )
 
-    async def get_dimension_data_version_index(self, version: Version) -> dict[int, int]:
+    async def get_dimension_data_version_index(
+        self, version: Version
+    ) -> dict[int, int]:
         return await _get_dimension_data_version_index(
             version=version, persistor=self._persistor
         )

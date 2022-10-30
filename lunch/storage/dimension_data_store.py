@@ -1,10 +1,11 @@
-from lunch.storage.store import Store
 from lunch.storage.cache.dimension_data_cache import DimensionDataCache
-from lunch.storage.serialization.dimension_data_serializer import DimensionDataSerializer
+from lunch.storage.serialization.dimension_data_serializer import (
+    DimensionDataSerializer,
+)
+from lunch.storage.store import Store
 
 
 class DimensionDataStore(Store):
-
     def __init__(
         self,
         serializer: DimensionDataSerializer,

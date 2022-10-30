@@ -1,9 +1,9 @@
 import os.path
-
 from contextlib import contextmanager
 from pathlib import Path
 
 from lunch.storage.persistence.model_persistor import ModelPersistor
+
 
 class LocalFileModelPersistor(ModelPersistor):
     """Hands out open files for file serializers to write to"""

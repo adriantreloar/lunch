@@ -1,9 +1,9 @@
 import os.path
-
 from contextlib import contextmanager
 from pathlib import Path
 
 from lunch.storage.persistence.reference_data_persistor import ReferenceDataPersistor
+
 
 class LocalFileReferenceDataPersistor(ReferenceDataPersistor):
     """Hands out open files for file serializers to write to.
@@ -19,7 +19,9 @@ class LocalFileReferenceDataPersistor(ReferenceDataPersistor):
         self._directory = directory
 
     def dimension_data_version_index_file(self, version: int) -> Path:
-        return _dimension_data_version_index_file(directory=self._directory, version=version)
+        return _dimension_data_version_index_file(
+            directory=self._directory, version=version
+        )
 
     @contextmanager
     def open_dimension_data_version_index_file_read(self, version: int):
@@ -33,6 +35,7 @@ class LocalFileReferenceDataPersistor(ReferenceDataPersistor):
         Path(os.path.dirname(file_path)).mkdir(parents=True, exist_ok=True)
         with open(file_path, "w") as f:
             yield f
+
 
 def _dimension_data_version_index_file(directory: Path, version: int) -> Path:
     return directory.joinpath(f"{version}/dimension_data/version.index.yaml")

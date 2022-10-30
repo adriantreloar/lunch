@@ -3,7 +3,7 @@ class Constant:
 
     Constants hold unchanging state
 
-    Tests for constants should only need to test that any functions that pull out part of a globals
+    Tests for constants should only need to test that any functions that pull out part of a constant
     return the correct part.
     e.g.
     >>> assert my_constant.constant_tree.leaves == ['leaf1', 'leaf2']

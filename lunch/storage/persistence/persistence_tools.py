@@ -1,6 +1,7 @@
 import re
 import unicodedata
 
+
 def slugify(value, allow_unicode=False):
     """
     Taken from https://github.com/django/django/blob/master/django/utils/text.py

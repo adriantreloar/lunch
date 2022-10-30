@@ -135,7 +135,7 @@ async def _get_dimension(
         return await cache.get_dimension(id_, version)
     except KeyError:
         dimension = await serializer.get_dimension(id_, version)
-        await cache.put_dimension(dimension, version)
+        await cache.put_dimensions(dimensions=[dimension], version=version)
         return dimension
 
 
@@ -238,6 +238,9 @@ async def _put_dimensions(
     # Note - we cache as we put, so that later puts in a transaction can validate against cached data
     await serializer.put_dimensions(dimensions_with_ids_and_versions, write_version)
     await cache.put_dimensions(dimensions_with_ids_and_versions, write_version)
+
+    # TODO 20221031 I don't know what this was for
+    return {}
 
 
 async def _get_max_dimension_id(
@@ -472,6 +475,9 @@ async def _put_facts(
     # Note - we cache as we put, so that later puts in a transaction can validate against cached data
     await serializer.put_facts(facts_with_ids_and_versions, write_version)
     await cache.put_facts(facts_with_ids_and_versions, write_version)
+
+    # TODO 20221030, I don't know what I was intending to return
+    return {}
 
 
 async def _abort_write(

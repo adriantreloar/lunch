@@ -5,7 +5,7 @@ from lunch.storage.cache.cache import Cache
 class DimensionDataCache(Cache):
     """ """
 
-    #async def get_dimension(self, id_: int, version: Version) -> dict:
+    # async def get_dimension(self, id_: int, version: Version) -> dict:
     #    raise NotImplementedError("Abstract")
 
     async def abort_write(self, version: Version):

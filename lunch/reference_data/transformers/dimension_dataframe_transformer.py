@@ -1,13 +1,15 @@
-from lunch.base_classes.transformer import Transformer
-import pandas as pd
+from typing import Any, AsyncIterable, Iterable
+
 import numpy as np
-from typing import AsyncIterable, Iterable, Any
+import pandas as pd
+
+from lunch.base_classes.transformer import Transformer
+
 
 class DimensionDataFrameTransformer(Transformer):
-
     @staticmethod
     def make_dataframe(
-            columns: dict[int, Iterable], dtypes: dict[int, np.dtype]
+        columns: dict[int, Iterable], dtypes: dict[int, np.dtype]
     ) -> pd.DataFrame:
         """
 
@@ -16,24 +18,34 @@ class DimensionDataFrameTransformer(Transformer):
         :return: a pandas DataFrame made of the columns
         """
 
-
-        series = {column_id: Series(data=iterable, dtype=dtypes.get(column_id, dtype("object"))) for column_id, iterable in columns.items()}
+        series = {
+            column_id: Series(
+                data=iterable, dtype=dtypes.get(column_id, dtype("object"))
+            )
+            for column_id, iterable in columns.items()
+        }
 
         return pd.DataFrame(series)
 
     @staticmethod
-    def merge(source_df: pd.DataFrame, compare_df: pd.DataFrame, key: list) -> pd.DataFrame:
-        col_names = pd.Index(np.concatenate([source_df.columns, compare_df.columns])).drop_duplicates()
+    def merge(
+        source_df: pd.DataFrame, compare_df: pd.DataFrame, key: list
+    ) -> pd.DataFrame:
+        col_names = pd.Index(
+            np.concatenate([source_df.columns, compare_df.columns])
+        ).drop_duplicates()
 
-        df = (source_df.set_index(key)
-              .combine_first(compare_df.set_index(key))
-              .reset_index()
-              .reindex(columns=col_names))
+        df = (
+            source_df.set_index(key)
+            .combine_first(compare_df.set_index(key))
+            .reset_index()
+            .reindex(columns=col_names)
+        )
 
         return df
 
     @staticmethod
-    def columnize(data: pd.DataFrame) -> dict[int: Iterable]:
+    def columnize(data: pd.DataFrame) -> dict[int:Iterable]:
         # dictionary of columns? attribute_id : column/iterator
         # index is -1?
 

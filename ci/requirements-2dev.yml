@@ -21,6 +21,7 @@ dependencies:
   - sphinx
   - sphinx-argparse
   - sphinx_rtd_theme
+  - types-PyYAML
 
   # packages not available in conda
   - pip:

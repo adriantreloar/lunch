@@ -5,7 +5,7 @@ from lunch.storage.cache.reference_data_cache import ReferenceDataCache
 class NullReferenceDataCache(ReferenceDataCache):
     """ReferenceDataCache which does nothing - thus we'll always end up going to the Serializer"""
 
-    #async def get_dimension_id(self, name: str, version: Version) -> dict:
+    # async def get_dimension_id(self, name: str, version: Version) -> dict:
     #    raise KeyError((name, version))
 
     async def abort_write(self, version: Version):

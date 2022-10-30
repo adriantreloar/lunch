@@ -8,7 +8,7 @@ class ModelCache(Cache):
     async def get_dimension(self, id_: int, version: Version) -> dict:
         raise NotImplementedError("Abstract")
 
-    async def put_dimensions(self, dimension: list[dict], version: Version):
+    async def put_dimensions(self, dimensions: list[dict], version: Version):
         raise NotImplementedError("Abstract")
 
     async def get_fact(self, id_: int, version: Version) -> dict:

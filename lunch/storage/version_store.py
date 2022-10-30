@@ -39,6 +39,16 @@ class VersionStore(Store):
         """
         return await _begin_write_model(read_version, self._serializer, self._cache)
 
+    async def begin_write_reference_data(self, read_version: Version) -> Version:
+        """
+
+        :param read_version:
+        :return:
+        """
+        return await _begin_write_reference_data(
+            read_version, self._serializer, self._cache
+        )
+
     async def abort(self, version: Version) -> Version:
         """
 
@@ -116,6 +126,32 @@ async def _begin_write_model(
     # TODO
     #  What do we cache and how?
     #  Do we cache uncommitted versions, marked as such?
+
+
+async def _begin_write_reference_data(
+    read_version: Version, serializer: VersionSerializer, cache: VersionCache
+) -> Version:
+    """
+
+    :param read_version:
+    :param serializer:
+    :param cache:
+    :return: Full write version
+    """
+
+    return await serializer.begin_write(
+        read_version=read_version,
+        model=False,
+        reference=True,
+        cube=False,
+        operations=False,
+        website=False,
+    )
+
+    # TODO
+    #  What do we cache and how?
+    #  Do we cache uncommitted versions, marked as such?
+    #  REFACTOR with the other begin writes
 
 
 async def _abort(

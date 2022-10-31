@@ -13,7 +13,7 @@ set -o nounset
 # Sort imports
 isort .
 # Make the code look like a Nazi would find appealing
-black -t py38 .  # py39 not yet available
+black -t py310 .
 flake8 --max-line-length=121
 
 mypy lunch/base_classes

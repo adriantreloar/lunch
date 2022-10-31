@@ -10,8 +10,10 @@ dependencies:
   # Development dependencies
   - black
   - coverage
-  - flake8 = 3.8
+  - flake8 = 5.0.4
   - isort
+  - jupyter = 1.0.0
+  - matplotlib = 3.6.1
   - mypy
   - pytest
   - pytest-asyncio
@@ -27,4 +29,5 @@ dependencies:
   # packages not available in conda
   - pip:
       - flake8-junit-report
+      - graphviz == 0.20.1
       - pyinstrument

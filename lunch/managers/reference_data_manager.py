@@ -1,7 +1,3 @@
-from typing import Any
-
-import dask.dataframe as dd
-
 # TODO - I don't like these imports - it suggests that update_dimension_from_dataframe is a method in the wrong place
 #  Ideally a smidgeon will be left for typing, e.f. pd.DataFrame, dd.DataFrame etc.
 import pandas as pd

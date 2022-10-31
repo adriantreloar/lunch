@@ -132,7 +132,7 @@ class VersionsTransformer(Transformer):
             )
 
     @staticmethod
-    def increment_readers_in_versions(versions_dict: dict, version: Version) -> Version:
+    def increment_readers_in_versions(versions_dict: dict, version: Version) -> dict:
         """
         When doing reads we must increment the number of readers, to prevent live versions being vacuumed
 
@@ -148,7 +148,7 @@ class VersionsTransformer(Transformer):
         return versions_dict_out
 
     @staticmethod
-    def decrement_readers_in_versions(versions_dict: dict, version: Version) -> Version:
+    def decrement_readers_in_versions(versions_dict: dict, version: Version) -> dict:
         """
         When finishing reads we must decrement the number of readers, to allow old versions to be vacuumed
 

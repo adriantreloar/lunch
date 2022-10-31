@@ -37,16 +37,20 @@ class DimensionIndexTransformer(Transformer):
 
     @staticmethod
     def update_dimension_version_index(
-        index: dict[int, int], write_version: Version, changed_ids: list[int]
+        index_: dict[int, int], write_version: Version, changed_ids: list[int]
     ) -> dict[int, int]:
-        copy_index = index.copy()
+        copy_index = index_.copy()
         copy_index.update({id_: write_version.model_version for id_ in changed_ids})
         return copy_index
 
     @staticmethod
     def update_dimension_name_index(
-        index: dict[str:int], changed_names_index: dict[str:int]
+        index_: dict[str, int], changed_names_index: dict[str, int]
     ) -> dict[str, int]:
-        copy_index = index.copy()
+        copy_index = index_.copy()
         copy_index.update(changed_names_index)
         return copy_index
+
+    @staticmethod
+    def get_max_id(dimension_index_dict: dict[str, int]) -> int:
+        return max(dimension_index_dict.values())

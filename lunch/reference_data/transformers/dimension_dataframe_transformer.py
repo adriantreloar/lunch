@@ -45,7 +45,7 @@ class DimensionDataFrameTransformer(Transformer):
         return df
 
     @staticmethod
-    def columnize(data: pd.DataFrame) -> dict[int:Iterable]:
+    def columnize(data: pd.DataFrame) -> dict[int, Iterable]:
         # dictionary of columns? attribute_id : column/iterator
         # index is -1?
 

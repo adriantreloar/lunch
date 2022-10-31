@@ -14,7 +14,7 @@ class NullModelCache(ModelCache):
     async def put_dimensions(self, dimensions: list[dict], version: Version):
         pass
 
-    async def get_fact_id(self, name: str, version: Version) -> dict:
+    async def get_fact_id(self, name: str, version: Version) -> int:
         raise KeyError((name, version))
 
     async def get_fact(self, id_: int, version: Version) -> dict:
@@ -38,11 +38,11 @@ class NullModelCache(ModelCache):
     async def get_dimension_version_index(self, version: Version) -> dict[int, int]:
         raise KeyError(version)
 
-    async def put_dimension_name_index(self, index: dict[str, int], version: Version):
+    async def put_dimension_name_index(self, index_: dict[str, int], version: Version):
         pass
 
     async def put_dimension_version_index(
-        self, index: dict[int, int], version: Version
+        self, index_: dict[int, int], version: Version
     ):
         pass
 
@@ -61,13 +61,13 @@ class NullModelCache(ModelCache):
     async def get_fact_name_index(self, version: Version) -> dict:
         raise KeyError(version)
 
-    async def put_fact_name_index(self, index: dict, version: Version):
+    async def put_fact_name_index(self, index_: dict, version: Version):
         pass
 
     async def get_fact_version_index(self, version: Version) -> dict:
         raise KeyError(version)
 
-    async def put_fact_version_index(self, index: dict, version: Version):
+    async def put_fact_version_index(self, index_: dict, version: Version):
         pass
 
     async def put_facts(self, dimensions: list[dict], version: Version):

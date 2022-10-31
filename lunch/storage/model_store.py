@@ -165,7 +165,7 @@ async def _put_dimensions(
 
     # Check for changes
     dimension_names_with_changes = list(dimensions_without_ids.keys())
-    for dimension in dimensions_with_ids:
+    for dimension in dimensions_with_ids.values():
         id_ = dimension_transformer.get_id_from_dimension(dimension)
 
         previous_dimension = await _get_dimension(
@@ -205,7 +205,7 @@ async def _put_dimensions(
     # All of these have a version of the write-version
     dimensions_version_index_write = (
         dimension_index_transformer.update_dimension_version_index(
-            index=dimensions_version_index_read,
+            index_=dimensions_version_index_read,
             write_version=write_version,
             changed_ids=[
                 dimension["id_"] for dimension in dimensions_with_ids.values()
@@ -214,7 +214,7 @@ async def _put_dimensions(
     )
     dimensions_name_index_write = (
         dimension_index_transformer.update_dimension_name_index(
-            index=dimensions_name_index_read,
+            index_=dimensions_name_index_read,
             changed_names_index={
                 dimension["name"]: dimension["id_"]
                 for dimension in dimensions_with_ids.values()
@@ -223,13 +223,13 @@ async def _put_dimensions(
     )
 
     await _put_dimension_version_index(
-        index=dimensions_version_index_write,
+        index_=dimensions_version_index_write,
         version=write_version,
         serializer=serializer,
         cache=cache,
     )
     await _put_dimension_name_index(
-        index=dimensions_name_index_write,
+        index_=dimensions_name_index_write,
         version=write_version,
         serializer=serializer,
         cache=cache,
@@ -280,23 +280,23 @@ async def _get_dimension_version_index(
 
 
 async def _put_dimension_name_index(
-    index: dict[str, int],
+    index_: dict[str, int],
     version: Version,
     serializer: ModelSerializer,
     cache: ModelCache,
 ):
-    await serializer.put_dimension_name_index(index=index, version=version)
-    await cache.put_dimension_name_index(index=index, version=version)
+    await serializer.put_dimension_name_index(index_=index_, version=version)
+    await cache.put_dimension_name_index(index_=index_, version=version)
 
 
 async def _put_dimension_version_index(
-    index: dict[int, int],
+    index_: dict[int, int],
     version: Version,
     serializer: ModelSerializer,
     cache: ModelCache,
 ):
-    await serializer.put_dimension_version_index(index=index, version=version)
-    await cache.put_dimension_version_index(index=index, version=version)
+    await serializer.put_dimension_version_index(index_=index_, version=version)
+    await cache.put_dimension_version_index(index_=index_, version=version)
 
 
 async def _get_fact_id(
@@ -325,7 +325,7 @@ async def _get_fact(
         return await cache.get_fact(id_, version)
     except KeyError:
         fact = await serializer.get_fact(id_, version)
-        await cache.put_fact(fact, version)
+        await cache.put_facts([fact], version)
         return fact
 
 
@@ -366,23 +366,23 @@ async def _get_fact_version_index(
 
 
 async def _put_fact_name_index(
-    index: dict[str, int],
+    index_: dict[str, int],
     version: Version,
     serializer: ModelSerializer,
     cache: ModelCache,
 ):
-    await serializer.put_fact_name_index(index=index, version=version)
-    await cache.put_fact_name_index(index=index, version=version)
+    await serializer.put_fact_name_index(fact_index=index_, version=version)
+    await cache.put_fact_name_index(index_=index_, version=version)
 
 
 async def _put_fact_version_index(
-    index: dict[int, int],
+    index_: dict[int, int],
     version: Version,
     serializer: ModelSerializer,
     cache: ModelCache,
 ):
-    await serializer.put_fact_version_index(index=index, version=version)
-    await cache.put_fact_version_index(index=index, version=version)
+    await serializer.put_fact_version_index(fact_index=index_, version=version)
+    await cache.put_fact_version_index(index_=index_, version=version)
 
 
 async def _put_facts(
@@ -411,7 +411,7 @@ async def _put_facts(
 
     # Check for changes
     fact_names_with_changes = list(facts_without_ids.keys())
-    for fact in facts_with_ids:
+    for fact in facts_with_ids.values():
         id_ = fact_transformer.get_id_from_fact(fact)
 
         previous_fact = await _get_fact(
@@ -448,25 +448,25 @@ async def _put_facts(
     # All the changed facts will be in facts_with_ids now
     # All of these have a version of the write-version
     facts_version_index_write = fact_index_transformer.update_fact_version_index(
-        index=facts_version_index_read,
+        index_=facts_version_index_read,
         write_version=write_version,
         changed_ids=[fact["id_"] for fact in facts_with_ids.values()],
     )
     facts_name_index_write = fact_index_transformer.update_fact_name_index(
-        index=facts_name_index_read,
+        index_=facts_name_index_read,
         changed_names_index={
             fact["name"]: fact["id_"] for fact in facts_with_ids.values()
         },
     )
 
     await _put_fact_version_index(
-        index=facts_version_index_write,
+        index_=facts_version_index_write,
         version=write_version,
         serializer=serializer,
         cache=cache,
     )
     await _put_fact_name_index(
-        index=facts_name_index_write,
+        index_=facts_name_index_write,
         version=write_version,
         serializer=serializer,
         cache=cache,

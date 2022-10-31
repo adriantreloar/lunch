@@ -52,7 +52,7 @@ async def _enact_plan(
 
     # We are making the
     compare_df = await DimensionDataFrameTransformer.make_dataframe(
-        columns=read_columns, index=read_index
+        columns=read_columns, index_=read_index
     )
 
     merged_df = await DimensionDataFrameTransformer.merge(

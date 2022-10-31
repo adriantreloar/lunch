@@ -1,9 +1,35 @@
 import asyncio
+from pathlib import Path
 
 from lunch.examples.setup_managers import model_manager, version_manager
+from lunch.storage.cache.null_reference_data_cache import NullReferenceDataCache
+from lunch.storage.persistence.local_file_reference_data_persistor import (
+    LocalFileReferenceDataPersistor,
+)  # index etc.
+from lunch.storage.reference_data_store import ReferenceDataStore
+from lunch.storage.serialization.yaml_reference_data_serializer import (
+    YamlReferenceDataSerializer,
+)  # For indexes
 
 
 async def main():
+
+    reference_data_persistor = LocalFileReferenceDataPersistor(
+        directory=Path(
+            "/home/treloarja/PycharmProjects/lunch/example_output/reference/dimension"
+        )
+    )
+    reference_data_cache = NullReferenceDataCache()
+    reference_data_serializer = YamlReferenceDataSerializer(
+        persistor=reference_data_persistor
+    )
+
+    # Dimensions and Hierarchies deserve special structures, but they also need an overall indexer
+    # so that we can check whether Dimensional Data, Hierarchical Data or both have changed
+    # for a given version
+    reference_data_store = ReferenceDataStore(
+        serializer=reference_data_serializer, cache=reference_data_cache
+    )
 
     d_department = {
         "name": "Department",

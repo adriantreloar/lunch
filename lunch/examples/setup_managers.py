@@ -23,7 +23,6 @@ from lunch.storage.persistence.local_file_model_persistor import LocalFileModelP
 from lunch.storage.persistence.local_file_version_persistor import (
     LocalFileVersionPersistor,
 )
-from lunch.storage.reference_data_store import ReferenceDataStore
 from lunch.storage.serialization.yaml_model_serializer import YamlModelSerializer
 from lunch.storage.serialization.yaml_version_serializer import YamlVersionSerializer
 from lunch.storage.transformers.dimension_index_transformer import (

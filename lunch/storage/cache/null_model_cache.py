@@ -5,7 +5,7 @@ from lunch.storage.cache.model_cache import ModelCache
 class NullModelCache(ModelCache):
     """ModelCache which does nothing - thus we'll always end up going to the Serializer"""
 
-    async def get_dimension_id(self, name: str, version: Version) -> dict:
+    async def get_dimension_id(self, name: str, version: Version) -> int:
         raise KeyError((name, version))
 
     async def get_dimension(self, id_: int, version: Version) -> dict:

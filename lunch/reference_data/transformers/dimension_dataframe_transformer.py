@@ -19,8 +19,8 @@ class DimensionDataFrameTransformer(Transformer):
         """
 
         series = {
-            column_id: Series(
-                data=iterable, dtype=dtypes.get(column_id, dtype("object"))
+            column_id: pd.Series(
+                data=iterable, dtype=dtypes.get(column_id, np.dtype("object"))
             )
             for column_id, iterable in columns.items()
         }
@@ -39,7 +39,7 @@ class DimensionDataFrameTransformer(Transformer):
             source_df.set_index(key)
             .combine_first(compare_df.set_index(key))
             .reset_index()
-            .reindex(columns=col_names)
+            .reindex(columns=col_names)  # type: ignore
         )
 
         return df

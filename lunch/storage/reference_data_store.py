@@ -6,6 +6,11 @@ from lunch.storage.store import Store
 
 
 class ReferenceDataStore(Store):
+    """
+    JAT 20221031
+    Not sure what this was for - my guess is cross references for input dimensions
+    """
+
     def __init__(
         self,
         serializer: ReferenceDataSerializer,

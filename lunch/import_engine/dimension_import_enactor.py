@@ -30,7 +30,6 @@ class DimensionImportEnactor(Conductor):
 
 
 async def _enact_plan(
-    self,
     import_plan: dict,
     data: Any,
     read_version: Version,
@@ -44,18 +43,18 @@ async def _enact_plan(
     # TODO we have started with bare instructions, turn into orchestrated thing later
 
     # TODO NEXT - check this is working - if so, see what isn't running in the larger script
-    read_columns, read_index = await dimension_data_store.get(
+    read_columns, read_dtypes = await dimension_data_store.get(
         read_version=read_version,
         dimension_id=import_plan["dimension_id"],
         filter=import_plan.get("read_filter"),
     )
 
     # We are making the
-    compare_df = await DimensionDataFrameTransformer.make_dataframe(
-        columns=read_columns, index_=read_index
+    compare_df = DimensionDataFrameTransformer.make_dataframe(
+        columns=read_columns, dtypes=read_dtypes
     )
 
-    merged_df = await DimensionDataFrameTransformer.merge(
+    merged_df = DimensionDataFrameTransformer.merge(
         source_df=data, compare_df=compare_df, key=import_plan["merge_key"]
     )
 
@@ -64,4 +63,8 @@ async def _enact_plan(
     columnar_data = DimensionDataFrameTransformer.columnize(data=merged_df)
 
     # put will have to handle its indexes too
-    dimension_data_store.put(columnar_data, write_version)
+    await dimension_data_store.put(
+        dimension_id=import_plan["dimension_id"],
+        columnar_data=columnar_data,
+        write_version=write_version,
+    )

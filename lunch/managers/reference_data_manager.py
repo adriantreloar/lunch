@@ -91,8 +91,6 @@ async def _update_dimension_from_dataframe(
         data=data,
         read_version=read_version,
         write_version=write_version,
-        model_manager=model_manager,
-        dimension_data_store=dimension_data_store,
     )
 
     # TODO - log import plan

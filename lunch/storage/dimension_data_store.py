@@ -19,8 +19,7 @@ class DimensionDataStore(Store):
         self._serializer = serializer
         self._cache = cache
 
-    @property
-    def storage_instructions(self):
+    def storage_instructions(self, version: Version):
         return dict()
 
     async def put(

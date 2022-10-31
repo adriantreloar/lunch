@@ -12,13 +12,11 @@ class DimensionImportPlanner(Transformer):
 
     @staticmethod
     def create_dataframe_import_plan(
-        self,
         read_dimension: dict,
         write_dimension: dict,
         read_dimension_storage_instructions: dict,
         write_dimension_storage_instructions: dict,
         data_columns: dict,  # name vs. type/attributes?
-        dimension_storage_instructions: dict,
     ) -> dict:
         """
 

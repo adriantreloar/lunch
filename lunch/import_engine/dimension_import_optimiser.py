@@ -60,11 +60,11 @@ async def _create_dataframe_import_plan(
     )
 
     # name vs. type/attributes?
-    data_columns = data.columns
+    data_columns = {n: t for n, t in zip(data.columns, data.dtypes)}
 
     # TODO - Pass in rules about the capability of the engine - is the engine a grid, or local dask etc.
     #  This will influence the choices the optimiser makes
-    return await dimension_import_planner.create_dataframe_import_plan(
+    return dimension_import_planner.create_dataframe_import_plan(
         read_dimension=read_dimension,
         write_dimension=write_dimension,
         data_columns=data_columns,
@@ -72,5 +72,10 @@ async def _create_dataframe_import_plan(
         # or to get e.g. filenames
         # The store is handing these out, so it had better understand them when they are
         # requested later
-        dimension_storage_instructions=dimension_data_store.storage_instructions,
+        read_dimension_storage_instructions=dimension_data_store.storage_instructions(
+            read_version
+        ),
+        write_dimension_storage_instructions=dimension_data_store.storage_instructions(
+            write_version
+        ),
     )

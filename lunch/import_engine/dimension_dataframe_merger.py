@@ -6,8 +6,7 @@ from lunch.base_classes.transformer import Transformer
 class DimensionDataFrameMerger(Transformer):
     def __init__(
         self, source_df: pd.DataFrame, compare_df: pd.DataFrame, dimension_model: dict
-    ) -> pd.DataFrame:
-
+    ) -> None:
         self._source_dataframe: pd.DataFrame = source_df
         self._compare_dataframe: pd.DataFrame = compare_df
         self._dimension_model: dict = dimension_model

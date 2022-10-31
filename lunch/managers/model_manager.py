@@ -49,8 +49,8 @@ class ModelManager(Conductor):
         self,
         dimensions: list[dict],
         facts: list[dict],
-        read_version: int,
-        write_version: int,
+        read_version: Version,
+        write_version: Version,
     ):
         return await _update_model(
             dimensions=dimensions,
@@ -91,7 +91,7 @@ async def _get_dimension_id(
     name: str,
     version: Version,
     storage: ModelStore,
-) -> dict:
+) -> int:
     return await storage.get_dimension_id(name=name, version=version)
 
 
@@ -126,7 +126,7 @@ async def _get_fact_id(
     name: str,
     version: Version,
     storage: ModelStore,
-) -> dict:
+) -> int:
     return await storage.get_fact_id(name=name, version=version)
 
 
@@ -258,7 +258,7 @@ async def _update_fact(
     if comparison:
 
         if not write_version.version:
-            with await version_manager.write_model_version(
+            async with version_manager.write_model_version(
                 read_version=read_version
             ) as new_write_version:
                 await _check_and_put_fact(
@@ -289,8 +289,8 @@ async def _check_and_put_dimension(
     # Pass the comparison into the reference check, and check references at the write version
     # Referred objects will be in
 
-    return await storage.put_dimension(
-        dimension, read_version=read_version, write_version=write_version
+    return await storage.put_dimensions(
+        [dimension], read_version=read_version, write_version=write_version
     )
 
 
@@ -301,6 +301,6 @@ async def _check_and_put_fact(
     # Pass the comparison into the reference check, and check references at the write version
     # Referred objects will be in
 
-    return await storage.put_fact(
-        fact, read_version=read_version, write_version=write_version
+    return await storage.put_facts(
+        [fact], read_version=read_version, write_version=write_version
     )

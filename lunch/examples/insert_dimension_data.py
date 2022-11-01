@@ -136,7 +136,7 @@ async def main():
             print(plan)
 
             await reference_data_manager.update_dimension_from_dataframe(
-                name="d_test",
+                name="Test",
                 data=df_data,
                 read_version=read_version,
                 write_version=write_version,

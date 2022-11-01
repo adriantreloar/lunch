@@ -12,6 +12,9 @@ Write speeds can be sped up, and calculations and queries made
 parallelisable by adopting a Multi Version Concurrency Control (MVCC) 
 approach to data storage.
 
+Read speeds are sped up by the cache friendly and parallelisable 
+nature of MVCC storage.
+
 This project allows me to try out the following technologies
 + Data oriented programming, with total separation of code and state
 + Automatic job generation for a dask grid using dask array

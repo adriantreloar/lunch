@@ -22,16 +22,16 @@ class YamlModelSerializer(ModelSerializer):
             version=version, persistor=self._persistor
         )
 
-    async def put_dimension_name_index(self, index: dict, version: Version):
+    async def put_dimension_name_index(self, index_: dict, version: Version):
         return await _put_dimension_name_index(
-            index=index, version=version, persistor=self._persistor
+            index_=index_, version=version, persistor=self._persistor
         )
 
     async def put_dimension_version_index(
-        self, index: dict[int, int], version: Version
+        self, index_: dict[int, int], version: Version
     ):
         return await _put_dimension_version_index(
-            index=index, version=version, persistor=self._persistor
+            index_=index_, version=version, persistor=self._persistor
         )
 
     async def get_dimension_version_index(self, version: Version) -> dict[int, int]:
@@ -63,17 +63,17 @@ class YamlModelSerializer(ModelSerializer):
     async def get_fact_name_index(self, version: Version) -> dict:
         return await _get_fact_name_index(version=version, persistor=self._persistor)
 
-    async def put_fact_name_index(self, index: dict, version: Version):
+    async def put_fact_name_index(self, fact_index: dict, version: Version):
         return await _put_fact_name_index(
-            index=index, version=version, persistor=self._persistor
+            index_=fact_index, version=version, persistor=self._persistor
         )
 
     async def get_fact_version_index(self, version: Version) -> dict:
         return await _get_fact_version_index(version=version, persistor=self._persistor)
 
-    async def put_fact_version_index(self, index: dict, version: Version):
+    async def put_fact_version_index(self, fact_index: dict, version: Version):
         return await _put_fact_version_index(
-            index=index, version=version, persistor=self._persistor
+            index_=fact_index, version=version, persistor=self._persistor
         )
 
     async def get_fact_id(self, name: str, version: Version) -> int:
@@ -146,21 +146,21 @@ async def _get_dimension_name_index(
 
 
 async def _put_dimension_name_index(
-    index: dict, version: Version, persistor: LocalFileModelPersistor
+    index_: dict, version: Version, persistor: LocalFileModelPersistor
 ):
     with persistor.open_dimension_name_index_file_write(
         version=version.model_version
     ) as stream:
-        yaml.safe_dump(index, stream)
+        yaml.safe_dump(index_, stream)
 
 
 async def _put_dimension_version_index(
-    index: dict, version: Version, persistor: LocalFileModelPersistor
+    index_: dict, version: Version, persistor: LocalFileModelPersistor
 ):
     with persistor.open_dimension_version_index_file_write(
         version=version.model_version
     ) as stream:
-        yaml.safe_dump(index, stream)
+        yaml.safe_dump(index_, stream)
 
 
 async def _get_dimension_version_index(
@@ -242,12 +242,12 @@ async def _get_fact_version_index(version: Version, persistor: LocalFileModelPer
 
 
 async def _put_fact_version_index(
-    index: dict, version: Version, persistor: LocalFileModelPersistor
+    index_: dict, version: Version, persistor: LocalFileModelPersistor
 ):
     with persistor.open_fact_version_index_file_write(
         version=version.model_version
     ) as stream:
-        yaml.safe_dump(index, stream)
+        yaml.safe_dump(index_, stream)
 
 
 async def _get_fact_name_index(version: Version, persistor: LocalFileModelPersistor):
@@ -265,12 +265,12 @@ async def _get_fact_name_index(version: Version, persistor: LocalFileModelPersis
 
 
 async def _put_fact_name_index(
-    index: dict, version: Version, persistor: LocalFileModelPersistor
+    index_: dict, version: Version, persistor: LocalFileModelPersistor
 ):
     with persistor.open_fact_name_index_file_write(
         version=version.model_version
     ) as stream:
-        yaml.safe_dump(index, stream)
+        yaml.safe_dump(index_, stream)
 
 
 async def _get_max_fact_id(version: Version, persistor: LocalFileModelPersistor) -> int:

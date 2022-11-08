@@ -53,7 +53,7 @@ async def _enact_plan(
         read_version=read_version,
         dimension_id=import_plan.read_dimension["id_"],
         filter=import_plan.read_filter,
-        column_types={attribute_id: dtype.str for attribute_id in (d["_id"] for d in import_plan.read_dimension["attributes"])}
+        column_types={attribute_id: dtype.str for attribute_id in (d["id_"] for d in import_plan.read_dimension["attributes"])}
     )
 
     # We are making the

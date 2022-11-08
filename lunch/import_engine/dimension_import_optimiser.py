@@ -64,6 +64,7 @@ async def _create_dataframe_import_plan(
 
     # TODO - Pass in rules about the capability of the engine - is the engine a grid, or local dask etc.
     #  This will influence the choices the optimiser makes
+    # TODO - merge is hardcoded to the first column - this is obviously a nonsense, but will get us some data in
     return dimension_import_planner.create_dataframe_import_plan(
         read_dimension=read_dimension,
         write_dimension=write_dimension,
@@ -78,4 +79,6 @@ async def _create_dataframe_import_plan(
         write_dimension_storage_instructions=dimension_data_store.storage_instructions(
             write_version
         ),
+        read_filter={},
+        merge_key={0:data.columns[0]},
     )

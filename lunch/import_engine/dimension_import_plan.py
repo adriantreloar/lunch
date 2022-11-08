@@ -7,3 +7,7 @@ class DimensionImportPlan(NamedTuple):
 
     read_filter: dict
     merge_key: dict
+
+    read_dimension_storage_instructions: dict
+    write_dimension_storage_instructions: dict
+    data_columns: dict

@@ -47,8 +47,9 @@ class DimensionDataStore(Store):
         #  if so, we shouldn't need to get them here
 
         try:
-            return await self.cache.get_columns(dimension_id, read_version)
+            column_data = await self._cache.get_columns(dimension_id=dimension_id, version=read_version)
         except KeyError:
-            column_data = await self.serializer.get_columns(dimension_id, read_version, column_types)
-            await self.cache.put_columns(dimension_id=dimension_id, version=read_version, column_data=column_data, column_types=column_types)
-            return column_data, column_types
+            column_data = await self._serializer.get_columns(dimension_id, read_version, column_types)
+            await self._cache.put_columns(dimension_id=dimension_id, version=read_version, column_data=column_data, column_types=column_types)
+
+        return column_data

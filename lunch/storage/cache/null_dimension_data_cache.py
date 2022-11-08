@@ -16,3 +16,7 @@ class NullDimensionDataCache(DimensionDataCache):
         :return:
         """
         pass
+
+    async def get_columns(self, dimension_id: int, version: Version):
+
+        raise KeyError((dimension_id, version))

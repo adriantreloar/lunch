@@ -43,9 +43,10 @@ async def _enact_plan(
     # TODO we have started with bare instructions, turn into orchestrated thing later
 
     # TODO NEXT - check this is working - if so, see what isn't running in the larger script
+
     read_columns, read_dtypes = await dimension_data_store.get(
         read_version=read_version,
-        dimension_id=import_plan["dimension_id"],
+        dimension_id=import_plan["read_dimension"]["id_"],
         filter=import_plan.get("read_filter"),
     )
 
@@ -64,7 +65,7 @@ async def _enact_plan(
 
     # put will have to handle its indexes too
     await dimension_data_store.put(
-        dimension_id=import_plan["dimension_id"],
+        dimension_id=import_plan["write_dimension"]["id_"],
         columnar_data=columnar_data,
         write_version=write_version,
     )

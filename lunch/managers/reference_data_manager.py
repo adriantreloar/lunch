@@ -60,7 +60,7 @@ async def _update_dimension_from_dataframe(
     # TODO - this is a sketched function
     #  everything is in the wrong place, but before we find a home for everything, we need to know what it is doing
     """
-    Dilemna - for a small dimension, we want to get the dimension (or DF) out of cache and merge it
+    Dilemma - for a small dimension, we want to get the dimension (or DF) out of cache and merge it
     However, even then we may wish to do this on a single remote core
     For a large dimension we want to go whole hog
 

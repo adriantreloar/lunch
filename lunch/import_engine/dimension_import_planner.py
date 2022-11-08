@@ -28,4 +28,8 @@ class DimensionImportPlanner(Transformer):
         :return:
         """
 
-        return {}
+        return {"read_dimension":read_dimension,
+                "write_dimension":write_dimension,
+                "read_dimension_storage_instructions":read_dimension_storage_instructions,
+                "write_dimension_storage_instructions": write_dimension_storage_instructions,
+                "data_columns": data_columns}

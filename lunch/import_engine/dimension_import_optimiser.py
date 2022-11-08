@@ -5,7 +5,7 @@ from lunch.import_engine.dimension_import_planner import DimensionImportPlanner
 from lunch.managers.model_manager import ModelManager
 from lunch.mvcc.version import Version
 from lunch.storage.dimension_data_store import DimensionDataStore
-
+from lunch.import_engine.dimension_import_plan import DimensionImportPlan
 
 class DimensionImportOptimiser(Conductor):
     def __init__(
@@ -24,7 +24,7 @@ class DimensionImportOptimiser(Conductor):
         data: DataFrame,
         read_version: Version,
         write_version: Version,
-    ):
+    ) -> DimensionImportPlan:
         return await _create_dataframe_import_plan(
             dimension_name=dimension_name,
             data=data,
@@ -44,7 +44,7 @@ async def _create_dataframe_import_plan(
     dimension_import_planner: DimensionImportPlanner,
     model_manager: ModelManager,
     dimension_data_store: DimensionDataStore,
-):
+) -> DimensionImportPlan:
     # TODO - try to remove the DimensionDataStore - ideally, the DimensionDataStore will be able to handle
     #  generic instructions we give it
 

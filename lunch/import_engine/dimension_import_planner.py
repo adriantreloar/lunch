@@ -1,9 +1,7 @@
 from pandas import DataFrame
 
 from lunch.base_classes.transformer import Transformer
-from lunch.managers.model_manager import ModelManager
-from lunch.mvcc.version import Version
-from lunch.storage.dimension_data_store import DimensionDataStore
+from lunch.import_engine.dimension_import_plan import DimensionImportPlan
 
 
 class DimensionImportPlanner(Transformer):
@@ -17,7 +15,7 @@ class DimensionImportPlanner(Transformer):
         read_dimension_storage_instructions: dict,
         write_dimension_storage_instructions: dict,
         data_columns: dict,  # name vs. type/attributes?
-    ) -> dict:
+    ) -> DimensionImportPlan:
         """
 
         :param self:
@@ -28,8 +26,8 @@ class DimensionImportPlanner(Transformer):
         :return:
         """
 
-        return {"read_dimension":read_dimension,
-                "write_dimension":write_dimension,
-                "read_dimension_storage_instructions":read_dimension_storage_instructions,
-                "write_dimension_storage_instructions": write_dimension_storage_instructions,
-                "data_columns": data_columns}
+        return DimensionImportPlan(read_dimension=read_dimension,
+                                    write_dimension=write_dimension,
+                                    read_dimension_storage_instructions=read_dimension_storage_instructions,
+                                    write_dimension_storage_instructions=write_dimension_storage_instructions,
+                                    data_columns=data_columns)

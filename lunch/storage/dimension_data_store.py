@@ -30,14 +30,25 @@ class DimensionDataStore(Store):
     ) -> None:
         raise NotImplementedError("TODO")
 
-    async def get(
-        self, read_version: Version, dimension_id: int, filter: Any | None
-    ) -> tuple[dict[int, Iterable], dict[int, dtype]]:
+    async def get_columns(
+        self, read_version: Version, dimension_id: int, column_types: dict[int, dtype], filter: Any | None
+    ) -> dict[int, Iterable]:
         """
+        Get columnar data
 
         :param read_version:
         :param dimension_id:
-        :param filter: TDOO not really sure what shape this will be. mongo style filter?
-        :return:
+        :param column_types: attribute_ids vs type for the column, so it can be read from the file
+        :param filter: TODO not really sure what shape this will be. mongo style filter?
+        :return: dict - column integer ids to iterables, dict column integer ids to types
         """
-        raise NotImplementedError("TODO")
+
+        # TODO - surely types should be in the metadata?
+        #  if so, we shouldn't need to get them here
+
+        try:
+            return await self.cache.get_columns(dimension_id, read_version)
+        except KeyError:
+            column_data = await self.serializer.get_columns(dimension_id, read_version, column_types)
+            await self.cache.put_columns(dimension_id=dimension_id, version=read_version, column_data=column_data, column_types=column_types)
+            return column_data, column_types

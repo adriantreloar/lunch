@@ -81,5 +81,5 @@ async def _create_dataframe_import_plan(
             write_version
         ),
         read_filter={},
-        merge_key={0: data.columns[0]},
+        merge_key=[0],
     )

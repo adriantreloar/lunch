@@ -8,7 +8,7 @@ class DimensionImportPlan(NamedTuple):
     write_dimension: dict
 
     read_filter: dict
-    merge_key: dict
+    merge_key: list
 
     read_dimension_storage_instructions: dict
     write_dimension_storage_instructions: dict

@@ -16,7 +16,7 @@ class DimensionImportPlanner(Transformer):
         write_dimension_storage_instructions: dict,
         data_columns: dict,  # name vs. type/attributes?
         read_filter: dict,
-        merge_key: dict,
+        merge_key: list,
     ) -> DimensionImportPlan:
         """
 

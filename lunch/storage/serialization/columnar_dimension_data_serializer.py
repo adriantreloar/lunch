@@ -96,7 +96,6 @@ def _get_attribute_data(
     version: Version,
     persistor: LocalFileColumnarDimensionDataPersistor,
 ) -> Iterable[str]:
-    # TODO - this is not an async iterator is it - we need an async file read
     with persistor.open_attribute_file_read(
         dimension_id=dimension_id,
         attribute_id=attribute_id,

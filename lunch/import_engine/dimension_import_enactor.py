@@ -1,13 +1,15 @@
 from typing import Any
+
 from numpy import dtype
 
 from lunch.base_classes.conductor import Conductor
+from lunch.import_engine.dimension_import_plan import DimensionImportPlan
 from lunch.mvcc.version import Version
 from lunch.reference_data.transformers.dimension_dataframe_transformer import (
     DimensionDataFrameTransformer,
 )
 from lunch.storage.dimension_data_store import DimensionDataStore
-from lunch.import_engine.dimension_import_plan import DimensionImportPlan
+
 
 class DimensionImportEnactor(Conductor):
     def __init__(self):
@@ -49,16 +51,21 @@ async def _enact_plan(
     #  we need an import_plan transformer class
     #  which means we really need an ImportPlan named-dict
 
-    read_columns, read_dtypes = await dimension_data_store.get_columns(
+    column_types = {
+        attribute_id: dtype(str)
+        for attribute_id in (d["id_"] for d in import_plan.read_dimension["attributes"])
+    }
+
+    read_columns = await dimension_data_store.get_columns(
         read_version=read_version,
         dimension_id=import_plan.read_dimension["id_"],
         filter=import_plan.read_filter,
-        column_types={attribute_id: dtype.str for attribute_id in (d["id_"] for d in import_plan.read_dimension["attributes"])}
+        column_types=column_types,
     )
 
     # We are making the
     compare_df = DimensionDataFrameTransformer.make_dataframe(
-        columns=read_columns, dtypes=read_dtypes
+        columns=read_columns, dtypes=column_types
     )
 
     merged_df = DimensionDataFrameTransformer.merge(

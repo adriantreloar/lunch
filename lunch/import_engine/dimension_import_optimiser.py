@@ -1,11 +1,12 @@
 from pandas import DataFrame
 
 from lunch.base_classes.conductor import Conductor
+from lunch.import_engine.dimension_import_plan import DimensionImportPlan
 from lunch.import_engine.dimension_import_planner import DimensionImportPlanner
 from lunch.managers.model_manager import ModelManager
 from lunch.mvcc.version import Version
 from lunch.storage.dimension_data_store import DimensionDataStore
-from lunch.import_engine.dimension_import_plan import DimensionImportPlan
+
 
 class DimensionImportOptimiser(Conductor):
     def __init__(
@@ -80,5 +81,5 @@ async def _create_dataframe_import_plan(
             write_version
         ),
         read_filter={},
-        merge_key={0:data.columns[0]},
+        merge_key={0: data.columns[0]},
     )

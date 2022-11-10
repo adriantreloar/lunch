@@ -28,10 +28,12 @@ class DimensionImportPlanner(Transformer):
         :return:
         """
 
-        return DimensionImportPlan(read_dimension=read_dimension,
-                                    write_dimension=write_dimension,
-                                    read_filter=read_filter,
-                                    merge_key=merge_key,
-                                    read_dimension_storage_instructions=read_dimension_storage_instructions,
-                                    write_dimension_storage_instructions=write_dimension_storage_instructions,
-                                    data_columns=data_columns)
+        return DimensionImportPlan(
+            read_dimension=read_dimension,
+            write_dimension=write_dimension,
+            read_filter=read_filter,
+            merge_key=merge_key,
+            read_dimension_storage_instructions=read_dimension_storage_instructions,
+            write_dimension_storage_instructions=write_dimension_storage_instructions,
+            data_columns=data_columns,
+        )

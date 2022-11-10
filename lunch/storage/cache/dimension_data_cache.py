@@ -1,3 +1,8 @@
+from typing import Iterable, Mapping
+
+from numpy import dtype
+from numpy.typing import DTypeLike
+
 from lunch.mvcc.version import Version
 from lunch.storage.cache.cache import Cache
 
@@ -14,4 +19,16 @@ class DimensionDataCache(Cache):
 
         :param version: Write version that has been aborted
         """
+        raise NotImplementedError("Abstract")
+
+    async def get_columns(self, dimension_id: int, version: Version):
+        raise NotImplementedError("Abstract")
+
+    async def put_columns(
+        self,
+        dimension_id: int,
+        version: Version,
+        column_data: Mapping[int, Iterable],
+        column_types: Mapping[int, DTypeLike],
+    ):
         raise NotImplementedError("Abstract")

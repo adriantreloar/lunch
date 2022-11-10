@@ -1,3 +1,7 @@
+from typing import Any, Iterable, Mapping
+
+from numpy.typing import DTypeLike
+
 from lunch.mvcc.version import Version
 from lunch.storage.cache.dimension_data_cache import DimensionDataCache
 
@@ -20,3 +24,12 @@ class NullDimensionDataCache(DimensionDataCache):
     async def get_columns(self, dimension_id: int, version: Version):
 
         raise KeyError((dimension_id, version))
+
+    async def put_columns(
+        self,
+        dimension_id: int,
+        version: Version,
+        column_data: Mapping[int, Iterable],
+        column_types: Mapping[int, DTypeLike],
+    ):
+        pass

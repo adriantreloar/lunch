@@ -1,4 +1,4 @@
-from typing import Any, AsyncIterable, Iterable
+from typing import AsyncIterable, Iterable, Mapping
 
 import numpy as np
 import pandas as pd
@@ -9,7 +9,7 @@ from lunch.base_classes.transformer import Transformer
 class DimensionDataFrameTransformer(Transformer):
     @staticmethod
     def make_dataframe(
-        columns: dict[int, Iterable], dtypes: dict[int, np.dtype]
+        columns: Mapping[int, Iterable], dtypes: Mapping[int, np.dtype]
     ) -> pd.DataFrame:
         """
 
@@ -29,15 +29,18 @@ class DimensionDataFrameTransformer(Transformer):
 
     @staticmethod
     def merge(
-        source_df: pd.DataFrame, compare_df: pd.DataFrame, key: list
+        source_df: pd.DataFrame, compare_df: pd.DataFrame, key: dict
     ) -> pd.DataFrame:
         col_names = pd.Index(
             np.concatenate([source_df.columns, compare_df.columns])
         ).drop_duplicates()
 
+        # TODO, been a bit sloppy here with the merge key
+        #  I am sure a test will show that it is failing
+        #  as merges haven't been properly written yet
         df = (
-            source_df.set_index(key)
-            .combine_first(compare_df.set_index(key))
+            source_df.set_index(key.keys())
+            .combine_first(compare_df.set_index(key.values()))
             .reset_index()
             .reindex(columns=col_names)  # type: ignore
         )

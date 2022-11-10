@@ -1,4 +1,7 @@
-from typing import Any, AsyncIterator, Iterator
+from typing import Any, AsyncIterable, AsyncIterator, Iterable, Iterator, Mapping
+
+from numpy import dtype
+from numpy.typing import DTypeLike
 
 from lunch.mvcc.version import Version
 from lunch.storage.persistence.local_file_columnar_dimension_data_persistor import (
@@ -56,6 +59,19 @@ class ColumnarDimensionDataSerializer(DimensionDataSerializer):
             persistor=self._persistor,
         )
 
+    async def get_columns(
+        self,
+        read_version: Version,
+        dimension_id: int,
+        column_types: Mapping[int, DTypeLike],
+    ) -> Mapping[int, AsyncIterable]:
+        return await _get_columns(
+            read_version=read_version,
+            dimension_id=dimension_id,
+            column_types=column_types,
+            persistor=self._persistor,
+        )
+
 
 async def _get_index_data(
     dimension_id: int,
@@ -80,6 +96,7 @@ async def _get_attribute_data(
     version: Version,
     persistor: LocalFileColumnarDimensionDataPersistor,
 ) -> AsyncIterator[str]:
+    # TODO - this is not an async iterator is it - we need an async file read
     with persistor.open_attribute_file_read(
         dimension_id=dimension_id,
         attribute_id=attribute_id,
@@ -87,6 +104,23 @@ async def _get_attribute_data(
     ) as f:
         for line in f:
             yield line
+
+
+async def _get_columns(
+    read_version: Version,
+    dimension_id: int,
+    column_types: Mapping[int, DTypeLike],
+    persistor: LocalFileColumnarDimensionDataPersistor,
+) -> Mapping[int, AsyncIterator]:
+    return {
+        attribute_id: _get_attribute_data(
+            dimension_id=dimension_id,
+            attribute_id=attribute_id,
+            version=read_version,
+            persistor=persistor,
+        )
+        for attribute_id, attribute_type in column_types.items()
+    }
 
 
 # TODO - if the dimension is flagged as newlines allowed, then separate with glagolytic, or whatever has been decided

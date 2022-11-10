@@ -35,12 +35,20 @@ class DimensionDataFrameTransformer(Transformer):
             np.concatenate([source_df.columns, compare_df.columns])
         ).drop_duplicates()
 
+        print()
+        print(source_df)
+        print(compare_df)
+
+        print()
+        print(key)
+        print()
+
         # TODO, been a bit sloppy here with the merge key
         #  I am sure a test will show that it is failing
         #  as merges haven't been properly written yet
         df = (
-            source_df.set_index(key.keys())
-            .combine_first(compare_df.set_index(key.values()))
+            source_df.set_index(list(key.values()))
+            .combine_first(compare_df.set_index(list(key.keys())))
             .reset_index()
             .reindex(columns=col_names)  # type: ignore
         )

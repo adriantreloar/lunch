@@ -25,10 +25,10 @@ class ColumnarDimensionDataSerializer(DimensionDataSerializer):
             yield i
 
     # TODO: convert type
-    async def get_attribute_data(
+    def get_attribute_data(
         self, dimension_id: int, attribute_id: int, version: Version
-    ) -> AsyncIterator[str]:
-        async for i in _get_attribute_data(
+    ) -> Iterable[str]:
+        for i in _get_attribute_data(
             dimension_id, attribute_id, version, self._persistor
         ):
             yield i
@@ -64,7 +64,7 @@ class ColumnarDimensionDataSerializer(DimensionDataSerializer):
         read_version: Version,
         dimension_id: int,
         column_types: Mapping[int, DTypeLike],
-    ) -> Mapping[int, AsyncIterable]:
+    ) -> Mapping[int, Iterable]:
         return await _get_columns(
             read_version=read_version,
             dimension_id=dimension_id,
@@ -90,12 +90,12 @@ async def _put_index_data(
     pass
 
 
-async def _get_attribute_data(
+def _get_attribute_data(
     dimension_id: int,
     attribute_id: int,
     version: Version,
     persistor: LocalFileColumnarDimensionDataPersistor,
-) -> AsyncIterator[str]:
+) -> Iterable[str]:
     # TODO - this is not an async iterator is it - we need an async file read
     with persistor.open_attribute_file_read(
         dimension_id=dimension_id,
@@ -111,7 +111,7 @@ async def _get_columns(
     dimension_id: int,
     column_types: Mapping[int, DTypeLike],
     persistor: LocalFileColumnarDimensionDataPersistor,
-) -> Mapping[int, AsyncIterator]:
+) -> Mapping[int, Iterable]:
     return {
         attribute_id: _get_attribute_data(
             dimension_id=dimension_id,

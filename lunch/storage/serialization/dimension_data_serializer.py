@@ -14,5 +14,5 @@ class DimensionDataSerializer(Serializer):
         read_version: Version,
         dimension_id: int,
         column_types: Mapping[int, DTypeLike],
-    ) -> Mapping[int, AsyncIterable]:
+    ) -> Mapping[int, Iterable]:
         raise NotImplementedError("Abstract")

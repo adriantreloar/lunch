@@ -79,8 +79,12 @@ async def _update_dimension_from_dataframe(
 
     """
 
+    # TODO - either during plan creation, or here
+    #  translate the read version to the version of the index of the reference data to the version fo the dimension
+
+
     # Create import plan
-    # We need to query storage (e.g. the indexes) for size hints, so that we can create a decent plan
+    # We need to query storage (e.g. the indexes) for size hints, so that we can create a decent pland
     # TODO - at some point we may need statistics, to speed this sort of thing up
     import_plan = await dimension_import_optimiser.create_dataframe_import_plan(
         dimension_name=name,

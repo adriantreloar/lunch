@@ -58,6 +58,9 @@ async def test_put_indexes_when_putting_dimensions():
         website_version=0,
     )
 
+    # TODO test dimensions with and without ids
+    # TODO test updates to dimension
+
     d_test = {
         "name": "Test",
         "attributes": [
@@ -70,53 +73,40 @@ async def test_put_indexes_when_putting_dimensions():
         ],
     }
 
-    serializer.get_dimension_version_index.return_value = {0: 0, 1: 1}
+    serializer.get_dimension_version_index.return_value = {1: 1}
     serializer.get_dimension_name_index.return_value = {}
-
     serializer.get_max_dimension_id.return_value = 0
 
     await testee_model_store.put_dimensions(
         dimensions=[d_test], read_version=read_version, write_version=write_version
     )
 
+    # Check that all of the gets have been called with the read version
     serializer.get_max_dimension_id.assert_called_with(version=read_version)
+    serializer.get_dimension_version_index.assert_called_with(version=read_version)
+    serializer.get_dimension_name_index.assert_called_with(version=read_version)
 
-    # TODO test dimensions with and without ids
-    # dimension_transformer.get_id_from_dimension(dimension)
+    serializer.put_dimension_version_index.assert_called_with(
+        index_={1: 2}, version=write_version
+    )
+    serializer.put_dimension_name_index.assert_called_with(
+        index_={"Test": 1}, version=write_version
+    )
 
-    # TODO Check for changes
-    # dimension_names_with_changes = list(dimensions_without_ids.keys())
-    #    previous_dimension = await ms._get_dimension(
-    #        id_=id_, version=read_version, serializer=serializer, cache=cache
-    #    )
-
-    # CHECK
-    # dimension_transformer.add_model_version_to_dimension(
-
-    # CHECK
-    # Mock calls to serializer
-    # dimensions_version_index_read = await _get_dimension_version_index(
-    #    version=read_version, serializer=serializer, cache=cache
-    # )
-    # dimensions_name_index_read = await _get_dimension_name_index(
-    #    version=read_version, serializer=serializer, cache=cache
-    # )
-
-    # CHECK
-    # Mock calls to serializer
-    # await _put_dimension_version_index(
-    #    index_=dimensions_version_index_write,
-    #    version=write_version,
-    #    serializer=serializer,
-    #    cache=cache,
-    # )
-    # await _put_dimension_name_index(
-    #    index_=dimensions_name_index_write,
-    #    version=write_version,
-    #    serializer=serializer,
-    #    cache=cache,
-    # )
-
-    # Note - we cache as we put, so that later puts in a transaction can validate against cached data
-    # CHECK
-    # await serializer.put_dimensions(dimensions_with_ids_and_versions, write_version)
+    # NOTE: model version and id have been added to dimension
+    written_dimension = {
+        "id_": 1,
+        "model_version": 2,
+        "name": "Test",
+        "attributes": [
+            {"name": "foo"},
+            {"name": "bar"},
+            {"name": "baz"},
+        ],
+        "key": [
+            "foo",
+        ],
+    }
+    serializer.put_dimensions.assert_called_with(
+        dimensions=[written_dimension], version=write_version
+    )

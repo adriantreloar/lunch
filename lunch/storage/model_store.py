@@ -236,8 +236,12 @@ async def _put_dimensions(
     )
 
     # Note - we cache as we put, so that later puts in a transaction can validate against cached data
-    await serializer.put_dimensions(dimensions_with_ids_and_versions, write_version)
-    await cache.put_dimensions(dimensions_with_ids_and_versions, write_version)
+    await serializer.put_dimensions(
+        dimensions=dimensions_with_ids_and_versions, version=write_version
+    )
+    await cache.put_dimensions(
+        dimensions=dimensions_with_ids_and_versions, version=write_version
+    )
 
 
 async def _get_max_dimension_id(

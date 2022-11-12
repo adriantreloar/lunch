@@ -6,7 +6,6 @@ from lunch.model.dimension.dimension_transformer import DimensionTransformer
 from lunch.model.fact.fact_comparer import FactComparer
 from lunch.model.fact.fact_transformer import FactTransformer
 from lunch.mvcc.version import Version
-from lunch.storage.cache.model_cache import ModelCache
 from lunch.storage.cache.null_model_cache import NullModelCache
 from lunch.storage.model_store import ModelStore
 from lunch.storage.serialization.model_serializer import ModelSerializer
@@ -88,7 +87,6 @@ def v_0_1_2():
     yield v0, v1, v2
 
 
-@pytest.mark.asyncio
 async def test_put_dimensions_first_insert(null_cache_model_store, v_0_1_2, d_test):
 
     testee_model_store, serializer, _ = null_cache_model_store

@@ -42,71 +42,82 @@ def null_cache_model_store():
     yield testee_model_store, serializer, cache
 
 
-@pytest.fixture()
-def d_test():
-    d_test = {
-        "name": "Test",
-        "attributes": [
-            {"name": "foo"},
-            {"name": "bar"},
-            {"name": "baz"},
-        ],
-        "key": [
-            "foo",
-        ],
-    }
-    yield d_test
+d_test = {
+    "name": "Test",
+    "attributes": [
+        {"name": "foo"},
+        {"name": "bar"},
+        {"name": "baz"},
+    ],
+    "key": [
+        "foo",
+    ],
+}
+
+v0 = Version(
+    version=0,
+    model_version=0,
+    reference_data_version=0,
+    cube_data_version=0,
+    operations_version=0,
+    website_version=0,
+)
+v1 = Version(
+    version=1,
+    model_version=1,
+    reference_data_version=0,
+    cube_data_version=0,
+    operations_version=0,
+    website_version=0,
+)
+v2 = Version(
+    version=2,
+    model_version=2,
+    reference_data_version=0,
+    cube_data_version=0,
+    operations_version=0,
+    website_version=0,
+)
 
 
-@pytest.fixture()
-def v_0_1_2():
-    v0 = Version(
-        version=0,
-        model_version=0,
-        reference_data_version=0,
-        cube_data_version=0,
-        operations_version=0,
-        website_version=0,
-    )
-    v1 = Version(
-        version=1,
-        model_version=1,
-        reference_data_version=0,
-        cube_data_version=0,
-        operations_version=0,
-        website_version=0,
-    )
-    v2 = Version(
-        version=2,
-        model_version=2,
-        reference_data_version=0,
-        cube_data_version=0,
-        operations_version=0,
-        website_version=0,
-    )
-    yield v0, v1, v2
-
-
-async def test_put_dimensions_first_insert(null_cache_model_store, v_0_1_2, d_test):
+@pytest.mark.parametrize(
+    "test_input,test_setup,expected_result",
+    [
+        (
+            {"put_dimensions": [d_test], "read_version": v1, "write_version": v2},
+            {
+                "read_version_index": {},
+                "read_name_index": {},
+                "read_max_dimension_id": 0,
+            },
+            {
+                "written_dimensions": [{**d_test, **{"id_": 1, "model_version": 2}}],
+                "written_name_index": {"Test": 1},
+                "written_version_index": {1: 2},  # dimension 1 is at version 2
+            },
+        ),
+        # TODO test dimensions with and without ids
+        # TODO test updates to dimension
+    ],
+)
+async def test_put_dimensions_first_insert(
+    null_cache_model_store, test_setup, test_input, expected_result
+):
 
     testee_model_store, serializer, _ = null_cache_model_store
-    _, v1, v2 = v_0_1_2
 
-    put_dimensions = [d_test]
-    read_version = v1
-    write_version = v2
+    put_dimensions = test_input["put_dimensions"]
+    read_version = test_input["read_version"]
+    write_version = test_input["write_version"]
 
-    read_version_index = {}
-    read_name_index = {}
-    read_max_dimension_id = 0
+    read_version_index = test_setup["read_version_index"]
+    read_name_index = test_setup["read_name_index"]
+    read_max_dimension_id = test_setup["read_max_dimension_id"]
 
     # Model version and id have been added to dimension
-    written_dimensions = [{**d_test, **{"id_": 1, "model_version": 2}}]
-    written_name_index = {"Test": 1}
-    written_version_index = {1: 2}  # dimension 1 is at version 2
-
-    # TODO test dimensions with and without ids
-    # TODO test updates to dimension
+    written_dimensions = expected_result["written_dimensions"]
+    written_name_index = expected_result["written_name_index"]
+    written_version_index = expected_result["written_version_index"]
 
     serializer.get_dimension_version_index.return_value = read_version_index
     serializer.get_dimension_name_index.return_value = read_name_index

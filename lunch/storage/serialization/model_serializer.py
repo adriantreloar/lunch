@@ -9,7 +9,7 @@ class ModelSerializer(Serializer):
     async def get_dimension(self, id_: int, version: Version) -> dict:
         raise NotImplementedError("Abstract")
 
-    async def put_dimensions(self, dimensions: list[dict], version: Version) -> dict:
+    async def put_dimensions(self, dimensions: list[dict], version: Version):
         raise NotImplementedError("Abstract")
 
     async def get_dimension_name_index(self, version: Version) -> dict[str, int]:
@@ -35,7 +35,7 @@ class ModelSerializer(Serializer):
     async def get_fact(self, id_: int, version: Version) -> dict:
         raise NotImplementedError("Abstract")
 
-    async def put_facts(self, facts: list[dict], version: Version) -> dict:
+    async def put_facts(self, facts: list[dict], version: Version):
         raise NotImplementedError("Abstract")
 
     async def get_fact_version_index(self, version: Version) -> dict:

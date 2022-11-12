@@ -58,7 +58,7 @@ class ModelStore(Store):
 
     async def put_dimensions(
         self, dimensions: list[dict], read_version: Version, write_version: Version
-    ) -> dict:
+    ) -> None:
 
         return await _put_dimensions(
             dimensions=dimensions,
@@ -148,7 +148,7 @@ async def _put_dimensions(
     dimension_comparer: DimensionComparer,
     serializer: ModelSerializer,
     cache: ModelCache,
-) -> dict:
+) -> None:
 
     dimensions_with_ids = {}
     dimensions_without_ids = {}
@@ -238,9 +238,6 @@ async def _put_dimensions(
     # Note - we cache as we put, so that later puts in a transaction can validate against cached data
     await serializer.put_dimensions(dimensions_with_ids_and_versions, write_version)
     await cache.put_dimensions(dimensions_with_ids_and_versions, write_version)
-
-    # TODO 20221031 I don't know what this was for
-    return {}
 
 
 async def _get_max_dimension_id(

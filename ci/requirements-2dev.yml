@@ -14,6 +14,7 @@ dependencies:
   - isort
   - jupyter = 1.0.0
   - matplotlib = 3.6.1
+  - mock
   - mypy
   - pytest
   - pytest-asyncio

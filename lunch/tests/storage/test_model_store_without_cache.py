@@ -96,9 +96,23 @@ v2 = Version(
                 "written_name_index": {"Test": 1},
                 "written_version_index": {1: 2},  # dimension 1 is at version 2
             },
-            id="initial_insert_any_dimension",
+            id="initial_insert_of_any_dimension",
         ),
-        # TODO test dimensions with and without ids
+        pytest.param(
+            {"put_dimensions": [{**d_test, **{"id_": 1, "model_version": 1, "name": "Test_Update"}}], "read_version": v1, "write_version": v2},
+            {
+                "read_version_index": {1: 1},  # dimension 1 is at version 1
+                "read_name_index": {"Test": 1},
+                "read_max_dimension_id": 1,
+                "read_dimensions": {(1, v1): {**d_test, **{"id_": 1, "model_version": 1}}},
+            },
+            {
+                "written_dimensions": [{**d_test, **{"id_": 1, "model_version": 2, "name": "Test_Update"}}],
+                "written_name_index": {"Test_Update": 1},
+                "written_version_index": {1: 2},  # dimension 1 is at version 2
+            },
+            id="update_single_dimension",
+        ),
         # TODO test updates to dimension
     ],
 )
@@ -141,7 +155,7 @@ async def test_put_dimensions_first_insert(
     serializer.get_dimension_version_index.assert_called_with(version=read_version)
     serializer.get_dimension_name_index.assert_called_with(version=read_version)
     for id_, version in test_setup["read_dimensions"].keys():
-        serializer.get_dimension.assert_called_with(version=version, dimension_id=id_)
+        serializer.get_dimension.assert_called_with(version=version, id_=id_)
 
     # Check that all of the puts have been put with the write version
     serializer.put_dimension_version_index.assert_called_with(

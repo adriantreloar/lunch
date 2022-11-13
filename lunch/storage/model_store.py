@@ -120,11 +120,11 @@ async def _get_dimension_id(
     name: str, version: Version, serializer: ModelSerializer, cache: ModelCache
 ):
     try:
-        return await cache.get_dimension_id(name, version)
+        return await cache.get_dimension_id(name=name, version=version)
     except KeyError:
-        dimension_id = await serializer.get_dimension_id(name, version)
+        dimension_id = await serializer.get_dimension_id(name=name, version=version)
 
-        await cache.put_dimension_id(dimension_id, name, version)
+        await cache.put_dimension_id(dimension_id=dimension_id, name=name, version=version)
         return dimension_id
 
 
@@ -132,9 +132,9 @@ async def _get_dimension(
     id_: int, version: Version, serializer: ModelSerializer, cache: ModelCache
 ):
     try:
-        return await cache.get_dimension(id_, version)
+        return await cache.get_dimension(id_=id_, version=version)
     except KeyError:
-        dimension = await serializer.get_dimension(id_, version)
+        dimension = await serializer.get_dimension(id_=id_, version=version)
         await cache.put_dimensions(dimensions=[dimension], version=version)
         return dimension
 

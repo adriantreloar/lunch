@@ -83,18 +83,20 @@ v2 = Version(
 @pytest.mark.parametrize(
     "test_input,test_setup,expected_result",
     [
-        (
+        pytest.param(
             {"put_dimensions": [d_test], "read_version": v1, "write_version": v2},
             {
                 "read_version_index": {},
                 "read_name_index": {},
                 "read_max_dimension_id": 0,
+                "read_dimensions": {},
             },
             {
                 "written_dimensions": [{**d_test, **{"id_": 1, "model_version": 2}}],
                 "written_name_index": {"Test": 1},
                 "written_version_index": {1: 2},  # dimension 1 is at version 2
             },
+            id="initial_insert_any_dimension",
         ),
         # TODO test dimensions with and without ids
         # TODO test updates to dimension
@@ -123,6 +125,11 @@ async def test_put_dimensions_first_insert(
     serializer.get_dimension_name_index.return_value = read_name_index
     serializer.get_max_dimension_id.return_value = read_max_dimension_id
 
+    def dimension_id_returns(id_: int, version: Version):
+        return test_setup["read_dimensions"][(id_, version)]
+
+    serializer.get_dimension.side_effect = dimension_id_returns
+
     await testee_model_store.put_dimensions(
         dimensions=put_dimensions,
         read_version=read_version,
@@ -133,6 +140,8 @@ async def test_put_dimensions_first_insert(
     serializer.get_max_dimension_id.assert_called_with(version=read_version)
     serializer.get_dimension_version_index.assert_called_with(version=read_version)
     serializer.get_dimension_name_index.assert_called_with(version=read_version)
+    for id_, version in test_setup["read_dimensions"].keys():
+        serializer.get_dimension.assert_called_with(version=version, dimension_id=id_)
 
     # Check that all of the puts have been put with the write version
     serializer.put_dimension_version_index.assert_called_with(

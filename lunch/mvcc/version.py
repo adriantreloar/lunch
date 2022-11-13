@@ -32,6 +32,9 @@ class Version:
             )
         )
 
+    def __repr__(self):
+        return f"V{self.version}"
+
     def __eq__(self, other: Any):
         if not isinstance(other, Version):
             return False
@@ -50,6 +53,8 @@ class Version:
 
         return True
 
+    def __hash__(self):
+        return self.version
 
 def version_to_dict(version: Version) -> dict:
     return {

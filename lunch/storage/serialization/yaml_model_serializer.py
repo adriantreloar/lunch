@@ -11,11 +11,11 @@ class YamlModelSerializer(ModelSerializer):
     def __init__(self, persistor: LocalFileModelPersistor):
         self._persistor = persistor
 
-    async def get_dimension(self, id_: int, version: Version) -> dict:
-        return await _get_dimension(id_, version, self._persistor)
+    async def get_dimension(self, id_: int, model_version: int) -> dict:
+        return await _get_dimension(id_, model_version, self._persistor)
 
-    async def put_dimensions(self, dimensions: list[dict], version: Version):
-        await _put_dimensions(dimensions, version, self._persistor)
+    async def put_dimensions(self, dimensions: list[dict], model_version: int):
+        await _put_dimensions(dimensions, model_version, self._persistor)
 
     async def get_dimension_name_index(self, version: Version) -> dict[str, int]:
         return await _get_dimension_name_index(
@@ -79,25 +79,23 @@ class YamlModelSerializer(ModelSerializer):
 
 
 async def _get_dimension(
-    id_: int, version: Version, persistor: LocalFileModelPersistor
+    id_: int, model_version: int, persistor: LocalFileModelPersistor
 ):
-    if not version.model_version:
+    if not model_version:
         return {}
 
-    with persistor.open_dimension_file_read(
-        id_=id_, version=version.model_version
-    ) as stream:
+    with persistor.open_dimension_file_read(id_=id_, version=model_version) as stream:
         d = yaml.safe_load(stream)
     return d
 
 
 async def _put_dimensions(
-    dimensions: list[dict], version: Version, persistor: LocalFileModelPersistor
+    dimensions: list[dict], model_version: int, persistor: LocalFileModelPersistor
 ):
     # TODO - this can be done in parallel perhaps
     for dimension in dimensions:
         with persistor.open_dimension_file_write(
-            id_=dimension["id_"], version=version.model_version
+            id_=dimension["id_"], version=model_version
         ) as stream:
             yaml.safe_dump(dimension, stream)
 

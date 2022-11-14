@@ -3,10 +3,10 @@ from lunch.storage.serialization.serializer import Serializer
 
 
 class ModelSerializer(Serializer):
-    async def get_dimension(self, id_: int, version: Version) -> dict:
+    async def get_dimension(self, id_: int, model_version: int) -> dict:
         raise NotImplementedError("Abstract")
 
-    async def put_dimensions(self, dimensions: list[dict], version: Version):
+    async def put_dimensions(self, dimensions: list[dict], model_version: int):
         raise NotImplementedError("Abstract")
 
     async def get_dimension_name_index(self, version: Version) -> dict[str, int]:
@@ -23,7 +23,7 @@ class ModelSerializer(Serializer):
     async def put_dimension_name_index(self, index_: dict[str, int], version: Version):
         raise NotImplementedError("Abstract")
 
-    async def get_max_dimension_id(self, version) -> int:
+    async def get_max_dimension_id(self, version: Version) -> int:
         raise NotImplementedError("Abstract")
 
     async def get_fact_id(self, name: str, version: Version) -> int:

@@ -134,11 +134,17 @@ async def _get_dimension_id(
 async def _get_dimension(
     id_: int, version: Version, serializer: ModelSerializer, cache: ModelCache
 ):
+    version_index = await _get_dimension_version_index(
+        version=version, serializer=serializer, cache=cache
+    )
+
+    model_version: int = version_index[id_]
+
     try:
-        return await cache.get_dimension(id_=id_, version=version)
+        return await cache.get_dimension(id_=id_, model_version=model_version)
     except KeyError:
-        dimension = await serializer.get_dimension(id_=id_, version=version)
-        await cache.put_dimensions(dimensions=[dimension], version=version)
+        dimension = await serializer.get_dimension(id_=id_, model_version=model_version)
+        await cache.put_dimensions(dimensions=[dimension], model_version=model_version)
         return dimension
 
 
@@ -240,10 +246,12 @@ async def _put_dimensions(
 
     # Note - we cache as we put, so that later puts in a transaction can validate against cached data
     await serializer.put_dimensions(
-        dimensions=dimensions_with_ids_and_versions, version=write_version
+        dimensions=dimensions_with_ids_and_versions,
+        model_version=write_version.model_version,
     )
     await cache.put_dimensions(
-        dimensions=dimensions_with_ids_and_versions, version=write_version
+        dimensions=dimensions_with_ids_and_versions,
+        model_version=write_version.model_version,
     )
 
 

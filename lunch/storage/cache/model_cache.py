@@ -5,10 +5,10 @@ from lunch.storage.cache.cache import Cache
 class ModelCache(Cache):
     """ """
 
-    async def get_dimension(self, id_: int, version: Version) -> dict:
+    async def get_dimension(self, id_: int, model_version: int) -> dict:
         raise NotImplementedError("Abstract")
 
-    async def put_dimensions(self, dimensions: list[dict], version: Version):
+    async def put_dimensions(self, dimensions: list[dict], model_version: int):
         raise NotImplementedError("Abstract")
 
     async def get_fact(self, id_: int, version: Version) -> dict:

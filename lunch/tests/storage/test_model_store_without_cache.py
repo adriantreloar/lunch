@@ -53,6 +53,15 @@ d_test = {
         "foo",
     ],
 }
+d_foo = {
+    "name": "Foo",
+    "attributes": [
+        {"name": "foo"},
+    ],
+    "key": [
+        "foo",
+    ],
+}
 
 v0 = Version(
     version=0,
@@ -99,6 +108,21 @@ v2 = Version(
             id="initial_insert_of_any_dimension",
         ),
         pytest.param(
+            {"put_dimensions": [d_test], "read_version": v1, "write_version": v2},
+            {
+                "read_version_index": {1: 1},  # dimension 1 is at version 1
+                "read_name_index": {"Foo": 1},
+                "read_max_dimension_id": 1,
+                "read_dimensions": {},
+            },
+            {
+                "written_dimensions": [{**d_test, **{"id_": 2, "model_version": 2}}],
+                "written_name_index": {"Foo": 1, "Test": 2},
+                "written_version_index": {1: 1, 2: 2},  # dimension 1 is STILL at version 1, dim 2 (d_test) at version 2
+            },
+            id="insert_where_other_dimensions_exist",
+        ),
+        pytest.param(
             {"put_dimensions": [{**d_test, **{"id_": 1, "model_version": 1, "name": "Test_Update"}}], "read_version": v1, "write_version": v2},
             {
                 "read_version_index": {1: 1},  # dimension 1 is at version 1
@@ -113,7 +137,6 @@ v2 = Version(
             },
             id="update_single_dimension",
         ),
-        # TODO test updates to dimension
     ],
 )
 async def test_put_dimensions_first_insert(

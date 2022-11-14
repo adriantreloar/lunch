@@ -93,6 +93,66 @@ v2 = Version(
     "test_input,test_setup,expected_result",
     [
         pytest.param(
+            {"dimension_name": "Test", "read_version": v1},
+            {"read_name_index": {}},
+            {"returned_dimension_id": None},
+            id="no_dimensions_exist",
+        ),
+        pytest.param(
+            {"dimension_name": "Test", "read_version": v1},
+            {"read_name_index": {"Foo": 1, "Bar": 2}},
+            {"returned_dimension_id": None},
+            id="other_dimensions_exist",
+        ),
+        pytest.param(
+            {"dimension_name": "Test", "read_version": v1},
+            {"read_name_index": {"Test": 1}},
+            {"returned_dimension_id": 1},
+            id="dimension_exists_alone",
+        ),
+        pytest.param(
+            {"dimension_name": "Test", "read_version": v1},
+            {"read_name_index": {"Foo": 1, "Test": 2, "Bar": "3"}},
+            {"returned_dimension_id": 2},
+            id="dimension_exists_with_others",
+        ),
+    ],
+)
+async def test_get_dimension_id(
+    null_cache_model_store, test_setup, test_input, expected_result
+):
+
+    testee_model_store, serializer, _ = null_cache_model_store
+
+    dimension_name = test_input["dimension_name"]
+    read_version = test_input["read_version"]
+
+    read_name_index = test_setup["read_name_index"]
+
+    expected_dimension_id = expected_result["returned_dimension_id"]
+
+    serializer.get_dimension_name_index.return_value = read_name_index
+
+    if expected_dimension_id is None:
+
+        # If we don't expect a dimension id to be there, we should get a key error
+        with pytest.raises(KeyError):
+            await testee_model_store.get_dimension_id(
+                name=dimension_name, version=read_version
+            )
+    else:
+
+        returned_dimension_id = await testee_model_store.get_dimension_id(
+            name=dimension_name, version=read_version
+        )
+
+        assert expected_dimension_id == returned_dimension_id
+
+
+@pytest.mark.parametrize(
+    "test_input,test_setup,expected_result",
+    [
+        pytest.param(
             {"put_dimensions": [d_test], "read_version": v1, "write_version": v2},
             {
                 "read_version_index": {},
@@ -204,62 +264,3 @@ async def test_put_dimensions(
         dimensions=written_dimensions, version=write_version
     )
 
-
-@pytest.mark.parametrize(
-    "test_input,test_setup,expected_result",
-    [
-        pytest.param(
-            {"dimension_name": "Test", "read_version": v1},
-            {"read_name_index": {}},
-            {"returned_dimension_id": None},
-            id="no_dimensions_exist",
-        ),
-        pytest.param(
-            {"dimension_name": "Test", "read_version": v1},
-            {"read_name_index": {"Foo": 1, "Bar": 2}},
-            {"returned_dimension_id": None},
-            id="other_dimensions_exist",
-        ),
-        pytest.param(
-            {"dimension_name": "Test", "read_version": v1},
-            {"read_name_index": {"Test": 1}},
-            {"returned_dimension_id": 1},
-            id="dimension_exists_alone",
-        ),
-        pytest.param(
-            {"dimension_name": "Test", "read_version": v1},
-            {"read_name_index": {"Foo": 1, "Test": 2, "Bar": "3"}},
-            {"returned_dimension_id": 2},
-            id="dimension_exists_with_others",
-        ),
-    ],
-)
-async def test_get_dimension_id(
-    null_cache_model_store, test_setup, test_input, expected_result
-):
-
-    testee_model_store, serializer, _ = null_cache_model_store
-
-    dimension_name = test_input["dimension_name"]
-    read_version = test_input["read_version"]
-
-    read_name_index = test_setup["read_name_index"]
-
-    expected_dimension_id = expected_result["returned_dimension_id"]
-
-    serializer.get_dimension_name_index.return_value = read_name_index
-
-    if expected_dimension_id is None:
-
-        # If we don't expect a dimension id to be there, we should get a key error
-        with pytest.raises(KeyError):
-            await testee_model_store.get_dimension_id(
-                name=dimension_name, version=read_version
-            )
-    else:
-
-        returned_dimension_id = await testee_model_store.get_dimension_id(
-            name=dimension_name, version=read_version
-        )
-
-        assert expected_dimension_id == returned_dimension_id

@@ -29,6 +29,12 @@ def test_add_name_to_empty_names_dict():
     )
     assert result == {"Foo": 1}
 
+def test_update_name_in_dict():
+    transformer = DimensionIndexTransformer()
+    result = transformer.update_dimension_name_index(
+        index_={"Foo": 1}, changed_names_index={"Bar": 1}
+    )
+    assert result == {"Bar": 1}
 
 def test_add_entry_to_empty_versions_dict():
     transformer = DimensionIndexTransformer()

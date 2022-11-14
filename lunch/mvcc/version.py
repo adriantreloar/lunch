@@ -56,6 +56,7 @@ class Version:
     def __hash__(self):
         return self.version
 
+
 def version_to_dict(version: Version) -> dict:
     return {
         "version": version.version,

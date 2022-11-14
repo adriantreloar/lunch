@@ -16,6 +16,7 @@ from lunch.storage.transformers.fact_index_transformer import FactIndexTransform
 class ModelStore(Store):
     """Manage storage for the Model (dimensions, schemas etc.)
     Like all stores, manage persistence and cache
+    Unfortunately (from single responsibility perspective) also routes index reads and writes
     """
 
     def __init__(

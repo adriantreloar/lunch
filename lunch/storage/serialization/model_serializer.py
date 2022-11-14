@@ -3,9 +3,6 @@ from lunch.storage.serialization.serializer import Serializer
 
 
 class ModelSerializer(Serializer):
-    async def get_dimension_id(self, name: str, version: Version) -> int:
-        raise NotImplementedError("Abstract")
-
     async def get_dimension(self, id_: int, version: Version) -> dict:
         raise NotImplementedError("Abstract")
 

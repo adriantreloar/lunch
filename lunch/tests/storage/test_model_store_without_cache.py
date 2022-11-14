@@ -118,20 +118,33 @@ v2 = Version(
             {
                 "written_dimensions": [{**d_test, **{"id_": 2, "model_version": 2}}],
                 "written_name_index": {"Foo": 1, "Test": 2},
-                "written_version_index": {1: 1, 2: 2},  # dimension 1 is STILL at version 1, dim 2 (d_test) at version 2
+                "written_version_index": {
+                    1: 1,
+                    2: 2,
+                },  # dimension 1 is STILL at version 1, dim 2 (d_test) at version 2
             },
             id="insert_where_other_dimensions_exist",
         ),
         pytest.param(
-            {"put_dimensions": [{**d_test, **{"id_": 1, "model_version": 1, "name": "Test_Update"}}], "read_version": v1, "write_version": v2},
+            {
+                "put_dimensions": [
+                    {**d_test, **{"id_": 1, "model_version": 1, "name": "Test_Update"}}
+                ],
+                "read_version": v1,
+                "write_version": v2,
+            },
             {
                 "read_version_index": {1: 1},  # dimension 1 is at version 1
                 "read_name_index": {"Test": 1},
                 "read_max_dimension_id": 1,
-                "read_dimensions": {(1, v1): {**d_test, **{"id_": 1, "model_version": 1}}},
+                "read_dimensions": {
+                    (1, v1): {**d_test, **{"id_": 1, "model_version": 1}}
+                },
             },
             {
-                "written_dimensions": [{**d_test, **{"id_": 1, "model_version": 2, "name": "Test_Update"}}],
+                "written_dimensions": [
+                    {**d_test, **{"id_": 1, "model_version": 2, "name": "Test_Update"}}
+                ],
                 "written_name_index": {"Test_Update": 1},
                 "written_version_index": {1: 2},  # dimension 1 is at version 2
             },
@@ -139,7 +152,7 @@ v2 = Version(
         ),
     ],
 )
-async def test_put_dimensions_first_insert(
+async def test_put_dimensions(
     null_cache_model_store, test_setup, test_input, expected_result
 ):
 
@@ -190,3 +203,75 @@ async def test_put_dimensions_first_insert(
     serializer.put_dimensions.assert_called_with(
         dimensions=written_dimensions, version=write_version
     )
+
+
+@pytest.mark.parametrize(
+    "test_input,test_setup,expected_result",
+    [
+        pytest.param(
+            {"dimension_name": "Test", "read_version": v1},
+            {"read_name_index": {}},
+            {"returned_dimension_id": None},
+            id="no_dimensions_exist",
+        ),
+        #        pytest.param(
+        #            {"put_dimensions": [d_test], "read_version": v1, "write_version": v2},
+        #            {
+        #                "read_version_index": {1: 1},  # dimension 1 is at version 1
+        #                "read_name_index": {"Foo": 1},
+        #                "read_max_dimension_id": 1,
+        #                "read_dimensions": {},
+        #            },
+        #            {
+        #                "written_dimensions": [{**d_test, **{"id_": 2, "model_version": 2}}],
+        #                "written_name_index": {"Foo": 1, "Test": 2},
+        #                "written_version_index": {1: 1, 2: 2},  # dimension 1 is STILL at version 1, dim 2 (d_test) at version 2
+        #            },
+        #            id="insert_where_other_dimensions_exist",
+        #        ),
+        #        pytest.param(
+        #            {"put_dimensions": [{**d_test, **{"id_": 1, "model_version": 1, "name": "Test_Update"}}], "read_version": v1, "write_version": v2},
+        #            {
+        #                "read_version_index": {1: 1},  # dimension 1 is at version 1
+        #                "read_name_index": {"Test": 1},
+        #                "read_max_dimension_id": 1,
+        #                "read_dimensions": {(1, v1): {**d_test, **{"id_": 1, "model_version": 1}}},
+        #            },
+        #            {
+        #                "written_dimensions": [{**d_test, **{"id_": 1, "model_version": 2, "name": "Test_Update"}}],
+        #                "written_name_index": {"Test_Update": 1},
+        #                "written_version_index": {1: 2},  # dimension 1 is at version 2
+        #            },
+        #            id="update_single_dimension",
+        #        ),
+    ],
+)
+async def test_get_dimension_id(
+    null_cache_model_store, test_setup, test_input, expected_result
+):
+
+    testee_model_store, serializer, _ = null_cache_model_store
+
+    dimension_name = test_input["dimension_name"]
+    read_version = test_input["read_version"]
+
+    read_name_index = test_setup["read_name_index"]
+
+    expected_dimension_id = expected_result["returned_dimension_id"]
+
+    serializer.get_dimension_name_index.return_value = read_name_index
+
+    if expected_dimension_id is None:
+
+        # If we don't expect a dimension id to be there, we should get a key error
+        with pytest.raises(KeyError):
+            await testee_model_store.get_dimension_id(
+                name=dimension_name, version=read_version
+            )
+    else:
+
+        returned_dimension_id = await testee_model_store.get_dimension_id(
+            name=dimension_name, version=read_version
+        )
+
+        assert expected_dimension_id == returned_dimension_id

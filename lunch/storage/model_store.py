@@ -120,13 +120,15 @@ class ModelStore(Store):
 async def _get_dimension_id(
     name: str, version: Version, serializer: ModelSerializer, cache: ModelCache
 ):
-    try:
-        return await cache.get_dimension_id(name=name, version=version)
-    except KeyError:
-        dimension_id = await serializer.get_dimension_id(name=name, version=version)
 
-        await cache.put_dimension_id(dimension_id=dimension_id, name=name, version=version)
-        return dimension_id
+    if not version.model_version:
+        raise KeyError(name, version.model_version)
+
+    dimension_name_index = await _get_dimension_name_index(
+        version=version, serializer=serializer, cache=cache
+    )
+
+    return dimension_name_index[name]
 
 
 async def _get_dimension(
@@ -266,7 +268,13 @@ async def _get_dimension_name_index(
     try:
         return await cache.get_dimension_name_index(version=version)
     except KeyError:
-        return await serializer.get_dimension_name_index(version=version)
+        dimension_name_index = await serializer.get_dimension_name_index(
+            version=version
+        )
+        await cache.put_dimension_name_index(
+            version=version, index_=dimension_name_index
+        )
+        return dimension_name_index
 
 
 async def _get_dimension_version_index(

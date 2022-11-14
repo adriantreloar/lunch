@@ -47,10 +47,10 @@ class DimensionIndexTransformer(Transformer):
     def update_dimension_name_index(
         index_: dict[str, int], changed_names_index: dict[str, int]
     ) -> dict[str, int]:
-        reversed_index = {v:k for k,v in index_.items()}
-        reversed_changed_names_index = {v:k for k,v in changed_names_index.items()}
+        reversed_index = {v: k for k, v in index_.items()}
+        reversed_changed_names_index = {v: k for k, v in changed_names_index.items()}
         reversed_index.update(reversed_changed_names_index)
-        return {v:k for k,v in reversed_index.items()}
+        return {v: k for k, v in reversed_index.items()}
 
     @staticmethod
     def get_max_id(dimension_index_dict: dict[str, int]) -> int:

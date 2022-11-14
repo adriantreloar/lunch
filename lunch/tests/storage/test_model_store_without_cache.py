@@ -214,36 +214,24 @@ async def test_put_dimensions(
             {"returned_dimension_id": None},
             id="no_dimensions_exist",
         ),
-        #        pytest.param(
-        #            {"put_dimensions": [d_test], "read_version": v1, "write_version": v2},
-        #            {
-        #                "read_version_index": {1: 1},  # dimension 1 is at version 1
-        #                "read_name_index": {"Foo": 1},
-        #                "read_max_dimension_id": 1,
-        #                "read_dimensions": {},
-        #            },
-        #            {
-        #                "written_dimensions": [{**d_test, **{"id_": 2, "model_version": 2}}],
-        #                "written_name_index": {"Foo": 1, "Test": 2},
-        #                "written_version_index": {1: 1, 2: 2},  # dimension 1 is STILL at version 1, dim 2 (d_test) at version 2
-        #            },
-        #            id="insert_where_other_dimensions_exist",
-        #        ),
-        #        pytest.param(
-        #            {"put_dimensions": [{**d_test, **{"id_": 1, "model_version": 1, "name": "Test_Update"}}], "read_version": v1, "write_version": v2},
-        #            {
-        #                "read_version_index": {1: 1},  # dimension 1 is at version 1
-        #                "read_name_index": {"Test": 1},
-        #                "read_max_dimension_id": 1,
-        #                "read_dimensions": {(1, v1): {**d_test, **{"id_": 1, "model_version": 1}}},
-        #            },
-        #            {
-        #                "written_dimensions": [{**d_test, **{"id_": 1, "model_version": 2, "name": "Test_Update"}}],
-        #                "written_name_index": {"Test_Update": 1},
-        #                "written_version_index": {1: 2},  # dimension 1 is at version 2
-        #            },
-        #            id="update_single_dimension",
-        #        ),
+        pytest.param(
+            {"dimension_name": "Test", "read_version": v1},
+            {"read_name_index": {"Foo": 1, "Bar": 2}},
+            {"returned_dimension_id": None},
+            id="other_dimensions_exist",
+        ),
+        pytest.param(
+            {"dimension_name": "Test", "read_version": v1},
+            {"read_name_index": {"Test": 1}},
+            {"returned_dimension_id": 1},
+            id="dimension_exists_alone",
+        ),
+        pytest.param(
+            {"dimension_name": "Test", "read_version": v1},
+            {"read_name_index": {"Foo": 1, "Test": 2, "Bar": "3"}},
+            {"returned_dimension_id": 2},
+            id="dimension_exists_with_others",
+        ),
     ],
 )
 async def test_get_dimension_id(

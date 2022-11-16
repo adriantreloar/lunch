@@ -17,6 +17,14 @@ class DimensionDataSerializer(Serializer):
     ) -> Mapping[int, Iterable]:
         raise NotImplementedError("Abstract")
 
+    async def put_columns(
+        self,
+        version: Version,
+        dimension_id: int,
+        columns: Mapping[int, Iterable],
+    ) -> None:
+        raise NotImplementedError("Abstract")
+
     async def get_version_index(self, version: Version) -> dict[int, int]:
         raise NotImplementedError("Abstract")
 

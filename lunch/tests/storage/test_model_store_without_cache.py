@@ -304,8 +304,26 @@ async def test_put_dimensions(
     written_name_index = expected_result["written_name_index"]
     written_version_index = expected_result["written_version_index"]
 
-    serializer.get_dimension_version_index.return_value = read_version_index
-    serializer.get_dimension_name_index.return_value = read_name_index
+    # Raise an error the first time we try to read the WRITE index
+    # we'll read the read index if we aren't already in the process of writing
+    is_first_time_reading_write_version = [True]
+
+    def dimension_version_index_returns(version: Version):
+        if is_first_time_reading_write_version[0] and version == write_version:
+            is_first_time_reading_write_version[0] = False
+            raise KeyError(version)
+        return read_version_index
+
+    is_first_time_reading_write_name_version = [True]
+
+    def dimension_name_index_returns(version: Version):
+        if is_first_time_reading_write_name_version[0] and version == write_version:
+            is_first_time_reading_write_name_version[0] = False
+            raise KeyError(version)
+        return read_name_index
+
+    serializer.get_dimension_version_index.side_effect = dimension_version_index_returns
+    serializer.get_dimension_name_index.side_effect = dimension_name_index_returns
     serializer.get_max_dimension_id.return_value = read_max_dimension_id
 
     def dimension_id_returns(id_: int, model_version: int):

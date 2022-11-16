@@ -28,8 +28,7 @@ class NullDimensionDataCache(DimensionDataCache):
     async def put_columns(
         self,
         dimension_id: int,
-        reference_data_version: int,
-        column_data: Mapping[int, Iterable],
-        column_types: Mapping[int, DTypeLike],
+        version: Version,
+        columns: Mapping[int, Iterable],
     ):
         pass

@@ -1,3 +1,4 @@
+import asyncio
 from typing import Any, AsyncIterable, AsyncIterator, Iterable, Iterator, Mapping
 
 # TODO, don't use YAML, use binary index file, maybe move index file creation off separately
@@ -45,19 +46,18 @@ class ColumnarDimensionDataSerializer(DimensionDataSerializer):
             persistor=self._persistor,
         )
 
-    # TODO: convert type, or have different methods for different types - e.g. string, string with newlines, etc.
     async def put_attribute_data(
         self,
         dimension_id: int,
         attribute_id: int,
         version: Version,
-        attribute_iterator: Iterator[Any],
+        attribute_data: Iterable[Any],
     ) -> None:
         await _put_attribute_data(
             dimension_id=dimension_id,
             version=version,
             attribute_id=attribute_id,
-            attribute_iterator=attribute_iterator,
+            attribute_data=attribute_data,
             persistor=self._persistor,
         )
 
@@ -74,6 +74,19 @@ class ColumnarDimensionDataSerializer(DimensionDataSerializer):
             persistor=self._persistor,
         )
 
+    async def put_columns(
+        self,
+        version: Version,
+        dimension_id: int,
+        columns: Mapping[int, Iterable],
+    ) -> None:
+        return await _put_columns(
+            version=version,
+            dimension_id=dimension_id,
+            columns=columns,
+            persistor=self._persistor,
+        )
+
 
 async def _get_version_index(
     version: Version, persistor: LocalFileColumnarDimensionDataPersistor
@@ -81,10 +94,13 @@ async def _get_version_index(
     if not version.reference_data_version:
         return {}
 
-    with persistor.open_version_index_file_read(
-        version=version.reference_data_version,
-    ) as stream:
-        version_index = yaml.safe_load(stream)
+    try:
+        with persistor.open_version_index_file_read(
+            version=version.reference_data_version,
+        ) as stream:
+            version_index = yaml.safe_load(stream)
+    except FileNotFoundError:
+        raise KeyError(version)
 
     return version_index
 
@@ -147,6 +163,26 @@ async def _get_columns(
     }
 
 
+async def _put_columns(
+    version: Version,
+    dimension_id: int,
+    columns: Mapping[int, Iterable],
+    persistor: LocalFileColumnarDimensionDataPersistor,
+) -> None:
+    coros = [
+        _put_attribute_data(
+            dimension_id=dimension_id,
+            attribute_id=attribute_id,
+            attribute_data=attribute_data,
+            version=version,
+            persistor=persistor,
+        )
+        for attribute_id, attribute_data in columns.items()
+    ]
+
+    await asyncio.gather(*coros)
+
+
 # TODO - if the dimension is flagged as newlines allowed, then separate with glagolytic, or whatever has been decided
 #  or have a version of this code that has two files - one for the strings, and one for start positions of the strings
 #  a further extension is to add bitmap indices to another file, for nullability
@@ -154,7 +190,7 @@ async def _put_attribute_data(
     dimension_id: int,
     attribute_id: int,
     version: Version,
-    attribute_iterator: Iterator[Any],
+    attribute_data: Iterable[Any],
     persistor: LocalFileColumnarDimensionDataPersistor,
 ) -> None:
     with persistor.open_attribute_file_write(
@@ -162,6 +198,6 @@ async def _put_attribute_data(
         attribute_id=attribute_id,
         version=version.reference_data_version,
     ) as f:
-        for attribute in attribute_iterator:
+        for attribute in attribute_data:
             f.write(str(attribute))
             f.write("\n")

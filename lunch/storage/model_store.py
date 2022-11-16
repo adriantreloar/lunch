@@ -203,18 +203,31 @@ async def _put_dimensions(
         )
         dimensions_with_ids_and_versions.append(out_dimension)
 
-    dimensions_version_index_read = await _get_dimension_version_index(
-        version=read_version, serializer=serializer, cache=cache
-    )
-    dimensions_name_index_read = await _get_dimension_name_index(
-        version=read_version, serializer=serializer, cache=cache
-    )
+    # We may have already started work on the write index
+    # If we can't find it start a new one
+    try:
+        dimensions_version_index_write = await _get_dimension_version_index(
+            version=write_version, serializer=serializer, cache=cache
+        )
+    except KeyError:
+        dimensions_version_index_write = await _get_dimension_version_index(
+            version=read_version, serializer=serializer, cache=cache
+        )
+
+    try:
+        dimensions_name_index_write = await _get_dimension_name_index(
+            version=write_version, serializer=serializer, cache=cache
+        )
+    except KeyError:
+        dimensions_name_index_write = await _get_dimension_name_index(
+            version=read_version, serializer=serializer, cache=cache
+        )
 
     # All the changed dimensions will be in dimensions_with_ids now
     # All of these have a version of the write-version
     dimensions_version_index_write = (
         dimension_index_transformer.update_dimension_version_index(
-            index_=dimensions_version_index_read,
+            index_=dimensions_version_index_write,
             write_version=write_version,
             changed_ids=[
                 dimension["id_"] for dimension in dimensions_with_ids.values()
@@ -223,7 +236,7 @@ async def _put_dimensions(
     )
     dimensions_name_index_write = (
         dimension_index_transformer.update_dimension_name_index(
-            index_=dimensions_name_index_read,
+            index_=dimensions_name_index_write,
             changed_names_index={
                 dimension["name"]: dimension["id_"]
                 for dimension in dimensions_with_ids.values()

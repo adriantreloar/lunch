@@ -56,21 +56,25 @@ async def _enact_plan(
         for attribute_id in (d["id_"] for d in import_plan.read_dimension["attributes"])
     }
 
-    read_columns = await dimension_data_store.get_columns(
-        read_version=read_version,
-        dimension_id=import_plan.read_dimension["id_"],
-        filter=import_plan.read_filter,
-        column_types=column_types,
-    )
+    try:
+        read_columns = await dimension_data_store.get_columns(
+            read_version=read_version,
+            dimension_id=import_plan.read_dimension["id_"],
+            filter=import_plan.read_filter,
+            column_types=column_types,
+        )
+    except KeyError:
+        # The first time we have had data for this dimension
+        merged_df = data
+    else:
+        # We are making the
+        compare_df = DimensionDataFrameTransformer.make_dataframe(
+            columns=read_columns, dtypes=column_types
+        )
 
-    # We are making the
-    compare_df = DimensionDataFrameTransformer.make_dataframe(
-        columns=read_columns, dtypes=column_types
-    )
-
-    merged_df = DimensionDataFrameTransformer.merge(
-        source_df=data, compare_df=compare_df, key=import_plan.merge_key
-    )
+        merged_df = DimensionDataFrameTransformer.merge(
+            source_df=data, compare_df=compare_df, key=import_plan.merge_key
+        )
 
     # dictionary of columns? attribute_id : column/iterator
     # how to represent index?
@@ -81,4 +85,5 @@ async def _enact_plan(
         dimension_id=import_plan.write_dimension["id_"],
         columnar_data=columnar_data,
         write_version=write_version,
+        read_version=read_version,
     )

@@ -21,14 +21,14 @@ class NullDimensionDataCache(DimensionDataCache):
         """
         pass
 
-    async def get_columns(self, dimension_id: int, version: Version):
+    async def get_columns(self, dimension_id: int, reference_data_version: int):
 
-        raise KeyError((dimension_id, version))
+        raise KeyError((dimension_id, reference_data_version))
 
     async def put_columns(
         self,
         dimension_id: int,
-        version: Version,
+        reference_data_version: int,
         column_data: Mapping[int, Iterable],
         column_types: Mapping[int, DTypeLike],
     ):

@@ -21,13 +21,13 @@ class DimensionDataCache(Cache):
         """
         raise NotImplementedError("Abstract")
 
-    async def get_columns(self, dimension_id: int, version: Version):
+    async def get_columns(self, dimension_id: int, reference_data_version: int):
         raise NotImplementedError("Abstract")
 
     async def put_columns(
         self,
         dimension_id: int,
-        version: Version,
+        reference_data_version: int,
         column_data: Mapping[int, Iterable],
         column_types: Mapping[int, DTypeLike],
     ):

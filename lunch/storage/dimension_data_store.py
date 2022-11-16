@@ -48,22 +48,23 @@ class DimensionDataStore(Store):
         :return: dict - column integer ids to iterables, dict column integer ids to types
         """
 
-        # TODO - surely types should be in the metadata?
-        #  if so, we shouldn't need to get them here
+        version_index = await self._serializer.get_version_index(version=read_version)
+
+        reference_data_version = version_index[dimension_id]
 
         try:
             column_data = await self._cache.get_columns(
-                dimension_id=dimension_id, version=read_version
+                dimension_id=dimension_id, reference_data_version=reference_data_version
             )
         except KeyError:
             column_data = await self._serializer.get_columns(
                 dimension_id=dimension_id,
-                read_version=read_version,
+                reference_data_version=reference_data_version,
                 column_types=column_types,
             )
             await self._cache.put_columns(
                 dimension_id=dimension_id,
-                version=read_version,
+                reference_data_version=reference_data_version,
                 column_data=column_data,
                 column_types=column_types,
             )

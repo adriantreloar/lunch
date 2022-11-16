@@ -1,6 +1,7 @@
 from typing import Any, AsyncIterable, AsyncIterator, Iterable, Iterator, Mapping
 
-from numpy import dtype
+# TODO, don't use YAML, use binary index file, maybe move index file creation off separately
+import yaml
 from numpy.typing import DTypeLike
 
 from lunch.mvcc.version import Version
@@ -18,18 +19,19 @@ class ColumnarDimensionDataSerializer(DimensionDataSerializer):
     def __init__(self, persistor: LocalFileColumnarDimensionDataPersistor):
         self._persistor = persistor
 
-    async def get_index_data(
-        self, dimension_id: int, version: Version
-    ) -> AsyncIterator[int]:
-        async for i in _get_index_data(dimension_id, version, self._persistor):
-            yield i
+    async def get_version_index(self, version: Version) -> dict[int, int]:
+        return await _get_version_index(version=version, persistor=self._persistor)
 
-    # TODO: convert type
+    async def put_version_index(self, index_: dict[int, int], version: Version):
+        return await _put_version_index(
+            index_=index_, version=version, persistor=self._persistor
+        )
+
     def get_attribute_data(
-        self, dimension_id: int, attribute_id: int, version: Version
+        self, dimension_id: int, attribute_id: int, reference_data_version: int
     ) -> Iterable[str]:
         for i in _get_attribute_data(
-            dimension_id, attribute_id, version, self._persistor
+            dimension_id, attribute_id, reference_data_version, self._persistor
         ):
             yield i
 
@@ -61,19 +63,42 @@ class ColumnarDimensionDataSerializer(DimensionDataSerializer):
 
     async def get_columns(
         self,
-        read_version: Version,
+        reference_data_version: int,
         dimension_id: int,
         column_types: Mapping[int, DTypeLike],
     ) -> Mapping[int, Iterable]:
         return await _get_columns(
-            read_version=read_version,
+            reference_data_version=reference_data_version,
             dimension_id=dimension_id,
             column_types=column_types,
             persistor=self._persistor,
         )
 
 
-async def _get_index_data(
+async def _get_version_index(
+    version: Version, persistor: LocalFileColumnarDimensionDataPersistor
+) -> dict[int, int]:
+    if not version.reference_data_version:
+        return {}
+
+    with persistor.open_version_index_file_read(
+        version=version.reference_data_version,
+    ) as stream:
+        version_index = yaml.safe_load(stream)
+
+    return version_index
+
+
+async def _put_version_index(
+    index_: dict, version: Version, persistor: LocalFileColumnarDimensionDataPersistor
+):
+    with persistor.open_version_index_file_write(
+        version=version.reference_data_version
+    ) as stream:
+        yaml.safe_dump(index_, stream)
+
+
+async def _get_version_data(
     dimension_id: int,
     version: Version,
     persistor: LocalFileColumnarDimensionDataPersistor,
@@ -93,20 +118,20 @@ async def _put_index_data(
 def _get_attribute_data(
     dimension_id: int,
     attribute_id: int,
-    version: Version,
+    reference_data_version: int,
     persistor: LocalFileColumnarDimensionDataPersistor,
 ) -> Iterable[str]:
     with persistor.open_attribute_file_read(
         dimension_id=dimension_id,
         attribute_id=attribute_id,
-        version=version.reference_data_version,
+        version=reference_data_version,
     ) as f:
         for line in f:
             yield line
 
 
 async def _get_columns(
-    read_version: Version,
+    reference_data_version: int,
     dimension_id: int,
     column_types: Mapping[int, DTypeLike],
     persistor: LocalFileColumnarDimensionDataPersistor,
@@ -115,7 +140,7 @@ async def _get_columns(
         attribute_id: _get_attribute_data(
             dimension_id=dimension_id,
             attribute_id=attribute_id,
-            version=read_version,
+            reference_data_version=reference_data_version,
             persistor=persistor,
         )
         for attribute_id, attribute_type in column_types.items()

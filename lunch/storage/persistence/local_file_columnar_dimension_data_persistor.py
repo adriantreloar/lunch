@@ -27,6 +27,9 @@ class LocalFileColumnarDimensionDataPersistor(DimensionDataPersistor):
             version=version,
         )
 
+    def dimension_version_index_file(self, version: int) -> Path:
+        return _dimension_version_index_file(directory=self._directory, version=version)
+
     @contextmanager
     def open_attribute_file_read(
         self, dimension_id: int, attribute_id: int, version: int
@@ -48,6 +51,19 @@ class LocalFileColumnarDimensionDataPersistor(DimensionDataPersistor):
         with open(file_path, "w") as f:
             yield f
 
+    @contextmanager
+    def open_version_index_file_read(self, version: int):
+        file_path = self.dimension_version_index_file(version=version)
+        with open(file_path, "r") as f:
+            yield f
+
+    @contextmanager
+    def open_version_index_file_write(self, version: int):
+        file_path = self.dimension_version_index_file(version=version)
+        Path(os.path.dirname(file_path)).mkdir(parents=True, exist_ok=True)
+        with open(file_path, "w") as f:
+            yield f
+
 
 def _attribute_file(
     dimension_id: int, attribute_id: int, directory: Path, version: int
@@ -55,3 +71,7 @@ def _attribute_file(
     return directory.joinpath(
         f"{version}/dimension_data/{dimension_id}/attribute.{attribute_id}.column"
     )
+
+
+def _dimension_version_index_file(directory: Path, version: int) -> Path:
+    return directory.joinpath(f"{version}/dimension_data.version.index.yaml")

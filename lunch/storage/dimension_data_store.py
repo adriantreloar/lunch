@@ -139,8 +139,13 @@ async def _get_dimension_version_index(
     serializer: DimensionDataSerializer,
     cache: DimensionDataCache,
 ) -> dict[int, int]:
-    raise NotImplementedError("TODO")
+    if not version.version:
+        return {}
 
+    try:
+        return await cache.get_dimension_version_index(version=version)
+    except KeyError:
+        return await serializer.get_dimension_version_index(version=version)
 
 async def _put_dimension_version_index(
     index_: dict,
@@ -148,4 +153,5 @@ async def _put_dimension_version_index(
     serializer: DimensionDataSerializer,
     cache: DimensionDataCache,
 ) -> None:
-    raise NotImplementedError("TODO")
+    await serializer.put_dimension_version_index(index_=index_, version=version)
+    await cache.put_dimension_version_index(index_=index_, version=version)

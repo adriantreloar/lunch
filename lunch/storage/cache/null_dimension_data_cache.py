@@ -32,3 +32,11 @@ class NullDimensionDataCache(DimensionDataCache):
         columns: Mapping[int, Iterable],
     ):
         pass
+
+    async def get_dimension_version_index(self, version: Version) -> dict[int, int]:
+        raise KeyError(version)
+
+    async def put_dimension_version_index(
+        self, index_: dict[int, int], version: Version
+    ):
+        pass

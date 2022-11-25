@@ -62,6 +62,7 @@ async def insert_dimension_data():
         persistor=dimension_data_persistor
     )
 
+    # TODO - this DimensionDataStore is redundant, we should be pointing stuff at the ReferenceDataStore
     dimension_data_storage = DimensionDataStore(
         serializer=dimension_serializer, cache=dimension_data_cache
     )

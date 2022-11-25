@@ -26,7 +26,7 @@ from lunch.storage.serialization.yaml_reference_data_serializer import (
 )  # For indexes
 
 
-async def main():
+async def insert_dimension_data():
 
     d_test = {
         "name": "Test",
@@ -147,4 +147,5 @@ async def main():
 
 
 # And run it
-asyncio.run(main())
+if __name__ == "__main__":
+    asyncio.run(insert_dimension_data())

@@ -8,8 +8,8 @@ from lunch.storage.serialization.dimension_data_serializer import (
     DimensionDataSerializer,
 )
 from lunch.storage.store import Store
-from lunch.storage.transformers.dimension_index_transformer import (
-    DimensionIndexTransformer,
+from lunch.storage.transformers.dimension_data_index_transformer import (
+    DimensionDataIndexTransformer,
 )
 
 
@@ -21,7 +21,7 @@ class DimensionDataStore(Store):
     ):
         self._serializer = serializer
         self._cache = cache
-        self._dimension_index_transformer = DimensionIndexTransformer()
+        self._dimension_data_index_transformer = DimensionDataIndexTransformer()
 
     def storage_instructions(self, version: Version):
         return dict()
@@ -37,7 +37,7 @@ class DimensionDataStore(Store):
             dimension_id=dimension_id,
             columnar_data=columnar_data,
             read_version=read_version,
-            dimension_index_transformer=self._dimension_index_transformer,
+            dimension_data_index_transformer=self._dimension_data_index_transformer,
             write_version=write_version,
             serializer=self._serializer,
             cache=self._cache,
@@ -60,7 +60,7 @@ class DimensionDataStore(Store):
         :return: dict - column integer ids to iterables, dict column integer ids to types
         """
 
-        version_index = await self._serializer.get_version_index(version=read_version)
+        version_index = await _get_version_index(serializer=self._serializer, cache=self._cache, version=read_version)
 
         reference_data_version = version_index[dimension_id]
 
@@ -88,7 +88,7 @@ async def _put(
     columnar_data: dict[int, Iterable],
     read_version: Version,
     write_version: Version,
-    dimension_index_transformer: DimensionIndexTransformer,
+    dimension_data_index_transformer: DimensionDataIndexTransformer,
     serializer: DimensionDataSerializer,
     cache: DimensionDataCache,
 ) -> None:
@@ -96,25 +96,25 @@ async def _put(
     # We want to update the version index for the write (should be in cache)
     # If it doesn't exist, start with the read version index
     try:
-        dimensions_version_index_write = await _get_dimension_version_index(
+        dimensions_version_index_write = await _get_version_index(
             version=write_version, serializer=serializer, cache=cache
         )
     except KeyError:
-        dimensions_version_index_write = await _get_dimension_version_index(
+        dimensions_version_index_write = await _get_version_index(
             version=read_version, serializer=serializer, cache=cache
         )
 
     # All the changed dimensions will be in dimensions_with_ids now
     # All of these have a version of the write-version
     dimensions_version_index_write = (
-        dimension_index_transformer.update_dimension_version_index(
+        dimension_data_index_transformer.update_dimension_version_index(
             index_=dimensions_version_index_write,
             write_version=write_version,
             changed_ids=[dimension_id],
         )
     )
 
-    await _put_dimension_version_index(
+    await _put_version_index(
         index_=dimensions_version_index_write,
         version=write_version,
         serializer=serializer,
@@ -134,7 +134,7 @@ async def _put(
     )
 
 
-async def _get_dimension_version_index(
+async def _get_version_index(
     version: Version,
     serializer: DimensionDataSerializer,
     cache: DimensionDataCache,
@@ -143,15 +143,15 @@ async def _get_dimension_version_index(
         return {}
 
     try:
-        return await cache.get_dimension_version_index(version=version)
+        return await cache.get_version_index(version=version)
     except KeyError:
-        return await serializer.get_dimension_version_index(version=version)
+        return await serializer.get_version_index(version=version)
 
-async def _put_dimension_version_index(
+async def _put_version_index(
     index_: dict,
     version: Version,
     serializer: DimensionDataSerializer,
     cache: DimensionDataCache,
 ) -> None:
-    await serializer.put_dimension_version_index(index_=index_, version=version)
-    await cache.put_dimension_version_index(index_=index_, version=version)
+    await serializer.put_version_index(index_=index_, version=version)
+    await cache.put_version_index(index_=index_, version=version)

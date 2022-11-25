@@ -46,6 +46,7 @@ class ColumnarDimensionDataSerializer(DimensionDataSerializer):
             persistor=self._persistor,
         )
 
+
     async def put_attribute_data(
         self,
         dimension_id: int,

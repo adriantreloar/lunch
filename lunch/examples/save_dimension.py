@@ -3,32 +3,43 @@ import asyncio
 from lunch.examples.setup_managers import model_manager, version_manager
 
 
-async def main():
+async def save_dimension():
+    d_department = {"name": "Department", "attributes": [{"name": "thing1"}]}
+    d_time = {"name": "Time", "attributes": [{"name": "thing1"}]}
+    d_test = {
+        "name": "Test",
+        "attributes": [
+            {"name": "foo"},
+            {"name": "bar"},
+            {"name": "baz"},
+        ],
+        "key": [
+            "foo",
+        ],
+    }
 
-    my_dim = {"name": "MyDim", "attributes": [{"name": "thing1"}]}
     async with version_manager.read_version() as read_version:
         async with version_manager.write_model_version(
             read_version=read_version
         ) as write_version:
             await model_manager.update_model(
-                dimensions=[my_dim],
+                dimensions=[d_test],
                 facts=[],
                 read_version=read_version,
                 write_version=write_version,
             )
 
-    your_dim = {"name": "YourDim", "attributes": [{"name": "thing1"}]}
     async with version_manager.read_version() as read_version:
         async with version_manager.write_model_version(
             read_version=read_version
         ) as write_version:
             await model_manager.update_model(
-                dimensions=[your_dim],
+                dimensions=[d_department, d_time],
                 facts=[],
                 read_version=read_version,
                 write_version=write_version,
             )
-
 
 # And run it
-asyncio.run(main())
+if __name__ == "__main__":
+    asyncio.run(save_dimension())

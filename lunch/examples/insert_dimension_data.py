@@ -25,20 +25,12 @@ from lunch.storage.serialization.yaml_reference_data_serializer import (
     YamlReferenceDataSerializer,
 )  # For indexes
 
+from lunch.examples.save_dimension import save_dimension
 
 async def insert_dimension_data():
 
-    d_test = {
-        "name": "Test",
-        "attributes": [
-            {"name": "foo"},
-            {"name": "bar"},
-            {"name": "baz"},
-        ],
-        "key": [
-            "foo",
-        ],
-    }
+    # Create d_test
+    await save_dimension()
 
     data = [
         {
@@ -107,16 +99,6 @@ async def insert_dimension_data():
         dimension_import_enactor=dimension_import_enactor,
     )
 
-    async with version_manager.read_version() as read_version:
-        async with version_manager.write_model_version(
-            read_version=read_version
-        ) as write_version:
-            await model_manager.update_model(
-                dimensions=[d_test],
-                facts=[],
-                read_version=read_version,
-                write_version=write_version,
-            )
 
     async with version_manager.read_version() as read_version:
         async with version_manager.write_reference_data_version(

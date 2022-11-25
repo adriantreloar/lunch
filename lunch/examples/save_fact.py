@@ -2,11 +2,13 @@ import asyncio
 
 from lunch.examples.setup_managers import model_manager, version_manager
 
+from lunch.examples.save_dimension import save_dimension
 
-async def main():
+async def save_fact():
 
-    d_department = {"name": "Department", "attributes": [{"name": "thing1"}]}
-    d_time = {"name": "Time", "attributes": [{"name": "thing1"}]}
+    await save_dimension()
+    #d_department = {"name": "Department", "attributes": [{"name": "thing1"}]}
+    #d_time = {"name": "Time", "attributes": [{"name": "thing1"}]}
 
     f_sales = {
         "name": "Sales",
@@ -19,7 +21,7 @@ async def main():
             read_version=read_version
         ) as write_version:
             await model_manager.update_model(
-                dimensions=[d_department, d_time],
+                dimensions=[],
                 facts=[f_sales],
                 read_version=read_version,
                 write_version=write_version,
@@ -27,4 +29,5 @@ async def main():
 
 
 # And run it
-asyncio.run(main())
+if __name__ == "__main__":
+    asyncio.run(save_fact())

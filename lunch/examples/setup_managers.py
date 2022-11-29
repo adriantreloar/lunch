@@ -25,10 +25,10 @@ from lunch.storage.persistence.local_file_version_persistor import (
 )
 from lunch.storage.serialization.yaml_model_serializer import YamlModelSerializer
 from lunch.storage.serialization.yaml_version_serializer import YamlVersionSerializer
-from lunch.storage.transformers.dimension_index_transformer import (
-    DimensionIndexTransformer,
+from lunch.storage.transformers.dimension_model_index_transformer import (
+    DimensionModelIndexTransformer,
 )
-from lunch.storage.transformers.fact_index_transformer import FactIndexTransformer
+from lunch.storage.transformers.fact_model_index_transformer import FactModelIndexTransformer
 from lunch.storage.version_store import VersionStore
 
 # Constant Global State
@@ -37,7 +37,7 @@ global_state = GlobalState()
 # Validators, Transformers
 version_transformer = VersionsTransformer()
 dimension_transformer = DimensionTransformer()
-dimension_index_transformer = DimensionIndexTransformer()
+dimension_index_transformer = DimensionModelIndexTransformer()
 dimension_comparer = DimensionComparer()
 dimension_structure_validator = DimensionStructureValidator()
 dimension_reference_validator = DimensionReferenceValidator()
@@ -45,7 +45,7 @@ fact_transformer = FactTransformer()
 fact_comparer = FactComparer()
 fact_structure_validator = FactStructureValidator()
 fact_reference_validator = FactReferenceValidator()
-fact_index_transformer = FactIndexTransformer()
+fact_index_transformer = FactModelIndexTransformer()
 
 
 # Persistence

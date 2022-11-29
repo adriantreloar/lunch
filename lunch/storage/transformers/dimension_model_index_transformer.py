@@ -2,7 +2,7 @@ from lunch.base_classes.transformer import Transformer
 from lunch.mvcc.version import Version
 
 
-class DimensionIndexTransformer(Transformer):
+class DimensionModelIndexTransformer(Transformer):
     """
     Transform dimension index dictionaries, when using a very basic read-transform-write serializer.
     """
@@ -27,7 +27,7 @@ class DimensionIndexTransformer(Transformer):
         try:
             return dimension_index_dict, dimension_index_dict[name]
         except KeyError:
-            max_id = DimensionIndexTransformer.get_max_id(
+            max_id = DimensionModelIndexTransformer.get_max_id(
                 dimension_index_dict=dimension_index_dict
             )
 

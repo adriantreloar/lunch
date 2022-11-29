@@ -2,7 +2,7 @@ from lunch.base_classes.transformer import Transformer
 from lunch.mvcc.version import Version
 
 
-class FactIndexTransformer(Transformer):
+class FactModelIndexTransformer(Transformer):
     """
     Transform dimension index dictionaries, when using a very basic read-transform-write serializer.
     """
@@ -27,7 +27,7 @@ class FactIndexTransformer(Transformer):
         try:
             return fact_index_dict, fact_index_dict[name]
         except KeyError:
-            max_id = FactIndexTransformer.get_max_id(fact_index_dict=fact_index_dict)
+            max_id = FactModelIndexTransformer.get_max_id(fact_index_dict=fact_index_dict)
 
             output_fact_index_dict = fact_index_dict.copy()
             output_fact_index_dict[name] = max_id

@@ -7,10 +7,10 @@ from lunch.storage.cache.model_cache import ModelCache
 from lunch.storage.persistence.model_persistor import ModelPersistor
 from lunch.storage.serialization.model_serializer import ModelSerializer
 from lunch.storage.store import Store
-from lunch.storage.transformers.dimension_index_transformer import (
-    DimensionIndexTransformer,
+from lunch.storage.transformers.dimension_model_index_transformer import (
+    DimensionModelIndexTransformer,
 )
-from lunch.storage.transformers.fact_index_transformer import FactIndexTransformer
+from lunch.storage.transformers.fact_model_index_transformer import FactModelIndexTransformer
 
 
 class ModelStore(Store):
@@ -22,10 +22,10 @@ class ModelStore(Store):
     def __init__(
         self,
         dimension_transformer: DimensionTransformer,
-        dimension_index_transformer: DimensionIndexTransformer,
+        dimension_index_transformer: DimensionModelIndexTransformer,
         dimension_comparer: DimensionComparer,
         fact_transformer: FactTransformer,
-        fact_index_transformer: FactIndexTransformer,
+        fact_index_transformer: FactModelIndexTransformer,
         fact_comparer: FactComparer,
         serializer: ModelSerializer,
         cache: ModelCache,
@@ -153,7 +153,7 @@ async def _put_dimensions(
     read_version: Version,
     write_version: Version,
     dimension_transformer: DimensionTransformer,
-    dimension_index_transformer: DimensionIndexTransformer,
+    dimension_index_transformer: DimensionModelIndexTransformer,
     dimension_comparer: DimensionComparer,
     serializer: ModelSerializer,
     cache: ModelCache,
@@ -422,7 +422,7 @@ async def _put_facts(
     write_version: Version,
     fact_comparer: FactComparer,
     fact_transformer: FactTransformer,
-    fact_index_transformer: FactIndexTransformer,
+    fact_index_transformer: FactModelIndexTransformer,
     serializer: ModelSerializer,
     cache: ModelCache,
 ) -> dict:

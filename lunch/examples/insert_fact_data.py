@@ -16,6 +16,11 @@ from lunch.storage.serialization.columnar_fact_data_serializer import (
     ColumnarFactDataSerializer,
 )
 from lunch.storage.fact_data_store import FactDataStore
+from lunch.import_engine.fact_import_planner import FactImportPlanner
+from lunch.import_engine.fact_import_optimiser import FactImportOptimiser
+from lunch.import_engine.fact_import_enactor import FactImportEnactor
+from lunch.managers.cube_data_manager import CubeDataManager
+
 
 async def insert_fact_data():
 
@@ -73,6 +78,12 @@ async def insert_fact_data():
     )
     fact_import_enactor = FactImportEnactor()
 
+    cube_data_manager = CubeDataManager(
+        model_manager=model_manager,
+        fact_data_store=fact_data_storage,
+        fact_import_optimiser=fact_import_optimiser,
+        fact_import_enactor=fact_import_enactor,
+    )
 
 
     async with version_manager.read_version() as read_version:
@@ -82,7 +93,7 @@ async def insert_fact_data():
 
             # This is also done in reference_data_manager.update_dimension_from_dataframe()
             # I did it again here just for show
-            plan = await fact_import_optimiser.create_fact_import_plan(
+            plan = await fact_import_optimiser.create_dataframe_import_plan(
                 fact_name="Sales",
                 data=df_data,
                 read_version=read_version,
@@ -95,7 +106,7 @@ async def insert_fact_data():
             print(df_data)
             print()
 
-            await fact_data_manager.append_fact_from_dataframe(
+            await cube_data_manager.append_fact_from_dataframe(
                 name="Sales",
                 data=df_data,
                 read_version=read_version,

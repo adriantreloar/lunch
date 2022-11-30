@@ -3,41 +3,41 @@ from typing import Any
 from numpy import dtype
 
 from lunch.base_classes.conductor import Conductor
-from lunch.import_engine.dimension_import_plan import DimensionImportPlan
+from lunch.import_engine.fact_import_plan import FactImportPlan
 from lunch.mvcc.version import Version
-from lunch.import_engine.transformers.dimension_dataframe_transformer import (
-    DimensionDataFrameTransformer,
+from lunch.import_engine.transformers.fact_dataframe_transformer import (
+    FactDataFrameTransformer,
 )
-from lunch.storage.dimension_data_store import DimensionDataStore
+from lunch.storage.fact_data_store import FactDataStore
 
 
-class DimensionImportEnactor(Conductor):
+class FactImportEnactor(Conductor):
     def __init__(self):
         pass
 
     async def enact_plan(
         self,
-        import_plan: DimensionImportPlan,
+        import_plan: FactImportPlan,
         data: Any,
         read_version: Version,
         write_version: Version,
-        dimension_data_store: DimensionDataStore,
+        fact_data_store: FactDataStore,
     ):
         return await _enact_plan(
             import_plan=import_plan,
             data=data,
             read_version=read_version,
             write_version=write_version,
-            dimension_data_store=dimension_data_store,
+            fact_data_store=fact_data_store,
         )
 
 
 async def _enact_plan(
-    import_plan: DimensionImportPlan,
+    import_plan: FactImportPlan,
     data: Any,
     read_version: Version,
     write_version: Version,
-    dimension_data_store: DimensionDataStore,
+    fact_data_store: FactDataStore,
 ):
 
     # TODO assert data is of the type specified in the plan
@@ -53,36 +53,36 @@ async def _enact_plan(
 
     column_types = {
         attribute_id: dtype(str)
-        for attribute_id in (d["id_"] for d in import_plan.read_dimension["attributes"])
+        for attribute_id in (d["id_"] for d in import_plan.read_fact["attributes"])
     }
 
     try:
-        read_columns = await dimension_data_store.get_columns(
+        read_columns = await fact_data_store.get_columns(
             read_version=read_version,
-            dimension_id=import_plan.read_dimension["id_"],
+            fact_id=import_plan.read_fact["id_"],
             filter=import_plan.read_filter,
             column_types=column_types,
         )
     except KeyError:
-        # The first time we have had data for this dimension
+        # The first time we have had data for this fact
         merged_df = data
     else:
         # We are making the
-        compare_df = DimensionDataFrameTransformer.make_dataframe(
+        compare_df = FactDataFrameTransformer.make_dataframe(
             columns=read_columns, dtypes=column_types
         )
 
-        merged_df = DimensionDataFrameTransformer.merge(
+        merged_df = FactDataFrameTransformer.merge(
             source_df=data, compare_df=compare_df, key=import_plan.merge_key
         )
 
     # dictionary of columns? attribute_id : column/iterator
     # how to represent index?
-    columnar_data = DimensionDataFrameTransformer.columnize(data=merged_df)
+    columnar_data = FactDataFrameTransformer.columnize(data=merged_df)
 
     # put will have to handle its indexes too
-    await dimension_data_store.put(
-        dimension_id=import_plan.write_dimension["id_"],
+    await fact_data_store.put(
+        fact_id=import_plan.write_fact["id_"],
         columnar_data=columnar_data,
         write_version=write_version,
         read_version=read_version,

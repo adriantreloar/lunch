@@ -87,6 +87,18 @@ class ModelManager(Conductor):
         return await _get_dimension(id_=id_, version=version, storage=self._storage)
 
 
+    async def get_fact_by_name(
+        self, name: str, version: Version, add_default_storage: bool
+    ) -> dict:
+        return await _get_fact_by_name(
+            name=name,
+            version=version,
+            add_default_storage=add_default_storage,
+            storage=self._storage,
+            default_storage=self._global_state.default_fact_storage,
+            fact_transformer=self._fact_transformer,
+        )
+
 async def _get_dimension_id(
     name: str,
     version: Version,
@@ -121,6 +133,24 @@ async def _get_dimension_by_name(
 
     return dim
 
+
+async def _get_fact_by_name(
+    name: str,
+    version: Version,
+    add_default_storage: bool,
+    default_storage: dict,
+    fact_transformer: FactTransformer,
+    storage: ModelStore,
+) -> dict:
+    id_ = await _get_fact_id(name=name, version=version, storage=storage)
+    fact = await _get_fact(id_=id_, version=version, storage=storage)
+
+    if add_default_storage:
+        fact = fact_transformer.add_default_storage(
+            fact=fact, default_storage=default_storage
+        )
+
+    return fact
 
 async def _get_fact_id(
     name: str,

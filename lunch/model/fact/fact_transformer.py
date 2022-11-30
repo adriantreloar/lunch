@@ -48,3 +48,21 @@ class FactTransformer(Transformer):
         out_fact = fact.copy()
         out_fact["model_version"] = model_version
         return out_fact
+
+
+    @staticmethod
+    def add_default_storage(fact: dict, default_storage: dict) -> dict:
+        """
+        Add default storage to a fact, only if it does not already have storage set.
+        :param fact: The fact we are adding storage to
+        :param default_storage: The default storage - a dictionary with only storage info, under the "storage" key
+        :return: The original dimension, if no edit has been made.
+        A copy dimension with storage if no storage was found in the original dimension.
+        """
+        # TODO - adding default storage could be done to any object (i.e. dimensions and so on)
+        # and not done separately
+        try:
+            fact["storage"]
+            return fact
+        except KeyError:
+            return {**fact, **default_storage}

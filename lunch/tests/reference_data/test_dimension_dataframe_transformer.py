@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 from pandas import DataFrame
 
-from lunch.reference_data.transformers.dimension_dataframe_transformer import (
+from lunch.import_engine.transformers.dimension_dataframe_transformer import (
     DimensionDataFrameTransformer,
 )
 

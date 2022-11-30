@@ -8,11 +8,8 @@ from lunch.storage.serialization.fact_data_serializer import (
     FactDataSerializer,
 )
 from lunch.storage.store import Store
-from lunch.storage.transformers.fact_data_version_index_transformer import (
-    FactDataVersionIndexTransformer,
-)
-from lunch.storage.transformers.fact_data_partition_index_transformer import (
-    FactDataPartitionIndexTransformer,
+from lunch.storage.transformers.fact_data_index_transformer import (
+    FactDataIndexTransformer,
 )
 
 
@@ -24,8 +21,8 @@ class FactDataStore(Store):
     ):
         self._serializer = serializer
         self._cache = cache
-        self._fact_data_version_index_transformer = FactDataVersionIndexTransformer()
-        self._fact_data_partition_index_transformer = FactDataPartitionIndexTransformer()
+        self._fact_data_version_index_transformer = FactDataIndexTransformer()
+        self._fact_data_partition_index_transformer = FactDataIndexTransformer()
 
     def storage_instructions(self, version: Version):
         return dict()
@@ -90,11 +87,13 @@ class FactDataStore(Store):
 
 async def _put(
     fact_id: int,
-    columnar_data: dict[int, Iterable],
+    columnar_data: dict[int, Iterable], # -1 -> value, 0-n -> fact dimension indices
     read_version: Version,
     write_version: Version,
-    fact_data_version_index_transformer: FactDataVersionIndexTransformer,
-    fact_data_partition_index_transformer: FactDataPartitionIndexTransformer,
+    fact_partition_indices: tuple[int,], # From the model
+    fact_data_indices: tuple[int,...], # From the model
+    fact_data_version_index_transformer: FactDataIndexTransformer,
+    fact_data_partition_index_transformer: FactDataIndexTransformer,
     serializer: FactDataSerializer,
     cache: FactDataCache,
 ) -> None:
@@ -113,7 +112,7 @@ async def _put(
     # All the changed facts will be in facts_with_ids now
     # All of these have a version of the write-version
     facts_version_index_write = (
-        fact_data_index_transformer.update_fact_version_index(
+        fact_data_version_index_transformer.update_fact_version_index(
             index_=facts_version_index_write,
             write_version=write_version,
             changed_ids=[fact_id],
@@ -127,6 +126,20 @@ async def _put(
         cache=cache,
     )
 
+
+    # Note - we cache as we put, so that later puts in a transaction can validate against cached data
+    # Note, as we serialize we collect the changed partition ids
+    changed_partition_ids = await serializer.put_columns(
+        fact_id=fact_id,
+        columns=columnar_data,
+        version=write_version,
+    )
+    await cache.put_columns(
+        fact_id=fact_id,
+        columns=columnar_data,
+        version=write_version,
+    )
+
     # We want to update the partition index for the write (should be in cache)
     # If it doesn't exist, start with the read version partition index
     try:
@@ -138,13 +151,12 @@ async def _put(
             version=read_version, serializer=serializer, cache=cache
         )
 
-    # All the changed facts will be in facts_with_ids now
-    # All of these have a version of the write-version
+
     facts_partition_index_write = (
         fact_data_partition_index_transformer.update_fact_partition_index(
             index_=facts_partition_index_write,
             write_version=write_version,
-            changed_ids=[ TODO get changed IDS],
+            changed_ids=[changed_partition_ids],
         )
     )
 
@@ -155,17 +167,7 @@ async def _put(
         cache=cache,
     )
 
-    # Note - we cache as we put, so that later puts in a transaction can validate against cached data
-    await serializer.put_columns(
-        fact_id=fact_id,
-        columns=columnar_data,
-        version=write_version,
-    )
-    await cache.put_columns(
-        fact_id=fact_id,
-        columns=columnar_data,
-        version=write_version,
-    )
+
 
 
 async def _get_version_index(

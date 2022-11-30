@@ -2,7 +2,7 @@ from typing import NamedTuple
 
 
 class DimensionImportPlan(NamedTuple):
-    """Data collected to allow efficient importing of aimension data"""
+    """Data collected to allow efficient importing of dimension data"""
 
     read_dimension: dict
     write_dimension: dict

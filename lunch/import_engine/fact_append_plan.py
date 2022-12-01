@@ -2,7 +2,7 @@ from typing import NamedTuple
 
 
 class FactAppendPlan(NamedTuple):
-    """Data collected to allow efficient importing of fact data"""
+    """Data collected to allow efficient importing (appending) of fact data"""
 
     read_fact: dict
     write_fact: dict

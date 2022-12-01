@@ -25,14 +25,14 @@ class CubeDataManager(Conductor):
         self._fact_import_optimiser = fact_import_optimiser
         self._fact_import_enactor = fact_import_enactor
 
-    async def update_fact_from_dataframe(
+    async def append_fact_from_dataframe(
         self,
         name: str,
         data: pd.DataFrame,
         read_version: Version,
         write_version: Version,
     ) -> None:
-        return await _update_fact_from_dataframe(
+        return await _append_fact_from_dataframe(
             name=name,
             data=data,
             read_version=read_version,
@@ -44,7 +44,7 @@ class CubeDataManager(Conductor):
         )
 
 
-async def _update_fact_from_dataframe(
+async def _append_fact_from_dataframe(
     name: str,
     data: pd.DataFrame,
     read_version: Version,
@@ -82,7 +82,7 @@ async def _update_fact_from_dataframe(
     # Create import plan
     # We need to query storage (e.g. the indexes) for size hints, so that we can create a decent pland
     # TODO - at some point we may need statistics, to speed this sort of thing up
-    import_plan = await fact_import_optimiser.create_dataframe_import_plan(
+    import_plan = await fact_import_optimiser.create_dataframe_append_plan(
         fact_name=name,
         data=data,
         read_version=read_version,

@@ -1,7 +1,7 @@
 from typing import NamedTuple
 
 
-class FactImportPlan(NamedTuple):
+class FactAppendPlan(NamedTuple):
     """Data collected to allow efficient importing of fact data"""
 
     read_fact: dict

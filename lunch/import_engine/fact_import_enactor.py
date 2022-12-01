@@ -3,7 +3,7 @@ from typing import Any
 from numpy import dtype
 
 from lunch.base_classes.conductor import Conductor
-from lunch.import_engine.fact_import_plan import FactImportPlan
+from lunch.import_engine.fact_append_plan import FactAppendPlan
 from lunch.mvcc.version import Version
 from lunch.import_engine.transformers.fact_dataframe_transformer import (
     FactDataFrameTransformer,
@@ -17,14 +17,14 @@ class FactImportEnactor(Conductor):
 
     async def enact_plan(
         self,
-        import_plan: FactImportPlan,
+        append_plan: FactAppendPlan,
         data: Any,
         read_version: Version,
         write_version: Version,
         fact_data_store: FactDataStore,
     ):
         return await _enact_plan(
-            import_plan=import_plan,
+            append_plan=append_plan,
             data=data,
             read_version=read_version,
             write_version=write_version,
@@ -33,7 +33,7 @@ class FactImportEnactor(Conductor):
 
 
 async def _enact_plan(
-    import_plan: FactImportPlan,
+    append_plan: FactAppendPlan,
     data: Any,
     read_version: Version,
     write_version: Version,
@@ -51,16 +51,17 @@ async def _enact_plan(
     #  we need an import_plan transformer class
     #  which means we really need an ImportPlan named-dict
 
+
     column_types = {
         attribute_id: dtype(str)
-        for attribute_id in (d["id_"] for d in import_plan.read_fact["attributes"])
+        for attribute_id in (d["id_"] for d in append_plan.read_fact["attributes"])
     }
 
     try:
         read_columns = await fact_data_store.get_columns(
             read_version=read_version,
-            fact_id=import_plan.read_fact["id_"],
-            filter=import_plan.read_filter,
+            fact_id=append_plan.read_fact["id_"],
+            filter=append_plan.read_filter,
             column_types=column_types,
         )
     except KeyError:

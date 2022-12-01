@@ -115,12 +115,6 @@ async def insert_dimension_data():
                 write_version=write_version,
             )
 
-            # TODO match this plan with what _enact_plan needs
-            print(plan)
-            print()
-            print(df_data)
-            print()
-
             await reference_data_manager.update_dimension_from_dataframe(
                 name="Test",
                 data=df_data,

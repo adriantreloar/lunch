@@ -1,15 +1,15 @@
 from pandas import DataFrame
 
 from lunch.base_classes.transformer import Transformer
-from lunch.import_engine.fact_import_plan import FactImportPlan
+from lunch.import_engine.fact_append_plan import FactAppendPlan
 
 
-class FactImportPlanner(Transformer):
+class FactAppendPlanner(Transformer):
     def __init__(self):
         pass
 
     @staticmethod
-    def create_dataframe_import_plan(
+    def create_dataframe_append_plan(
         read_fact: dict,
         write_fact: dict,
         read_fact_storage_instructions: dict,
@@ -17,7 +17,7 @@ class FactImportPlanner(Transformer):
         data_columns: dict,  # name vs. type/attributes?
         read_filter: dict,
         merge_key: list,
-    ) -> FactImportPlan:
+    ) -> FactAppendPlan:
         """
 
         :param self:
@@ -28,7 +28,7 @@ class FactImportPlanner(Transformer):
         :return:
         """
 
-        return FactImportPlan(
+        return FactAppendPlan(
             read_fact=read_fact,
             write_fact=write_fact,
             read_filter=read_filter,

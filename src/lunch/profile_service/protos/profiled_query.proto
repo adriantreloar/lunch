@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+import "profile.proto";
+import "query.proto";
+import "query_identifier.proto";
+
+message ProfiledQuery {
+  QueryIdentifier query_id = 1;
+  Query query = 2;
+  Profile profile = 3;
+}

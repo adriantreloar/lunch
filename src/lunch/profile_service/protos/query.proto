@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+import "query_identifier.proto";
+
+message Query {
+  string query_type = 1;
+  QueryIdentifier query_id = 2;
+  string query = 3;
+}

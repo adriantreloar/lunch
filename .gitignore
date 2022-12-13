@@ -6,4 +6,4 @@
 /.mypy_cache/
 /.pytest_cache/
 /doc/build/
-/lunch/tests/.pytest_cache/
+/src/lunch/tests/.pytest_cache/

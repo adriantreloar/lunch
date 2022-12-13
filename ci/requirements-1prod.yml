@@ -11,9 +11,12 @@ dependencies:
   - click
   - dask
   - distributed
+  - grpcio
+  - grpcio-tools
   - jsonschema
   - numpy
   - pandas
+  - pyarrow
   - uvloop
   - yaml
 

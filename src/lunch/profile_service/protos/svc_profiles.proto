@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+import "query.proto";
+import "query_identifier.proto";
+import "profiled_query.proto";
+
+// The profile service definition.
+service Profiles {
+  // Saves a profile to the central store
+  rpc putProfile (ProfiledQuery) returns (QueryIdentifier) {}
+  // Requests a profile from the central store
+  rpc getProfile (QueryIdentifier) returns (ProfiledQuery) {}
+
+}

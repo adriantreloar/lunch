@@ -58,7 +58,7 @@ async def insert_fact_data():
 
     fact_data_persistor = LocalFileColumnarFactDataPersistor(
         directory=Path(
-            "/example_output/fact"
+            "../../../example_output/fact"
         )
     )
     fact_data_cache = NullFactDataCache()

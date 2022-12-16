@@ -89,12 +89,14 @@ async def _update_dimension_from_dataframe(
         dimension_name=name,
         data=data,
         read_version=read_version,
-        write_version=write_version,
+        write_version=write_version
     )
 
     # TODO - log import plan
 
     # Enact import plan
     return await dimension_import_enactor.enact_plan(
-        import_plan, data, read_version, write_version, dimension_data_store
+        import_plan=import_plan, data=data, read_version=read_version, write_version=write_version,
+        dimension_data_store=dimension_data_store
+
     )

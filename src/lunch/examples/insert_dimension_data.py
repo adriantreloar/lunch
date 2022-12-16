@@ -51,10 +51,9 @@ async def insert_dimension_data():
     ]
 
     df_data = pd.DataFrame(data=data)
-
     dimension_data_persistor = LocalFileColumnarDimensionDataPersistor(
         directory=Path(
-            "/example_output/reference/dimension"
+            "../../../example_output/reference/dimension"
         )
     )
     dimension_data_cache = NullDimensionDataCache()

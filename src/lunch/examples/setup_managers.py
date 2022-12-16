@@ -50,10 +50,10 @@ fact_index_transformer = FactModelIndexTransformer()
 
 # Persistence
 version_persistor = LocalFileVersionPersistor(
-    directory=Path("/example_output")
+    directory=Path("../../../example_output")
 )
 model_persistor = LocalFileModelPersistor(
-    directory=Path("/example_output/model")
+    directory=Path("../../../example_output/model")
 )
 
 # Serializers

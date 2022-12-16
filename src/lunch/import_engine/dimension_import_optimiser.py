@@ -1,7 +1,8 @@
 from pandas import DataFrame
 
 from src.lunch.base_classes.conductor import Conductor
-from src.lunch.import_engine.dimension_import_plan import DimensionImportPlan
+from src.lunch.plans.plan import Plan
+from src.lunch.plans.basic_plan import BasicPlan
 from src.lunch.import_engine.dimension_import_planner import DimensionImportPlanner
 from src.lunch.managers.model_manager import ModelManager
 from src.lunch.mvcc.version import Version
@@ -25,7 +26,7 @@ class DimensionImportOptimiser(Conductor):
         data: DataFrame,
         read_version: Version,
         write_version: Version,
-    ) -> DimensionImportPlan:
+    ) -> Plan:
         return await _create_dataframe_import_plan(
             dimension_name=dimension_name,
             data=data,
@@ -45,7 +46,7 @@ async def _create_dataframe_import_plan(
     dimension_import_planner: DimensionImportPlanner,
     model_manager: ModelManager,
     dimension_data_store: DimensionDataStore,
-) -> DimensionImportPlan:
+) -> Plan:
     # TODO - try to remove the DimensionDataStore - ideally, the DimensionDataStore will be able to handle
     #  generic instructions we give it
 

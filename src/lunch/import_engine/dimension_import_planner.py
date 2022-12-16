@@ -1,5 +1,6 @@
 from src.lunch.base_classes.transformer import Transformer
-from src.lunch.import_engine.dimension_import_plan import DimensionImportPlan
+from src.lunch.plans.plan import Plan
+from src.lunch.plans.basic_plan import BasicPlan
 
 
 class DimensionImportPlanner(Transformer):
@@ -15,7 +16,7 @@ class DimensionImportPlanner(Transformer):
         data_columns: dict,  # name vs. type/attributes?
         read_filter: dict,
         merge_key: list,
-    ) -> DimensionImportPlan:
+    ) -> Plan:
         """
 
         :param self:
@@ -26,12 +27,15 @@ class DimensionImportPlanner(Transformer):
         :return:
         """
 
-        return DimensionImportPlan(
-            read_dimension=read_dimension,
-            write_dimension=write_dimension,
-            read_filter=read_filter,
-            merge_key=merge_key,
-            read_dimension_storage_instructions=read_dimension_storage_instructions,
-            write_dimension_storage_instructions=write_dimension_storage_instructions,
-            data_columns=data_columns,
+        return BasicPlan(
+            name="_import_locally_from_dataframe",
+            inputs={"read_dimension": read_dimension,
+                    "write_dimension": write_dimension,
+                    "read_filter":read_filter,
+                    "merge_key":merge_key,
+                    "read_dimension_storage_instructions": read_dimension_storage_instructions,
+                    "write_dimension_storage_instructions": write_dimension_storage_instructions,
+                    "data_columns": data_columns
+                    },
+            outputs={}
         )

@@ -8,7 +8,7 @@ class DimensionImportPlanner(Transformer):
         pass
 
     @staticmethod
-    def create_dataframe_import_plan(
+    def create_local_dataframe_import_plan(
         read_dimension: dict,
         write_dimension: dict,
         read_dimension_storage_instructions: dict,

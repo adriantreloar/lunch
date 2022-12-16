@@ -90,8 +90,8 @@ async def _put(
     columnar_data: dict[int, Iterable], # -1 -> value, 0-n -> fact dimension indices
     read_version: Version,
     write_version: Version,
-    fact_partition_indices: tuple[int,], # From the model
-    fact_data_indices: tuple[int,...], # From the model
+    fact_partition_indices: tuple[int, ...],  # From the model
+    fact_data_indices: tuple[int, ...],  # From the model
     fact_data_version_index_transformer: FactDataIndexTransformer,
     fact_data_partition_index_transformer: FactDataIndexTransformer,
     serializer: FactDataSerializer,
@@ -150,7 +150,6 @@ async def _put(
         facts_partition_index_write = await _get_partition_index(
             version=read_version, serializer=serializer, cache=cache
         )
-
 
     facts_partition_index_write = (
         fact_data_partition_index_transformer.update_fact_partition_index(

@@ -63,7 +63,7 @@ async def _create_dataframe_append_plan(
     # TODO - Pass in rules about the capability of the engine - is the engine a grid, or local dask etc.
     #  This will influence the choices the optimiser makes
     # TODO - merge is hardcoded to the first column - this is obviously a nonsense, but will get us some data in
-    return fact_append_planner.create_dataframe_append_plan(
+    return fact_append_planner.create_local_dataframe_append_plan(
         read_fact=read_fact,
         write_fact=write_fact,
         data_columns=data_columns,

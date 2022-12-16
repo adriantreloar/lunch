@@ -1,7 +1,8 @@
 from src.lunch.model.dimension.dimension_comparer import DimensionComparer
 from src.lunch.model.dimension.dimension_transformer import DimensionTransformer
-from src.lunch.model.fact.fact_comparer import FactComparer
-from src.lunch.model.fact.fact_transformer import FactTransformer
+#from src.lunch.model.fact.fact_comparer import FactComparer
+#from src.lunch.model.fact.fact_transformer import FactTransformer
+from src.lunch.model.fact import Fact
 from src.lunch.mvcc.version import Version
 from src.lunch.storage.cache.model_cache import ModelCache
 from src.lunch.storage.serialization.model_serializer import ModelSerializer
@@ -23,9 +24,9 @@ class ModelStore(Store):
         dimension_transformer: DimensionTransformer,
         dimension_index_transformer: DimensionModelIndexTransformer,
         dimension_comparer: DimensionComparer,
-        fact_transformer: FactTransformer,
+        #fact_transformer: FactTransformer,
         fact_index_transformer: FactModelIndexTransformer,
-        fact_comparer: FactComparer,
+        #fact_comparer: FactComparer,
         serializer: ModelSerializer,
         cache: ModelCache,
     ):
@@ -34,9 +35,9 @@ class ModelStore(Store):
         self._dimension_transformer = dimension_transformer
         self._dimension_index_transformer = dimension_index_transformer
         self._dimension_comparer = dimension_comparer
-        self._fact_transformer = fact_transformer
+        #self._fact_transformer = fact_transformer
         self._fact_index_transformer = fact_index_transformer
-        self._fact_comparer = fact_comparer
+        #self._fact_comparer = fact_comparer
 
     async def get_dimension_id(self, name: str, version: Version) -> int:
         """
@@ -90,16 +91,16 @@ class ModelStore(Store):
         )
 
     async def put_facts(
-        self, facts: list[dict], read_version: Version, write_version: Version
+        self, facts: list[Fact], read_version: Version, write_version: Version
     ) -> dict:
 
         return await _put_facts(
             facts=facts,
             read_version=read_version,
             write_version=write_version,
-            fact_transformer=self._fact_transformer,
+            #fact_transformer=self._fact_transformer,
             fact_index_transformer=self._fact_index_transformer,
-            fact_comparer=self._fact_comparer,
+            #fact_comparer=self._fact_comparer,
             serializer=self._serializer,
             cache=self._cache,
         )
@@ -350,7 +351,7 @@ async def _get_fact_id(
 
 async def _get_fact(
     id_: int, version: Version, serializer: ModelSerializer, cache: ModelCache
-):
+) -> Fact:
     try:
         return await cache.get_fact(id_, version)
     except KeyError:
@@ -416,11 +417,11 @@ async def _put_fact_version_index(
 
 
 async def _put_facts(
-    facts: list[dict],
+    facts: list[Fact],
     read_version: Version,
     write_version: Version,
-    fact_comparer: FactComparer,
-    fact_transformer: FactTransformer,
+    #fact_comparer: FactComparer,
+    #fact_transformer: FactTransformer,
     fact_index_transformer: FactModelIndexTransformer,
     serializer: ModelSerializer,
     cache: ModelCache,
@@ -431,41 +432,38 @@ async def _put_facts(
     facts_without_ids = {}
 
     for fact in facts:
-        fact_name = fact_transformer.get_name_from_fact(fact)
+        fact_name = fact.name
         try:
             # The fact may already have the id - if it is being edited
-            id_ = fact_transformer.get_id_from_fact(fact)
-            facts_with_ids[fact_name] = fact
-        except KeyError:
+            id_ = fact.fact_id
+        except AttributeError:
             facts_without_ids[fact_name] = fact
+        else:
+            facts_with_ids[fact_name] = fact
 
     # Check for changes
     fact_names_with_changes = list(facts_without_ids.keys())
     for fact in facts_with_ids.values():
-        id_ = fact_transformer.get_id_from_fact(fact)
+        id_ = fact.id_
 
         previous_fact = await _get_fact(
             id_=id_, version=read_version, serializer=serializer, cache=cache
         )
-        comparison = fact_comparer.compare(fact, previous_fact)
 
-        if comparison:
-            fact_name = fact_transformer.get_name_from_fact(fact)
-            fact_names_with_changes.append(fact_name)
+        if fact != previous_fact:
+            fact_names_with_changes.append(fact.name)
 
     # Update the facts without ids
     max_fact_id = await _get_max_fact_id(
         version=read_version, serializer=serializer, cache=cache
     )
-    for i, (name, dimension) in enumerate(facts_without_ids.items()):
-        fact_with_id = fact_transformer.add_id_to_fact(dimension, max_fact_id + i + 1)
+    for i, (name, fact) in enumerate(facts_without_ids.items()):
+        fact_with_id = fact.set(fact_id=max_fact_id + i + 1)
         facts_with_ids[name] = fact_with_id
 
     facts_with_ids_and_versions = []
     for name, fact in facts_with_ids.items():
-        out_fact = fact_transformer.add_model_version_to_fact(
-            fact, write_version.model_version
-        )
+        out_fact = fact.set(model_version=write_version.model_version)
         facts_with_ids_and_versions.append(out_fact)
 
     facts_version_index_read = await _get_fact_version_index(
@@ -480,12 +478,12 @@ async def _put_facts(
     facts_version_index_write = fact_index_transformer.update_fact_version_index(
         index_=facts_version_index_read,
         write_version=write_version,
-        changed_ids=[fact["id_"] for fact in facts_with_ids.values()],
+        changed_ids=[fact.fact_id for fact in facts_with_ids.values()],
     )
     facts_name_index_write = fact_index_transformer.update_fact_name_index(
         index_=facts_name_index_read,
         changed_names_index={
-            fact["name"]: fact["id_"] for fact in facts_with_ids.values()
+            fact.name: fact.fact_id for fact in facts_with_ids.values()
         },
     )
 

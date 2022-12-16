@@ -4,17 +4,24 @@ from src.lunch.examples.setup_managers import model_manager, version_manager
 
 from src.lunch.examples.save_dimension import save_dimension
 
+from src.lunch.model.fact import Fact, FactStorage
+
 async def save_fact():
 
     await save_dimension()
     #d_department = {"name": "Department", "attributes": [{"name": "thing1"}]}
     #d_time = {"name": "Time", "attributes": [{"name": "thing1"}]}
 
-    f_sales = {
-        "name": "Sales",
-        "dimensions": ["Department", "Time"],
-        "measures": [{"name": "sales", "type": "decimal", "precision": "2"}],
-    }
+    f_sales = Fact(
+        name="Sales",
+        dimensions=[{"name":"Department", "column_id": 1, "view_order": 1},
+                    {"name":"Time", "column_id": 2, "view_order": 2}
+                    ],
+        measures=[{"name": "sales", "measure_id": 1, "type": "decimal", "precision": 2}],
+        storage=FactStorage(index_columns=[1],
+                            data_columns=[2, 0]
+                            )
+        )
 
     async with version_manager.read_version() as read_version:
         async with version_manager.write_model_version(

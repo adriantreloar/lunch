@@ -3,6 +3,7 @@ import yaml
 from src.lunch.mvcc.version import Version
 from src.lunch.storage.persistence.local_file_model_persistor import LocalFileModelPersistor
 from src.lunch.storage.serialization.model_serializer import ModelSerializer
+from src.lunch.model.fact import Fact
 
 
 class YamlModelSerializer(ModelSerializer):
@@ -188,14 +189,14 @@ async def _put_fact(fact: dict, version: Version, persistor: LocalFileModelPersi
 
 
 async def _put_facts(
-    facts: list[dict], version: Version, persistor: LocalFileModelPersistor
+    facts: list[Fact], version: Version, persistor: LocalFileModelPersistor
 ):
     # TODO - this could be done in parallel perhaps?
     for fact in facts:
         with persistor.open_fact_file_write(
-            id_=fact["id_"], version=version.model_version
+            id_=fact.fact_id, version=version.model_version
         ) as stream:
-            yaml.safe_dump(fact, stream)
+            yaml.safe_dump(fact.serialize(), stream)
 
 
 async def _get_fact_version_index(version: Version, persistor: LocalFileModelPersistor):

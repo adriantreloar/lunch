@@ -9,10 +9,11 @@ from src.lunch.model.dimension.dimension_structure_validator import (
     DimensionStructureValidator,
 )
 from src.lunch.model.dimension.dimension_transformer import DimensionTransformer
-from src.lunch.model.fact.fact_comparer import FactComparer
-from src.lunch.model.fact.fact_reference_validator import FactReferenceValidator
-from src.lunch.model.fact.fact_structure_validator import FactStructureValidator
-from src.lunch.model.fact.fact_transformer import FactTransformer
+from src.lunch.model.fact import FactStorage, Fact
+#from src.lunch.model.fact.fact_comparer import FactComparer
+#from src.lunch.model.fact.fact_reference_validator import FactReferenceValidator
+#from src.lunch.model.fact.fact_structure_validator import FactStructureValidator
+#from src.lunch.model.fact.fact_transformer import FactTransformer
 from src.lunch.mvcc.version import Version
 from src.lunch.storage.model_store import ModelStore
 
@@ -24,10 +25,10 @@ class ModelManager(Conductor):
         dimension_comparer: DimensionComparer,
         dimension_reference_validator: DimensionReferenceValidator,
         dimension_transformer: DimensionTransformer,
-        fact_structure_validator: FactStructureValidator,
-        fact_comparer: FactComparer,
-        fact_reference_validator: FactReferenceValidator,
-        fact_transformer: FactTransformer,
+        #fact_structure_validator: FactStructureValidator,
+        #fact_comparer: FactComparer,
+        #fact_reference_validator: FactReferenceValidator,
+        #fact_transformer: FactTransformer,
         version_manager: VersionManager,
         storage: ModelStore,
         global_state: GlobalState,
@@ -38,17 +39,17 @@ class ModelManager(Conductor):
         self._dimension_comparer = dimension_comparer
         self._dimension_reference_validator = dimension_reference_validator
         self._dimension_transformer = dimension_transformer
-        self._fact_structure_validator = fact_structure_validator
-        self._fact_comparer = fact_comparer
-        self._fact_reference_validator = fact_reference_validator
-        self._fact_transformer = fact_transformer
+        #self._fact_structure_validator = fact_structure_validator
+        #self._fact_comparer = fact_comparer
+        #self._fact_reference_validator = fact_reference_validator
+        #self._fact_transformer = fact_transformer
 
         self._global_state = global_state
 
     async def update_model(
         self,
         dimensions: list[dict],
-        facts: list[dict],
+        facts: list[Fact],
         read_version: Version,
         write_version: Version,
     ):
@@ -60,9 +61,9 @@ class ModelManager(Conductor):
             dimension_structure_validator=self._dimension_structure_validator,
             dimension_comparer=self._dimension_comparer,
             dimension_transformer=self._dimension_transformer,
-            fact_structure_validator=self._fact_structure_validator,
-            fact_comparer=self._fact_comparer,
-            fact_transformer=self._fact_transformer,
+            #fact_structure_validator=self._fact_structure_validator,
+            #fact_comparer=self._fact_comparer,
+            #fact_transformer=self._fact_transformer,
             version_manager=self._version_manager,
             storage=self._storage,
         )
@@ -95,7 +96,6 @@ class ModelManager(Conductor):
             version=version,
             add_default_storage=add_default_storage,
             storage=self._storage,
-            default_storage=self._global_state.default_fact_storage,
             fact_transformer=self._fact_transformer,
         )
 
@@ -138,19 +138,12 @@ async def _get_fact_by_name(
     name: str,
     version: Version,
     add_default_storage: bool,
-    default_storage: dict,
-    fact_transformer: FactTransformer,
+    default_storage: FactStorage,
+    #fact_transformer: FactTransformer,
     storage: ModelStore,
 ) -> dict:
     id_ = await _get_fact_id(name=name, version=version, storage=storage)
-    fact = await _get_fact(id_=id_, version=version, storage=storage)
-
-    if add_default_storage:
-        fact = fact_transformer.add_default_storage(
-            fact=fact, default_storage=default_storage
-        )
-
-    return fact
+    return await _get_fact(id_=id_, version=version, storage=storage)
 
 async def _get_fact_id(
     name: str,
@@ -164,21 +157,21 @@ async def _get_fact(
     id_: int,
     version: Version,
     storage: ModelStore,
-) -> dict:
+) -> Fact:
     return await storage.get_fact(id_=id_, version=version)
 
 
 async def _update_model(
     dimensions: list[dict],
-    facts: list[dict],
+    facts: list[Fact],
     read_version: Version,
     write_version: Version,
     dimension_structure_validator: DimensionStructureValidator,
     dimension_comparer: DimensionComparer,
     dimension_transformer: DimensionTransformer,
-    fact_structure_validator: FactStructureValidator,
-    fact_comparer: FactComparer,
-    fact_transformer: FactTransformer,
+    #fact_structure_validator: FactStructureValidator,
+    #fact_comparer: FactComparer,
+    #fact_transformer: FactTransformer,
     version_manager: VersionManager,
     storage: ModelStore,
 ):
@@ -196,10 +189,6 @@ async def _update_model(
     await storage.put_dimensions(
         read_version=read_version, write_version=write_version, dimensions=dimensions
     )
-
-    # This could throw a validation error
-    for fact in facts:
-        fact_structure_validator.validate(data=fact)
 
     # TODO - it would make sense to do basic validations and change detection BEFORE creating the new write version,
     #  Thus we would only have model_version flagged in the write version if we definitely needed one
@@ -254,9 +243,9 @@ async def _update_fact(
     fact: dict,
     read_version: Version,
     write_version: Version,
-    fact_structure_validator: FactStructureValidator,
-    fact_comparer: FactComparer,
-    fact_transformer: FactTransformer,
+    #fact_structure_validator: FactStructureValidator,
+    #fact_comparer: FactComparer,
+    #fact_transformer: FactTransformer,
     version_manager: VersionManager,
     storage: ModelStore,
 ):
@@ -325,7 +314,7 @@ async def _check_and_put_dimension(
 
 
 async def _check_and_put_fact(
-    fact: dict, read_version: Version, write_version: Version, storage: ModelStore
+    fact: Fact, read_version: Version, write_version: Version, storage: ModelStore
 ):
     # TODO - check references - if we have made deletions we'll need to know
     # Pass the comparison into the reference check, and check references at the write version

@@ -1,9 +1,12 @@
 from typing import Any
 
 from numpy import dtype
+import pyarrow as pa
+import pyarrow.parquet as pq
 
 from src.lunch.base_classes.conductor import Conductor
-from src.lunch.import_engine.fact_append_plan import FactAppendPlan
+from src.lunch.plans.plan import Plan
+from src.lunch.plans.basic_plan import BasicPlan
 from src.lunch.mvcc.version import Version
 from src.lunch.import_engine.transformers.fact_dataframe_transformer import (
     FactDataFrameTransformer,
@@ -17,7 +20,7 @@ class FactImportEnactor(Conductor):
 
     async def enact_plan(
         self,
-        append_plan: FactAppendPlan,
+        append_plan: Plan,
         data: Any,
         read_version: Version,
         write_version: Version,
@@ -33,13 +36,29 @@ class FactImportEnactor(Conductor):
 
 
 async def _enact_plan(
-    append_plan: FactAppendPlan,
+    append_plan: Plan,
     data: Any,
     read_version: Version,
     write_version: Version,
     fact_data_store: FactDataStore,
 ):
+    if isinstance(append_plan, BasicPlan) and append_plan.name == "_import_append_locally_from_dataframe":
+        # TODO: if import_plan.inputs["read_filter"] is a guid, lookup the output form a previous step
+        # TODO: if import_plan.inputs["merge_key"] is a guid, lookup the output form a previous step
 
+        await _import_append_locally_from_dataframe(data=data,
+                                             read_version=read_version,
+                                             write_version=write_version,
+                                             append_plan= append_plan,
+                                             fact_data_store=fact_data_store)
+    else:
+        raise ValueError(append_plan)
+
+async def _import_append_locally_from_dataframe(data: Any,
+                                             read_version: Version,
+                                             write_version: Version,
+                                             append_plan: Plan,
+                                             fact_data_store: FactDataStore) -> None:
     # TODO assert data is of the type specified in the plan
     #  could be a dataframe, dask dataframe, list of open files, list of file names, file mask, and so on
 
@@ -51,10 +70,22 @@ async def _enact_plan(
     #  we need an import_plan transformer class
     #  which means we really need an ImportPlan named-dict
 
+    #return BasicPlan(
+    #    name="_import_append_locally_from_dataframe",
+    #    inputs={"read_fact": read_fact,
+    #            "write_fact": write_fact,
+    #            "read_filter": read_filter,
+    #            "merge_key": merge_key,
+    #            "read_fact_storage_instructions": read_fact_storage_instructions,
+    #            "write_fact_storage_instructions": write_fact_storage_instructions,
+    #            "data_columns": data_columns
+    #            },
+    #    outputs={}
+    #)
 
     column_types = {
         attribute_id: dtype(str)
-        for attribute_id in (d["id_"] for d in append_plan.read_fact["attributes"])
+        for attribute_id in (d["id_"] for d in append_plan.inputs["read_fact"]["attributes"])
     }
 
     try:
@@ -81,9 +112,11 @@ async def _enact_plan(
     # how to represent index?
     columnar_data = FactDataFrameTransformer.columnize(data=merged_df)
 
+    table = pa.Table.from_pandas(merged_df[FACT_COLUMNS])
+
     # put will have to handle its indexes too
     await fact_data_store.put(
-        fact_id=import_plan.write_fact["id_"],
+        fact_id=append_plan["inputs"]["write_fact"]["id_"],
         columnar_data=columnar_data,
         write_version=write_version,
         read_version=read_version,

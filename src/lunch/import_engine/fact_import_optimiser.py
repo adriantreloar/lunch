@@ -1,8 +1,8 @@
 from pandas import DataFrame
 
 from src.lunch.base_classes.conductor import Conductor
-from src.lunch.import_engine.fact_append_plan import FactAppendPlan
 from src.lunch.import_engine.fact_append_planner import FactAppendPlanner
+from src.lunch.plans.plan import Plan
 from src.lunch.managers.model_manager import ModelManager
 from src.lunch.mvcc.version import Version
 from src.lunch.storage.fact_data_store import FactDataStore
@@ -25,7 +25,7 @@ class FactImportOptimiser(Conductor):
         data: DataFrame,
         read_version: Version,
         write_version: Version,
-    ) -> FactAppendPlan:
+    ) -> Plan:
         return await _create_dataframe_append_plan(
             fact_name=fact_name,
             data=data,
@@ -45,16 +45,16 @@ async def _create_dataframe_append_plan(
     fact_append_planner: FactAppendPlanner,
     model_manager: ModelManager,
     fact_data_store: FactDataStore,
-) -> FactAppendPlan:
+) -> Plan:
     # TODO - try to remove the FactDataStore - ideally, the FactDataStore will be able to handle
     #  generic instructions we give it
 
     # It is the model_manager's job to ensure it is handing out valid facts, so don't validate here
     read_fact = await model_manager.get_fact_by_name(
-        name=fact_name, version=read_version, add_default_storage=True
+        name=fact_name, version=read_version
     )
     write_fact = await model_manager.get_fact_by_name(
-        name=fact_name, version=write_version, add_default_storage=True
+        name=fact_name, version=write_version
     )
 
     # name vs. type/attributes?

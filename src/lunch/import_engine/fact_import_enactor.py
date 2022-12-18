@@ -42,11 +42,11 @@ async def _enact_plan(
     write_version: Version,
     fact_data_store: FactDataStore,
 ):
-    if isinstance(append_plan, BasicPlan) and append_plan.name == "_import_append_locally_from_dataframe":
+    if isinstance(append_plan, BasicPlan) and append_plan.name == "_import_fact_append_locally_from_dataframe":
         # TODO: if import_plan.inputs["read_filter"] is a guid, lookup the output form a previous step
         # TODO: if import_plan.inputs["merge_key"] is a guid, lookup the output form a previous step
 
-        await _import_append_locally_from_dataframe(data=data,
+        await _import_fact_append_locally_from_dataframe(data=data,
                                              read_version=read_version,
                                              write_version=write_version,
                                              append_plan= append_plan,
@@ -54,7 +54,7 @@ async def _enact_plan(
     else:
         raise ValueError(append_plan)
 
-async def _import_append_locally_from_dataframe(data: Any,
+async def _import_fact_append_locally_from_dataframe(data: Any,
                                              read_version: Version,
                                              write_version: Version,
                                              append_plan: Plan,
@@ -83,6 +83,11 @@ async def _import_append_locally_from_dataframe(data: Any,
     #    outputs={}
     #)
 
+    # TODO - go back to the plan creation
+    #  to create the plan, we need to actually know whether we have pre-id-ed data
+    #  to create the plan we need to know if we are first translating "Dimension Column" -> dimension_id
+    #  thus by the time we have created the plan we should know this
+
     column_types = {
         attribute_id: dtype(str)
         for attribute_id in (d["id_"] for d in append_plan.inputs["read_fact"]["attributes"])
@@ -91,7 +96,7 @@ async def _import_append_locally_from_dataframe(data: Any,
     try:
         read_columns = await fact_data_store.get_columns(
             read_version=read_version,
-            fact_id=append_plan.read_fact["id_"],
+            fact_id=append_plan.inputs["read_fact"].fact_id,
             filter=append_plan.read_filter,
             column_types=column_types,
         )

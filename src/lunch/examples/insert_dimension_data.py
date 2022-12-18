@@ -50,7 +50,22 @@ async def insert_dimension_data():
         },
     ]
 
-    df_data = pd.DataFrame(data=data)
+    df_data_d_test = pd.DataFrame(data=data)
+
+    department_data = [
+        {"thing1": f"A Thing {i}"} for i in range(1000)
+    ]
+
+    df_data_d_department = pd.DataFrame(data=department_data)
+
+    # TODO - This Time data is a bit naff, we could do with a better example
+    time_data = [
+        {"thing1": f"Time {i}"} for i in range(10000)
+    ]
+
+    df_data_d_time = pd.DataFrame(data=time_data)
+
+
     dimension_data_persistor = LocalFileColumnarDimensionDataPersistor(
         directory=Path(
             "../../../example_output/reference/dimension"
@@ -105,22 +120,26 @@ async def insert_dimension_data():
             read_version=read_version
         ) as write_version:
 
-            # This is also done in reference_data_manager.update_dimension_from_dataframe()
-            # I did it again here just for show
-            plan = await dimension_import_optimiser.create_dataframe_import_plan(
-                dimension_name="Test",
-                data=df_data,
+            await reference_data_manager.update_dimension_from_dataframe(
+                name="Test",
+                data=df_data_d_test,
                 read_version=read_version,
                 write_version=write_version,
             )
 
             await reference_data_manager.update_dimension_from_dataframe(
-                name="Test",
-                data=df_data,
+                name="Department",
+                data=df_data_d_department,
                 read_version=read_version,
                 write_version=write_version,
             )
 
+            await reference_data_manager.update_dimension_from_dataframe(
+                name="Time",
+                data=df_data_d_time,
+                read_version=read_version,
+                write_version=write_version,
+            )
 
 # And run it
 if __name__ == "__main__":

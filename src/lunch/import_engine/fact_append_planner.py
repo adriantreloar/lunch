@@ -30,7 +30,7 @@ class FactAppendPlanner(Transformer):
         """
 
         return BasicPlan(
-            name="_import_append_locally_from_dataframe",
+            name="_import_fact_append_locally_from_dataframe",
             inputs={"read_fact": read_fact,
                     "write_fact": write_fact,
                     "read_filter": read_filter,

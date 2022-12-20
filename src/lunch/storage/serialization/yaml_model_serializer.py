@@ -43,7 +43,7 @@ class YamlModelSerializer(ModelSerializer):
     async def get_max_dimension_id(self, version) -> int:
         return await _get_max_dimension_id(version=version, persistor=self._persistor)
 
-    async def get_fact(self, id_: int, version: Version) -> dict:
+    async def get_fact(self, id_: int, version: Version) -> Fact:
         return await _get_fact(
             id_=id_,
             version=version,
@@ -170,15 +170,15 @@ async def _get_fact_id(name: str, version: Version, persistor: LocalFileModelPer
     return d[name]
 
 
-async def _get_fact(id_: int, version: Version, persistor: LocalFileModelPersistor):
+async def _get_fact(id_: int, version: Version, persistor: LocalFileModelPersistor) -> Fact:
     if not version.model_version:
-        return {}
+        raise KeyError(id_)
 
     with persistor.open_fact_file_read(
         id_=id_, version=version.model_version
     ) as stream:
         d = yaml.safe_load(stream)
-    return d
+    return Fact(**d)
 
 
 async def _put_fact(fact: dict, version: Version, persistor: LocalFileModelPersistor):

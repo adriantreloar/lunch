@@ -9,7 +9,8 @@ from src.lunch.model.dimension.dimension_structure_validator import (
     DimensionStructureValidator,
 )
 from src.lunch.model.dimension.dimension_transformer import DimensionTransformer
-from src.lunch.model.fact import FactStorage, Fact
+from src.lunch.model.fact import Fact, FactTransformer
+from src.lunch.model.star_schema import StarSchema, StarSchemaTransformer
 #from src.lunch.model.fact.fact_comparer import FactComparer
 #from src.lunch.model.fact.fact_reference_validator import FactReferenceValidator
 #from src.lunch.model.fact.fact_structure_validator import FactStructureValidator
@@ -90,12 +91,22 @@ class ModelManager(Conductor):
 
     async def get_fact_by_name(
         self, name: str, version: Version
-    ) -> dict:
+    ) -> Fact:
         return await _get_fact_by_name(
             name=name,
             version=version,
             storage=self._storage,
         )
+
+    async def get_star_schema_model_by_fact_name(
+        self, name: str, version: Version
+    ) -> StarSchema:
+        fact = await _get_fact_by_name(name=name, version=version, storage=self._storage)
+        dimensions_by_id = {}
+        for dimension_id in FactTransformer.get_unique_dimension_ids(fact):
+            dimensions_by_id[dimension_id] = await _get_dimension(id_=dimension_id, version=version, storage=self._storage)
+
+        return StarSchema(fact=fact, dimensions=dimensions_by_id)
 
 async def _get_dimension_id(
     name: str,
@@ -136,7 +147,7 @@ async def _get_fact_by_name(
     name: str,
     version: Version,
     storage: ModelStore,
-) -> dict:
+) -> Fact:
     id_ = await _get_fact_id(name=name, version=version, storage=storage)
     return await _get_fact(id_=id_, version=version, storage=storage)
 
@@ -182,7 +193,7 @@ async def _update_model(
         out_dimensions.append(dimension)
 
     await storage.put_dimensions(
-        read_version=read_version, write_version=write_version, dimensions=dimensions
+        read_version=read_version, write_version=write_version, dimensions=out_dimensions
     )
 
     # TODO - it would make sense to do basic validations and change detection BEFORE creating the new write version,
@@ -190,8 +201,40 @@ async def _update_model(
     #  However, currently checks aren't done before write_version creation, so we will need to create indexes
     #  for dimensions and facts everytime
 
+
+    # TODO - package this into a function
+    out_facts = []
+    for fact in facts:
+        # add default view order if there is none
+        fact = FactTransformer.fill_default_view_order(fact=fact)
+        # add column ids if we don't have them
+        fact = FactTransformer.fill_default_column_ids(fact=fact)
+
+        # TODO - package this into a function
+        dimensions = []
+        # Gather canonical versions of all of the dimensions used in the fact
+        # validate fact cross references (and fill in dimension ids) against WRITE version of dimension
+        for dimension_metadata in fact.dimensions:
+            dimension_id = dimension_metadata.dimension_id
+            dimension: dict = None
+            if dimension_id != 0:
+                dimension = await _get_dimension(id_=dimension_id, version=write_version, storage=storage)
+            if dimension is None:
+                dimension_name = dimension_metadata.dimension_name
+                dimension = await _get_dimension_by_name(name=dimension_name,
+                                                         version=write_version,
+                                                         storage=storage,
+                                                         add_default_storage=False,
+                                                         default_storage=None,
+                                                         dimension_transformer=dimension_transformer)
+            dimensions.append(dimension)
+
+        fact = FactTransformer.fill_dimension_info(fact=fact, dimensions=dimensions)
+
+        out_facts.append(fact)
+
     await storage.put_facts(
-        read_version=read_version, write_version=write_version, facts=facts
+        read_version=read_version, write_version=write_version, facts=out_facts
     )
 
     # fact_version_index_read = await storage.get_fact_version_index(version=read_version)

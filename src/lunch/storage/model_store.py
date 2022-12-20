@@ -85,7 +85,7 @@ class ModelStore(Store):
             name=name, version=version, serializer=self._serializer, cache=self._cache
         )
 
-    async def get_fact(self, id_: int, version: Version) -> dict:
+    async def get_fact(self, id_: int, version: Version) -> Fact:
         return await _get_fact(
             id_=id_, version=version, serializer=self._serializer, cache=self._cache
         )

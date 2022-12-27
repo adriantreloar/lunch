@@ -78,32 +78,37 @@ async def _import_locally_from_dataframe(
     #  we need an import_plan transformer class
     #  which means we really need an ImportPlan named-dict
 
-    column_types = {
-        attribute_id: dtype(str)
-        for attribute_id in (d["id_"] for d in read_dimension["attributes"])
-    }
-    # Could throw a key error so keep this lookup outside the next try block
-    dimension_id = read_dimension["id_"]
-
-    try:
-        read_columns = await dimension_data_store.get_columns(
-            read_version=read_version,
-            dimension_id=dimension_id,
-            filter=read_filter,
-            column_types=column_types,
-        )
-    except KeyError:
-        # The first time we have had data for this dimension
+    if read_dimension is None:
+        # The dimension  only exists for the write version,
+        # it must have been created as part of the write transaction
         merged_df = data
     else:
-        # We are making the
-        compare_df = DimensionDataFrameTransformer.make_dataframe(
-            columns=read_columns, dtypes=column_types
-        )
+        column_types = {
+            attribute_id: dtype(str)
+            for attribute_id in (d["id_"] for d in read_dimension["attributes"])
+        }
+        # Could throw a key error so keep this lookup outside the next try block
+        dimension_id = read_dimension["id_"]
 
-        merged_df = DimensionDataFrameTransformer.merge(
-            source_df=data, compare_df=compare_df, key=merge_key
-        )
+        try:
+            read_columns = await dimension_data_store.get_columns(
+                read_version=read_version,
+                dimension_id=dimension_id,
+                filter=read_filter,
+                column_types=column_types,
+            )
+        except KeyError:
+            # The first time we have had data for this dimension
+            merged_df = data
+        else:
+            # We are making the
+            compare_df = DimensionDataFrameTransformer.make_dataframe(
+                columns=read_columns, dtypes=column_types
+            )
+
+            merged_df = DimensionDataFrameTransformer.merge(
+                source_df=data, compare_df=compare_df, key=merge_key
+            )
 
     # dictionary of columns? attribute_id : column/iterator
     # how to represent index?

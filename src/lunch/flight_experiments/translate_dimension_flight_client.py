@@ -19,7 +19,7 @@ async def translate_dimension_example():
     call_options = pa.flight.FlightCallOptions(timeout=None, headers=[("foo".encode("utf8"), "bar".encode("utf8"))])
 
     async with version_manager.read_version() as read_version:
-        command_dict = {"command":"dimension_lookup",
+        command_dict = {"command": "dimension_lookup",
                         "parameters":
                             {"version": version_to_dict(read_version),
                              "dimension_id": 1,

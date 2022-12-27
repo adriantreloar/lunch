@@ -59,6 +59,7 @@ class DimensionDataStore(Store):
         :param filter: TODO not really sure what shape this will be. mongo style filter?
         :return: dict - column integer ids to iterables, dict column integer ids to types
         """
+        print(f"{read_version=}")
 
         version_index = await _get_version_index(serializer=self._serializer, cache=self._cache, version=read_version)
 
@@ -104,6 +105,7 @@ async def _put(
             version=read_version, serializer=serializer, cache=cache
         )
 
+    print(f"{dimensions_version_index_write=}")
     # All the changed dimensions will be in dimensions_with_ids now
     # All of these have a version of the write-version
     dimensions_version_index_write = (
@@ -139,6 +141,10 @@ async def _get_version_index(
     serializer: DimensionDataSerializer,
     cache: DimensionDataCache,
 ) -> dict[int, int]:
+
+    print(f"_get_version_index {version=}")
+    print(f"_get_version_index {serializer._persistor=}")
+
     if not version.version:
         return {}
 
@@ -153,5 +159,9 @@ async def _put_version_index(
     serializer: DimensionDataSerializer,
     cache: DimensionDataCache,
 ) -> None:
+    print(f"_put_version_index {index_=}")
+    print(f"_put_version_index {version=}")
+    print(f"_put_version_index {serializer._persistor=}")
+
     await serializer.put_version_index(index_=index_, version=version)
     await cache.put_version_index(index_=index_, version=version)

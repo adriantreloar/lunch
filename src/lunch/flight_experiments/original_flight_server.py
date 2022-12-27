@@ -43,6 +43,16 @@ class FlightServer(pa.flight.FlightServerBase):
                 for chunk in reader:
                     writer.write_table(pa.Table.from_batches([chunk.data]))
 
+    def do_exchange(self, context, descriptor, reader, writer):
+        # Read the uploaded data and write it back immediately
+        print(context)
+        print()
+        print(descriptor.command.decode("utf8"))
+        print()
+        writer.begin(reader.schema)
+        for chunk in reader:
+            writer.write(chunk.data)
+
     def do_get(self, context, ticket):
         dataset = ticket.ticket.decode('utf-8')
         # Stream data from a file

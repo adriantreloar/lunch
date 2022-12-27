@@ -82,10 +82,13 @@ async def _import_locally_from_dataframe(
         attribute_id: dtype(str)
         for attribute_id in (d["id_"] for d in read_dimension["attributes"])
     }
+    # Could throw a key error so keep this lookup outside the next try block
+    dimension_id = read_dimension["id_"]
+
     try:
         read_columns = await dimension_data_store.get_columns(
             read_version=read_version,
-            dimension_id=read_dimension["id_"],
+            dimension_id=dimension_id,
             filter=read_filter,
             column_types=column_types,
         )

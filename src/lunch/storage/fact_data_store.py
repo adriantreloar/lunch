@@ -24,9 +24,6 @@ class FactDataStore(Store):
         self._fact_data_version_index_transformer = FactDataIndexTransformer()
         self._fact_data_partition_index_transformer = FactDataIndexTransformer()
 
-    def storage_instructions(self, version: Version):
-        return dict()
-
     async def put(
         self,
         fact_id: int,

@@ -68,7 +68,7 @@ async def insert_dimension_data():
 
     dimension_data_persistor = LocalFileColumnarDimensionDataPersistor(
         directory=Path(
-            "../../../example_output/reference/dimension"
+            "/home/treloarja/PycharmProjects/lunch/example_output/reference/dimension"
         )
     )
     dimension_data_cache = NullDimensionDataCache()
@@ -83,7 +83,7 @@ async def insert_dimension_data():
 
     reference_data_persistor = LocalFileReferenceDataPersistor(
         directory=Path(
-            "/example_output/reference/dimension"
+            "/home/treloarja/PycharmProjects/lunch/example_output/reference/dimension"
         )
     )
     reference_data_cache = NullReferenceDataCache()
@@ -107,7 +107,6 @@ async def insert_dimension_data():
     )
 
     reference_data_manager = ReferenceDataManager(
-        model_manager=model_manager,
         reference_data_store=reference_storage,
         dimension_data_store=dimension_data_storage,
         dimension_import_optimiser=dimension_import_optimiser,

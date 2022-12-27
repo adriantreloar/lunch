@@ -2,8 +2,9 @@ from src.lunch.base_classes.transformer import Transformer
 from src.lunch.plans.plan import Plan
 from src.lunch.plans.basic_plan import BasicPlan
 from src.lunch.plans.remote_plan import RemotePlan
-
-
+from src.lunch.model.star_schema import StarSchema, StarSchemaTransformer
+from src.lunch.model.table_metadata import TableMetadata, TableMetadataTransformer
+from src.lunch.mvcc.version import Version
 
 class FactAppendPlanner(Transformer):
     def __init__(self):
@@ -11,33 +12,31 @@ class FactAppendPlanner(Transformer):
 
     @staticmethod
     def create_local_dataframe_append_plan(
-        read_fact: dict,
-        write_fact: dict,
-        read_fact_storage_instructions: dict,
-        write_fact_storage_instructions: dict,
-        data_columns: dict,  # name vs. type/attributes?
-        read_filter: dict,
-        merge_key: list,
+        read_version_target_model: StarSchema,
+        write_version_target_model: StarSchema,
+        source_metadata: TableMetadata,
+        column_mapping: dict,
+        read_version: Version,
+        write_version: Version,
     ) -> Plan:
-        """
+        print(write_version_target_model)
+        print(source_metadata)
+        for m in column_mapping:
+            print(m)
 
-        :param self:
-        :param read_fact:
-        :param write_fact:
-        :param read_fact_storage_instructions: From fact storage.
-            Allows the optimiser to know what instructions it has to work with
-        :return:
-        """
+        # Check every dimension is mapped (in theory there could be a default - 0? meaning ALL?)
+        # Check every mapping maps a source to a target
+        # for each mapping work out what the target type is - id, translate, measure_name, or measure
+
+        # Translate, and Broadcast Measures in parallel
+
+        #Combine - all? - in storage order index followed by data followed by values
+        # Sort by key
+        #
 
         return BasicPlan(
-            name="_import_fact_append_locally_from_dataframe",
-            inputs={"read_fact": read_fact,
-                    "write_fact": write_fact,
-                    "read_filter": read_filter,
-                    "merge_key": merge_key,
-                    "read_fact_storage_instructions": read_fact_storage_instructions,
-                    "write_fact_storage_instructions": write_fact_storage_instructions,
-                    "data_columns": data_columns
+            name="",
+            inputs={
                     },
             outputs={}
         )

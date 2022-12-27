@@ -14,13 +14,11 @@ from src.lunch.storage.reference_data_store import ReferenceDataStore
 class ReferenceDataManager(Conductor):
     def __init__(
         self,
-        model_manager: ModelManager,
         reference_data_store: ReferenceDataStore,
         dimension_data_store: DimensionDataStore,
         dimension_import_optimiser: DimensionImportOptimiser,
         dimension_import_enactor: DimensionImportEnactor,
     ):
-        self._model_manager = model_manager
 
         self._reference_data_store = reference_data_store
         self._dimension_data_store = dimension_data_store
@@ -40,7 +38,6 @@ class ReferenceDataManager(Conductor):
             data=data,
             read_version=read_version,
             write_version=write_version,
-            model_manager=self._model_manager,
             dimension_import_optimiser=self._dimension_import_optimiser,
             dimension_import_enactor=self._dimension_import_enactor,
             dimension_data_store=self._dimension_data_store,
@@ -52,7 +49,6 @@ async def _update_dimension_from_dataframe(
     data: pd.DataFrame,
     read_version: Version,
     write_version: Version,
-    model_manager: ModelManager,
     dimension_import_optimiser: DimensionImportOptimiser,
     dimension_import_enactor: DimensionImportEnactor,
     dimension_data_store: DimensionDataStore,

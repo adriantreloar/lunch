@@ -11,10 +11,6 @@ from src.lunch.model.dimension.dimension_structure_validator import (
     DimensionStructureValidator,
 )
 from src.lunch.model.dimension.dimension_transformer import DimensionTransformer
-#from src.lunch.model.fact.fact_comparer import FactComparer
-#from src.lunch.model.fact.fact_reference_validator import FactReferenceValidator
-#from src.lunch.model.fact.fact_structure_validator import FactStructureValidator
-#from src.lunch.model.fact.fact_transformer import FactTransformer
 from src.lunch.mvcc.versions_transformer import VersionsTransformer
 from src.lunch.storage.cache.null_model_cache import NullModelCache
 from src.lunch.storage.cache.null_version_cache import NullVersionCache
@@ -41,19 +37,15 @@ dimension_index_transformer = DimensionModelIndexTransformer()
 dimension_comparer = DimensionComparer()
 dimension_structure_validator = DimensionStructureValidator()
 dimension_reference_validator = DimensionReferenceValidator()
-#fact_transformer = FactTransformer()
-#fact_comparer = FactComparer()
-#fact_structure_validator = FactStructureValidator()
-#fact_reference_validator = FactReferenceValidator()
 fact_index_transformer = FactModelIndexTransformer()
 
 
 # Persistence
 version_persistor = LocalFileVersionPersistor(
-    directory=Path("../../../example_output")
+    directory=Path("/home/treloarja/PycharmProjects/lunch/example_output")
 )
 model_persistor = LocalFileModelPersistor(
-    directory=Path("../../../example_output/model")
+    directory=Path("/home/treloarja/PycharmProjects/lunch/example_output/model")
 )
 
 # Serializers
@@ -86,11 +78,6 @@ model_manager = ModelManager(
     dimension_comparer=dimension_comparer,
     dimension_reference_validator=dimension_reference_validator,
     dimension_transformer=dimension_transformer,
-    #fact_comparer=fact_comparer,
-    #fact_structure_validator=fact_structure_validator,
-    #fact_reference_validator=fact_reference_validator,
-    #fact_transformer=fact_transformer,
-    version_manager=version_manager,
     storage=model_store,
     global_state=global_state,
 )

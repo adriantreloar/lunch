@@ -21,6 +21,7 @@ from src.lunch.import_engine.fact_import_optimiser import FactImportOptimiser
 from src.lunch.import_engine.fact_import_enactor import FactImportEnactor
 from src.lunch.managers.cube_data_manager import CubeDataManager
 
+from src.lunch.model.table_metadata import TableMetadata, TableMetadataTransformer
 
 async def insert_fact_data():
 
@@ -69,10 +70,15 @@ async def insert_fact_data():
                         }
                        ]
 
+    source_metadata=TableMetadata(column_names=list(df_data.columns),
+                  column_types=list(df_data.dtypes),
+                  length=df_data.shape[0])
+
+
 
     fact_data_persistor = LocalFileColumnarFactDataPersistor(
         directory=Path(
-            "../../../example_output/fact"
+            "/home/treloarja/PycharmProjects/lunch/example_output/fact"
         )
     )
     fact_data_cache = NullFactDataCache()
@@ -102,20 +108,23 @@ async def insert_fact_data():
 
     async with version_manager.read_version() as read_version:
 
-        sales_star_schema = await model_manager.get_star_schema_model_by_fact_name(name="Sales", version=read_version)
-        print(sales_star_schema)
+        read_version_sales_star_schema = await model_manager.get_star_schema_model_by_fact_name(name="Sales", version=read_version)
+
         async with version_manager.write_reference_data_version(
             read_version=read_version
         ) as write_version:
 
+            write_version_sales_star_schema = await model_manager.get_star_schema_model_by_fact_name(name="Sales",
+                                                                                                    version=write_version)
 
 
             # This is also done in reference_data_manager.update_dimension_from_dataframe()
             # I did it again here just for show
             plan = await fact_import_optimiser.create_dataframe_append_plan(
-                target_model=sales_star_schema,
+                read_version_target_model=read_version_sales_star_schema,
+                write_version_target_model=write_version_sales_star_schema,
                 # TODO replace source_data with metadata that has already been extracted from df_data
-                source_data=df_data,
+                source_metadata=source_metadata,
                 column_mapping=column_mapping,
                 read_version=read_version,
                 write_version=write_version,
@@ -123,16 +132,13 @@ async def insert_fact_data():
 
             # TODO match this plan with what _enact_plan needs
             print(plan)
-            print()
-            print(df_data)
-            print()
 
-            await cube_data_manager.append_fact_from_dataframe(
-                plan=plan,
-                source_data=df_data,
-                read_version=read_version,
-                write_version=write_version,
-            )
+            #await cube_data_manager.append_fact_from_dataframe(
+            #    plan=plan,
+            #    source_data=df_data,
+            #    read_version=read_version,
+            #    write_version=write_version,
+            #)
 
 
 # And run it

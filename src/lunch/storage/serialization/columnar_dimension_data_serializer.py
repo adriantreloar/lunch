@@ -144,7 +144,8 @@ def _get_attribute_data(
         version=reference_data_version,
     ) as f:
         for line in f:
-            yield line
+            # Strip the newline character off the end
+            yield line[:-1]
 
 
 async def _get_columns(

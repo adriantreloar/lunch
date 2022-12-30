@@ -1,3 +1,5 @@
+import logging
+
 import pyarrow as pa
 import pyarrow.flight
 import pyarrow.parquet
@@ -64,6 +66,8 @@ dimension_comparer = DimensionComparer()
 dimension_structure_validator = DimensionStructureValidator()
 dimension_reference_validator = DimensionReferenceValidator()
 fact_index_transformer = FactModelIndexTransformer()
+
+log = logging.getLogger()
 
 class TranslateDimensionFlightServer(pa.flight.FlightServerBase):
 
@@ -187,14 +191,17 @@ class TranslateDimensionFlightServer(pa.flight.FlightServerBase):
 
             coro = self._get_dimension_lookup_table(version=version, dimension_id=dimension_id, attribute_id=attribute_id)
             dimension_lookup_table = asyncio.run(coro)
-            print(dimension_lookup_table)
+            # print(dimension_lookup_table)
             output_schema = pa.schema([pa.field('sk', pa.int32())])
 
             writer.begin(output_schema)
             for chunk in reader:
-                print(f"{chunk=}")
+                # print(f"{chunk=}")
+                print(f"generating original order for {chunk.data.num_rows=}")
                 orig_order = pa.array(range(chunk.data.num_rows), type=pa.int32())
+                print(f"building input table")
                 input_table = pa.table([chunk.data.column(0), orig_order], names=["nk", "orig_order"])
+                print(f"joining translation")
 
                 input_with_sk = input_table.join(right_table=dimension_lookup_table,
                                                  keys=["nk"],
@@ -205,9 +212,12 @@ class TranslateDimensionFlightServer(pa.flight.FlightServerBase):
                                                  coalesce_keys=True,
                                                  use_threads=True
                                                  )
+                print(f"sorting output")
                 keys_sorted = input_with_sk["sk"].take(input_with_sk["orig_order"])
-                print(f"{keys_sorted=}")
+                # print(f"{keys_sorted=}")
+                print(f"writing output")
                 writer.write(pa.table([keys_sorted], schema=output_schema))
+                print(f"output written")
         else:
             raise NotImplementedError(command["command"])
 

@@ -4,8 +4,9 @@ import pyarrow as pa
 import pyarrow.flight
 import json
 import asyncio
-import concurrent.futures
+import concurrent.futures as futures
 from threading import Thread
+import time
 
 from src.lunch.mvcc.version import version_to_dict
 
@@ -45,48 +46,75 @@ async def translate_dimension_example():
         #FlightCallOptions_options
         writer, reader = client.do_exchange(descriptor=upload_descriptor, options=call_options)
 
+        print(writer)
+        print(reader)
+
         # Writer thread
+        with futures.ThreadPoolExecutor(max_workers=2) as executor:
+            write_future = executor.submit(_write_batches, writer, pa.schema([pa.field('baz', pa.string())]))
 
-        # TODO return a future from here, check the future OK at end
-        # TODO use a thread pool, preferable created in server startup
-        worker = Thread(target=_write_batches, args=(writer,))
-        ## Start the thread
-        worker.start()
+            # TODO return a future from here, check the future OK at end
+            # TODO use a thread pool, preferable created in server startup
+            #worker = Thread(target=_write_batches, args=(writer, pa.schema([pa.field('baz', pa.string())])))
+            #worker.start()
 
-        for m, return_chunk in enumerate(reader):
-            #print(f"... {m} read chunk {return_chunk}", datetime.datetime.utcnow())
-            tab = pa.Table.from_batches([return_chunk.data])
-            #print("received rows:", tab.num_rows, ", bytes: ", tab.nbytes, datetime.datetime.utcnow())
 
-        print("joining worker thread", datetime.datetime.utcnow())
-        worker.join()
+            #while True:
+            #    return_chunk = reader.read_chunk()
+            def read_it_all(reader):
+                total_rows = 0
+                total_bytes = 0
+                for m, return_chunk in enumerate(reader.to_reader()):
+                    print(f"... {m} read chunk {return_chunk}", datetime.datetime.utcnow())
+                    tab = pa.Table.from_batches([return_chunk])
+                    total_rows += tab.num_rows
+                    total_bytes += tab.nbytes
+                    print("received rows:", tab.num_rows, ", bytes: ", tab.nbytes, datetime.datetime.utcnow())
+                    print("received total:", total_rows, ", bytes: ", total_bytes, datetime.datetime.utcnow())
 
-        print(f"TIME {datetime.datetime.utcnow()-start_time}")
+                print(f"READ ROWS {total_rows}")
+                print(f"READ BYTES {total_bytes}")
+                return total_rows, total_bytes
+
+
+            read_future = executor.submit(read_it_all, reader)
+
+            #print("sleeping")
+            #time.sleep(3)
+            #await asyncio.sleep(2)
+            print("joining worker threads", datetime.datetime.utcnow())
+            #worker.join()
+            print(write_future.result(timeout=10))
+
+            print(read_future.result(timeout=10))
+            print("joined worker thread", datetime.datetime.utcnow())
+
+            writer.close()
+
+        print(f"READ  TIME {datetime.datetime.utcnow()-start_time}")
         print(f"FIN", datetime.datetime.utcnow())
 
-async def _async_write_batches(writer):
-    return _write_batches(writer)
 
-def _write_batches(writer):
+def _write_batches(writer, schema):
     print(f"beginning writer...", datetime.datetime.utcnow())
-    writer.begin(schema=pa.schema([pa.field('baz', pa.string())]))
+    writer.begin(schema=schema)
+    start_time = datetime.datetime.utcnow()
     total_rows = 0
     total_bytes = 0
-    TUNING_FACTOR = 2
-    for n in range(10):
+    for n in range(5):
         batch = pa.record_batch([
-            pa.array(['a', 'b', 'c', 'c'] * int(1024 * 128)),
-        ], names=["baz"])
-        print("sending rows:", batch.num_rows, ", bytes: ", batch.nbytes)
+            pa.array(['a', 'b', 'c', 'c'] * int(32768*8)),
+        ], schema=schema)
         total_rows += batch.num_rows
         total_bytes += batch.nbytes
-        print(f"translating {n}...", datetime.datetime.utcnow())
         writer.write_batch(batch)
-        print(f"...batch {n} written...", datetime.datetime.utcnow())
-    print(f"closing writer...", datetime.datetime.utcnow())
-    writer.close()
-    print(f"... writer closed", datetime.datetime.utcnow())
-    print(f"TOTAL sent {total_rows} rows, {total_bytes} bytes")
+
+    writer.done_writing()
+    print(f"WRITE ROWS {total_rows}")
+    print(f"WRITE BYTES {total_bytes}")
+    print(f"WRITE  TIME {datetime.datetime.utcnow() - start_time}")
+
+    return total_rows
 
 # And run it
 if __name__ == "__main__":

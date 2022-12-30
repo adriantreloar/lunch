@@ -1,4 +1,5 @@
 import logging
+import time
 
 import pyarrow as pa
 import pyarrow.flight
@@ -194,13 +195,17 @@ class TranslateDimensionFlightServer(pa.flight.FlightServerBase):
             # print(dimension_lookup_table)
             output_schema = pa.schema([pa.field('sk', pa.int32())])
 
+            total_read_rows=0
+            total_write_rows=0
+
             writer.begin(output_schema)
-            for chunk in reader:
+            for m, chunk in enumerate(reader):
                 # print(f"{chunk=}")
                 print(f"generating original order for {chunk.data.num_rows=}")
                 orig_order = pa.array(range(chunk.data.num_rows), type=pa.int32())
                 print(f"building input table")
                 input_table = pa.table([chunk.data.column(0), orig_order], names=["nk", "orig_order"])
+                total_read_rows+=chunk.data.num_rows
                 print(f"joining translation")
 
                 input_with_sk = input_table.join(right_table=dimension_lookup_table,
@@ -215,9 +220,17 @@ class TranslateDimensionFlightServer(pa.flight.FlightServerBase):
                 print(f"sorting output")
                 keys_sorted = input_with_sk["sk"].take(input_with_sk["orig_order"])
                 # print(f"{keys_sorted=}")
-                print(f"writing output")
-                writer.write(pa.table([keys_sorted], schema=output_schema))
-                print(f"output written")
+                print(f"writing output {m}")
+                output_table = pa.table([keys_sorted], schema=output_schema)
+                total_write_rows += output_table.num_rows
+                writer.write(output_table)
+                print(f"output written {m}")
+
+            print(f"Total read {total_read_rows}, Total write {total_write_rows}")
+            print("closing")
+
+            #writer.done_writing()
+            writer.close()
         else:
             raise NotImplementedError(command["command"])
 

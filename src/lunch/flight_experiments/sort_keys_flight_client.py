@@ -18,9 +18,9 @@ from src.lunch.examples.insert_dimension_data import insert_dimension_data
 #    asyncio.set_event_loop(loop)
 #    loop.run_forever()
 
-async def translate_dimension_example():
+async def sort_keys_example():
 
-    await insert_dimension_data()
+    #await insert_dimension_data()
 
     start_time = datetime.datetime.now()
     client = pa.flight.connect("grpc://0.0.0.0:8817")
@@ -29,21 +29,15 @@ async def translate_dimension_example():
 
 
     async with version_manager.read_version() as read_version:
-        command_dict = {"command": "dimension_lookup",
+        command_dict = {"command": "sort_and_group_fact_partition_keys",
                         "parameters":
-                            {"version": version_to_dict(read_version),
-                             "dimension_id": 1,
-                             "attribute_id": 'foo'
-                             }
+                            {"key": []}
                         }
         command = json.dumps(command_dict).encode("utf8")
         print(command_dict)
         print()
 
         upload_descriptor = pa.flight.FlightDescriptor.for_command(command)
-
-        #FlightDescriptor_descriptor
-        #FlightCallOptions_options
         writer, reader = client.do_exchange(descriptor=upload_descriptor, options=call_options)
 
         print(writer)
@@ -51,17 +45,23 @@ async def translate_dimension_example():
 
         # Writer thread
         with futures.ThreadPoolExecutor(max_workers=2) as executor:
-            write_future = executor.submit(_write_batches, writer, pa.schema([pa.field('baz', pa.string())]))
-
+            print("submitting write thread")
+            write_future = executor.submit(_write_batches, writer, pa.schema([pa.field('k0', pa.int32()),
+                                                                              pa.field('k1', pa.int32())]))
+            print("submitted write thread")
 
             def read_it_all(reader):
                 total_rows = 0
                 total_bytes = 0
-                for m, return_chunk in enumerate(reader.to_reader()):
+
+                print(f"about to loop reader")
+                for m, return_chunk in enumerate(reader): #.to_reader()):
                     print(f"... {m} read chunk {return_chunk}", datetime.datetime.utcnow())
-                    tab = pa.Table.from_batches([return_chunk])
+                    tab = pa.Table.from_batches([return_chunk.data])
                     total_rows += tab.num_rows
                     total_bytes += tab.nbytes
+                    partition_slices = json.loads(return_chunk.app_metadata.to_pybytes().decode("utf8"))
+                    print("returned metadata", partition_slices)
                     print("received rows:", tab.num_rows, ", bytes: ", tab.nbytes, datetime.datetime.utcnow())
                     print("received total:", total_rows, ", bytes: ", total_bytes, datetime.datetime.utcnow())
 
@@ -69,10 +69,15 @@ async def translate_dimension_example():
                 print(f"READ BYTES {total_bytes}")
                 return total_rows, total_bytes
 
-
+            print("submitting read thread")
             read_future = executor.submit(read_it_all, reader)
+            print("submitted read thread")
 
+            #print("sleeping")
+            #time.sleep(3)
+            #await asyncio.sleep(2)
             print("joining worker threads", datetime.datetime.utcnow())
+            #worker.join()
             print(write_future.result(timeout=10))
 
             print(read_future.result(timeout=10))
@@ -91,12 +96,16 @@ def _write_batches(writer, schema):
     total_rows = 0
     total_bytes = 0
     for n in range(5):
+        MULTIPLIER = int(32768 * 8)
         batch = pa.record_batch([
-            pa.array(['a', 'b', 'c', 'c'] * int(32768*8)),
+            pa.array([2, 2, n, n] * MULTIPLIER),
+            pa.array([1, 1, 2, 1] * MULTIPLIER),
         ], schema=schema)
         total_rows += batch.num_rows
         total_bytes += batch.nbytes
+        print(f"writing batch rows {batch.num_rows}")
         writer.write_batch(batch)
+        print(f"written batch")
 
     writer.done_writing()
     print(f"WRITE ROWS {total_rows}")
@@ -107,4 +116,4 @@ def _write_batches(writer, schema):
 
 # And run it
 if __name__ == "__main__":
-    asyncio.run(translate_dimension_example())
+    asyncio.run(sort_keys_example())

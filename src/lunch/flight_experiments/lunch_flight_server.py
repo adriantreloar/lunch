@@ -70,7 +70,7 @@ fact_index_transformer = FactModelIndexTransformer()
 
 log = logging.getLogger()
 
-class TranslateDimensionFlightServer(pa.flight.FlightServerBase):
+class LunchFlightServer(pa.flight.FlightServerBase):
 
     def __init__(self, location="grpc://0.0.0.0:8817", **kwargs):
 
@@ -79,7 +79,7 @@ class TranslateDimensionFlightServer(pa.flight.FlightServerBase):
         self._reference_data_manager = reference_data_manager
         self._dimension_data_store = dimension_data_storage
         # super() starts serving immediately, so do set up before calling super()
-        super(TranslateDimensionFlightServer, self).__init__(location, **kwargs)
+        super(LunchFlightServer, self).__init__(location, **kwargs)
 
     def _setup_managers(self, path: Path):
 
@@ -159,6 +159,8 @@ class TranslateDimensionFlightServer(pa.flight.FlightServerBase):
 
 
     def _make_flight_info(self, dataset):
+        # TODO - create one of these that takes versions and partition keys
+        #  and hands out flight info
         dataset_path = self._repo / dataset
         schema = pa.parquet.read_schema(dataset_path)
         metadata = pa.parquet.read_metadata(dataset_path)
@@ -186,53 +188,118 @@ class TranslateDimensionFlightServer(pa.flight.FlightServerBase):
         print()
 
         if command["command"] == "dimension_lookup":
-            version = version_from_dict(command["parameters"]["version"])
-            dimension_id = command["parameters"]["dimension_id"]
-            attribute_id = command["parameters"]["attribute_id"]
-
-            coro = self._get_dimension_lookup_table(version=version, dimension_id=dimension_id, attribute_id=attribute_id)
-            dimension_lookup_table = asyncio.run(coro)
-            # print(dimension_lookup_table)
-            output_schema = pa.schema([pa.field('sk', pa.int32())])
-
-            total_read_rows=0
-            total_write_rows=0
-
-            writer.begin(output_schema)
-            for m, chunk in enumerate(reader):
-                # print(f"{chunk=}")
-                print(f"generating original order for {chunk.data.num_rows=}")
-                orig_order = pa.array(range(chunk.data.num_rows), type=pa.int32())
-                print(f"building input table")
-                input_table = pa.table([chunk.data.column(0), orig_order], names=["nk", "orig_order"])
-                total_read_rows+=chunk.data.num_rows
-                print(f"joining translation")
-
-                input_with_sk = input_table.join(right_table=dimension_lookup_table,
-                                                 keys=["nk"],
-                                                 right_keys=["nk"],
-                                                 join_type='left outer',
-                                                 left_suffix="l_",
-                                                 right_suffix="r_",
-                                                 coalesce_keys=True,
-                                                 use_threads=True
-                                                 )
-                print(f"sorting output")
-                keys_sorted = input_with_sk["sk"].take(input_with_sk["orig_order"])
-                # print(f"{keys_sorted=}")
-                print(f"writing output {m}")
-                output_table = pa.table([keys_sorted], schema=output_schema)
-                total_write_rows += output_table.num_rows
-                writer.write(output_table)
-                print(f"output written {m}")
-
-            print(f"Total read {total_read_rows}, Total write {total_write_rows}")
-            print("closing")
-
-            #writer.done_writing()
-            writer.close()
+            self._translate_dimension(command, reader, writer)
+        elif command["command"] == "sort_and_group_fact_partition_keys":
+            self._sort_and_group_fact_partition_keys(command, reader, writer)
         else:
             raise NotImplementedError(command["command"])
+
+    def _sort_and_group_fact_partition_keys(self, command, reader, writer):
+        """
+        Sort fact partition key data on a batch by batch basis:
+        Each batch of keys which is read, will cause the sort index for that batch
+        to be written back as data,
+        with a list of the partition keys, and the length of each partition key slice as metadata.
+
+        The sort index can be used to sort the fact data.
+        The list of partition keys can be used to slice the sorted data into chunks for writing
+        to storage.
+
+        :param command:
+        :param reader: Reader with batches of columns [key0, key1, ...] as described in the command
+        :param writer: Writer with a single column (sort index for each record batch) in the data,
+            and a list of dictionaries e.g. [{'count': 20, 'key0:' 1, 'key1': 1, ...},...] in the metadata
+            The sort index will give us the index of the data sorted by key0, key1 (as described in command)
+            The list of dictionaries will give us the counts we need to slice sorted data,
+            and the keys to send them on for further processing
+        :return:
+        """
+        command_parameters = command["parameters"]
+        key_ = command_parameters["key"]
+
+        output_schema = pa.schema([pa.field('sort_index', pa.int32())])
+        writer.begin(output_schema)
+        total_read_rows = 0
+        total_write_rows = 0
+        for m, chunk in enumerate(reader):
+
+            # print(f"{chunk=}")
+            total_read_rows += chunk.data.num_rows
+
+            sort_key_names = [field.name for field in chunk.data.schema]
+            sort_keys = [(name, "ascending") for name in sort_key_names]
+            print(f"sorting input by", sort_keys)
+            sort_index = pa.compute.sort_indices(chunk.data,
+                                                 sort_keys=sort_keys,
+                                                 null_placement='at_end',
+                                                 options=None,
+                                                 memory_pool=None)
+
+            keys_sorted = chunk.data.take(sort_index)
+
+            grouped = pa.TableGroupBy(keys_sorted, sort_key_names)
+            print(f"{grouped.keys=}")
+            grouped.aggregate([(sort_key_names[0], "count")])
+            slices = grouped.aggregate([(sort_key_names[0], "count")]).to_pylist()
+            print(f"{slices=}")
+
+            slices_as_binary = json.dumps(slices).encode("utf8")
+
+            output_table = pa.record_batch([sort_index], schema=output_schema)
+            total_write_rows += output_table.num_rows
+
+            # TODO - I'm not sure the data and metadata will stick together when done this way...
+            print(f"writing metadata {m}")
+            #writer.write_metadata(slices_as_binary)
+            print(f"writing output {m}")
+            #writer.write(output_table)
+            #for batch in output_table.batches():
+            writer.write_with_metadata(output_table, slices_as_binary)
+            print(f"output written {m}")
+        print(f"Total read {total_read_rows}, Total write {total_write_rows}")
+        print("closing")
+        writer.close()
+
+    def _translate_dimension(self, command, reader, writer):
+        version = version_from_dict(command["parameters"]["version"])
+        dimension_id = command["parameters"]["dimension_id"]
+        attribute_id = command["parameters"]["attribute_id"]
+        coro = self._get_dimension_lookup_table(version=version, dimension_id=dimension_id, attribute_id=attribute_id)
+        dimension_lookup_table = asyncio.run(coro)
+        # print(dimension_lookup_table)
+        output_schema = pa.schema([pa.field('sk', pa.int32())])
+        total_read_rows = 0
+        total_write_rows = 0
+        writer.begin(output_schema)
+        for m, chunk in enumerate(reader):
+            # print(f"{chunk=}")
+            print(f"generating original order for {chunk.data.num_rows=}")
+            orig_order = pa.array(range(chunk.data.num_rows), type=pa.int32())
+            print(f"building input table")
+            input_table = pa.table([chunk.data.column(0), orig_order], names=["nk", "orig_order"])
+            total_read_rows += chunk.data.num_rows
+            print(f"joining translation")
+
+            input_with_sk = input_table.join(right_table=dimension_lookup_table,
+                                             keys=["nk"],
+                                             right_keys=["nk"],
+                                             join_type='left outer',
+                                             left_suffix="l_",
+                                             right_suffix="r_",
+                                             coalesce_keys=True,
+                                             use_threads=True
+                                             )
+            print(f"sorting output to original sort order")
+            # The join has wrecked the original sort order, so sort the data back again
+            keys_sorted = input_with_sk["sk"].take(input_with_sk["orig_order"])
+            print(f"writing output {m}")
+            output_table = pa.table([keys_sorted], schema=output_schema)
+            total_write_rows += output_table.num_rows
+            writer.write(output_table)
+            print(f"output written {m}")
+        print(f"Total read {total_read_rows}, Total write {total_write_rows}")
+        print("closing writer")
+        writer.close()
 
     def list_actions(self, context):
         return []
@@ -261,5 +328,5 @@ class TranslateDimensionFlightServer(pa.flight.FlightServerBase):
 
 if __name__ == '__main__':
 
-    server = TranslateDimensionFlightServer()
+    server = LunchFlightServer()
     server.serve()

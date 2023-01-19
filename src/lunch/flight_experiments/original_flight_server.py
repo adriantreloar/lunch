@@ -35,13 +35,14 @@ class FlightServer(pa.flight.FlightServerBase):
         return self._make_flight_info(descriptor.path[0].decode('utf-8'))
 
     def do_put(self, context, descriptor, reader, writer):
+        # Note writer is a metadata writer, allowing us to send metadata back to the client
         dataset = descriptor.path[0].decode('utf-8')
         dataset_path = self._repo / dataset
         # Read the uploaded data and write to Parquet incrementally
         with dataset_path.open("wb") as sink:
-            with pa.parquet.ParquetWriter(sink, reader.schema) as writer:
+            with pa.parquet.ParquetWriter(sink, reader.schema) as data_writer:
                 for chunk in reader:
-                    writer.write_table(pa.Table.from_batches([chunk.data]))
+                    data_writer.write_table(pa.Table.from_batches([chunk.data]))
 
     def do_exchange(self, context, descriptor, reader, writer):
         # Read the uploaded data and write it back immediately

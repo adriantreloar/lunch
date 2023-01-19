@@ -123,7 +123,6 @@ async def insert_fact_data():
             plan = await fact_import_optimiser.create_dataframe_append_plan(
                 read_version_target_model=read_version_sales_star_schema,
                 write_version_target_model=write_version_sales_star_schema,
-                # TODO replace source_data with metadata that has already been extracted from df_data
                 source_metadata=source_metadata,
                 column_mapping=column_mapping,
                 read_version=read_version,

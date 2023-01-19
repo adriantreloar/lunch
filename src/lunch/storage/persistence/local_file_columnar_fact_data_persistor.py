@@ -7,7 +7,7 @@ from src.lunch.storage.persistence.fact_data_persistor import FactDataPersistor
 
 class LocalFileColumnarFactDataPersistor(FactDataPersistor):
     """Hands out open files for file serializers to write to.
-    Includes columnar fact data, but not the indices
+    Includes columnar fact data, and indices
     """
 
     def __init__(self, directory: Path):

@@ -4,10 +4,15 @@ import time
 import pyarrow as pa
 import pyarrow.flight
 import pyarrow.parquet
+import pyarrow.csv
+
+import numpy as np
 
 import asyncio
 from pathlib import Path
 import json
+
+
 
 from src.lunch.mvcc.version import Version, version_from_dict
 from src.lunch.import_engine.dimension_import_enactor import DimensionImportEnactor
@@ -41,6 +46,9 @@ from src.lunch.model.dimension.dimension_structure_validator import (
     DimensionStructureValidator,
 )
 from src.lunch.model.dimension.dimension_transformer import DimensionTransformer
+from src.lunch.model.star_schema import StarSchemaTransformer
+
+
 from src.lunch.mvcc.versions_transformer import VersionsTransformer
 from src.lunch.storage.cache.null_model_cache import NullModelCache
 from src.lunch.storage.cache.null_version_cache import NullVersionCache
@@ -49,12 +57,14 @@ from src.lunch.storage.persistence.local_file_model_persistor import LocalFileMo
 from src.lunch.storage.persistence.local_file_version_persistor import (
     LocalFileVersionPersistor,
 )
+from src.lunch.storage.persistence.local_file_parquet_fact_data_persistor import LocalFileParquetFactDataPersistor
 from src.lunch.storage.serialization.yaml_model_serializer import YamlModelSerializer
 from src.lunch.storage.serialization.yaml_version_serializer import YamlVersionSerializer
 from src.lunch.storage.transformers.dimension_model_index_transformer import (
     DimensionModelIndexTransformer,
 )
 from src.lunch.storage.transformers.fact_model_index_transformer import FactModelIndexTransformer
+from src.lunch.model.fact import FactDimensionMetadatum
 
 # Constant Global State
 global_state = GlobalState()
@@ -72,12 +82,13 @@ log = logging.getLogger()
 
 class LunchFlightServer(pa.flight.FlightServerBase):
 
-    def __init__(self, location="grpc://0.0.0.0:8817", **kwargs):
+    def __init__(self, location="grpc://0.0.0.0:8819", **kwargs):
 
-        model_manager, reference_data_manager, dimension_data_storage = self._setup_managers(path=Path("/home/treloarja/PycharmProjects/lunch/example_output"))
+        model_manager, reference_data_manager, dimension_data_storage, fact_data_persistor = self._setup_managers(path=Path("/home/treloarja/PycharmProjects/lunch/example_output"))
         self._model_manager = model_manager
         self._reference_data_manager = reference_data_manager
         self._dimension_data_store = dimension_data_storage
+        self._fact_data_persistor = fact_data_persistor
         # super() starts serving immediately, so do set up before calling super()
         super(LunchFlightServer, self).__init__(location, **kwargs)
 
@@ -85,12 +96,14 @@ class LunchFlightServer(pa.flight.FlightServerBase):
 
         model_path = path / "model"
         dimension_data_path = path / "reference/dimension"
+        fact_data_path = path / "fact"
 
         # Persistence
         version_persistor = LocalFileVersionPersistor(directory=path)
         model_persistor = LocalFileModelPersistor(directory=model_path)
         dimension_data_persistor = LocalFileColumnarDimensionDataPersistor(directory=dimension_data_path)
         reference_data_persistor = LocalFileReferenceDataPersistor(directory=dimension_data_path)
+        fact_data_persistor = LocalFileParquetFactDataPersistor(directory=fact_data_path)
 
         # Serializers
         version_serializer = YamlVersionSerializer(
@@ -155,7 +168,7 @@ class LunchFlightServer(pa.flight.FlightServerBase):
             dimension_import_enactor=dimension_import_enactor,
         )
 
-        return model_manager, reference_data_manager, dimension_data_storage
+        return model_manager, reference_data_manager, dimension_data_storage, fact_data_persistor
 
 
     def _make_flight_info(self, dataset):
@@ -191,8 +204,268 @@ class LunchFlightServer(pa.flight.FlightServerBase):
             self._translate_dimension(command, reader, writer)
         elif command["command"] == "sort_and_group_fact_partition_keys":
             self._sort_and_group_fact_partition_keys(command, reader, writer)
+
         else:
             raise NotImplementedError(command["command"])
+
+    def do_put(self, context, descriptor, reader, writer):
+        # Note writer is a metadata writer, allowing us to send metadata back to the client
+
+        command = json.loads(descriptor.command.decode("utf8"))
+        print(command)
+        print()
+
+        if command["command"] == "import_fact_from_csv":
+            self._import_fact_from_csv(command=command, reader=reader, metadata_writer=writer)
+        elif command["command"] == "write_fact_data":
+            self._write_fact_data_file(command=command, reader=reader, metadata_writer=writer)
+        elif command["command"] == "write_fact_partition_index":
+            self._write_fact_partition_index(command=command, reader=reader, metadata_writer=writer)
+        elif command["command"] == "write_fact_version_index":
+            self._write_fact_version_index(command=command, reader=reader, metadata_writer=writer)
+        else:
+            raise NotImplementedError(command["command"])
+
+    def _import_fact_from_csv(self, command, reader, metadata_writer):
+
+        read_version = command["parameters"]["read_version"]
+        write_version = command["parameters"]["write_version"]
+
+        read_version_target_schema = StarSchemaTransformer.from_dict(command["parameters"]["read_version_target_schema"])
+        write_version_target_schema = StarSchemaTransformer.from_dict(command["parameters"]["write_version_target_schema"])
+
+        source_schema = command["parameters"]["source_schema"]
+        column_mappings = command["parameters"]["column_mappings"]
+
+        csv_file_path = command["parameters"]["csv_file_path"]
+        csv_has_headers = command["parameters"]["csv_has_headers"]
+
+        column_names = source_schema["column_names"]
+        column_type_names = source_schema["column_types"]
+        data_schema = pa.schema([pa.field(n, pa.string() if t == 'object' else pa.from_numpy_dtype(np.dtype(t))) for n, t in zip(column_names, column_type_names)])
+        print(data_schema)
+        #[pa.field('sort_index', pa.int32())]
+
+        # NEXT: We need to know - what we are translating to what
+        # in the example there are 2 translations and a value
+        # also there is a measure to broadcast
+
+        # link command['column_mappings'] to 'source_schema' and 'write_version_target_schema'
+        # Use the column name e.g. 'department_thing' to send each column to the translator service/function
+        # use the target information as parameters in the translator service/function
+
+
+        # e.g.
+        # column_mapping = [{"source": ["department_thing"],
+        #                    "target": ["Department", "thing1"]
+        #                    },
+        #                   {"source": ["thing 2"],
+        #                    "target": ["Time", "thing2"],
+        #                    },
+        #                   {"source": ["sales value"],
+        #                    # A measure target puts the original value into 'value'
+        #                    # amd the measure id into 'measure dimension'
+        #                    "measure target": ["measures", "sales"],
+        #                    }
+        #                   ]
+
+        # First index the column mapping, so we can do easy lookups.
+        # When we iterate over the target schema (to see what needs to be filled in)
+        # we will use this lookup to see if we have a mapping, or if we need to default
+        # keep the whole of the mapping on the right side of the lookup,
+        # so that, as the mapping objects alter over software versions, we don't have to fiddle with this code
+        dimension_mappings = {}
+        measure_mappings = {}
+
+        print(f"{column_mappings=}")
+
+        for column_mapping in column_mappings:
+            dimension_target = column_mapping.get("target")
+            if dimension_target is not None:
+                dimension_name_on_fact, _ = dimension_target
+                dimension_mappings[dimension_name_on_fact] = column_mapping
+            else:
+                measure_target = column_mapping.get("measure target")
+                _, measure_name = measure_target
+                measure_mappings[measure_name] = column_mapping
+
+        print(f"{dimension_mappings=}")
+
+        # 'write_version_target_schema':
+        # {'fact':
+        #   {'name': 'Sales',
+        #   'fact_id': 1,
+        #   'model_version': 6,
+        #   'dimensions': [
+        #     {'name': 'Department',
+        #     'view_order': 1,
+        #     'column_id': 1,
+        #     'dimension_name': 'Department',
+        #     'dimension_id': 5},
+        #     {'name': 'Time',
+        #     'view_order': 2,
+        #     'column_id': 2,
+        #     'dimension_name': 'Time',
+        #     'dimension_id': 6}
+        #     ],
+        #   'measures': [
+        #     {'name': 'sales',
+        #     'measure_id': 1,
+        #     'type': 'decimal',
+        #     'precision': 2}],
+        #   'storage': {
+        #     'index_columns': [1],
+        #     'data_columns': [2, 0]}
+        #     },
+        #   'dimensions': {
+        #     5: {'attributes': [
+        #          {'id_': 1, 'name': 'thing1'}],
+        #          'id_': 5,
+        #          'model_version': 5,
+        #          'name': 'Department'},
+        #     6: {'attributes': [
+        #          {'id_': 1, 'name': 'thing2'}],
+        #          'id_': 6,
+        #          'model_version': 5,
+        #          'name': 'Time'
+        #          }
+        #        }
+        #     }
+
+        # All dimensions must be mapped. We can broadcast 0 to the dimension for unmapped
+        # We need one instruction for each dimension
+        # we need one instruction per mapped measure column
+        # we need to know, for each column, whether we are index, or data, and where we sit in the whole shebang
+
+        all_dimension_mappings = {}
+        # For each dimension in the fact, decide the mapping type, and extra info about the mapping
+        for dim_as_fact_sees_it_ in write_version_target_schema.fact.dimensions:
+
+            dim_as_fact_sees_it: FactDimensionMetadatum = dim_as_fact_sees_it_
+
+            dimension_mapping = dimension_mappings.get(dim_as_fact_sees_it.name)
+
+            if dimension_mapping:
+                # There is a column which maps to this dimension
+
+                dimension = write_version_target_schema.dimensions[dim_as_fact_sees_it.dimension_id]
+                dimension_mapping["mapping_type"] = "dimension_column_lookup"
+
+                # Fill in the direct information we need to map the dimension
+                dimension_name_on_fact, dimension_attribute_name = dimension_mapping["target"]
+                assert dimension_name_on_fact == dim_as_fact_sees_it.name
+                dimension_mapping["target_dimension"] = dimension
+                dimension_mapping["target_dimension_id"] = dimension["id_"]
+                for attribute in dimension["attributes"]:
+                    if attribute["name"] == dimension_attribute_name:
+                        dimension_mapping["target_attribute_id"] = attribute["id_"]
+                        break
+            else:
+                # We need to map a default for this dimension, since we don't have a column mapping
+                dimension_mapping = {"mapping_type": "dimension_default"}
+
+            all_dimension_mappings[dim_as_fact_sees_it.dimension_id] = dimension_mapping
+
+        print(f"{all_dimension_mappings=}")
+
+        # For each mapped measure, decide the mapping type (e.g. translate/broadcast),
+        # and extra information like the value column and type,
+
+        #  TODO: NEXT
+
+
+
+        # NOTE: pyarrow.csv.read_csv will read a single table, but will do it multithreaded
+        # ideally we'd optimise to use pyarrow.csv.read_csv if the file size is small enough
+
+        csv_read_options = pa.csv.ReadOptions(use_threads=None,
+                                                   block_size=None,
+                                                   skip_rows=None,
+                                                   column_names= column_names,
+                                                   autogenerate_column_names=None,
+                                                   encoding='utf8',
+                                                   skip_rows_after_names=None)
+
+        csv_parse_options = pyarrow.csv.ParseOptions(delimiter=None,
+                                                     quote_char=None,
+                                                     double_quote=None,
+                                                     escape_char=None,
+                                                     newlines_in_values=None,
+                                                     ignore_empty_lines=None,
+                                                     invalid_row_handler=None
+                                                     )
+
+        csv_convert_options = pa.csv.ConvertOptions(check_utf8=None,
+                                                    column_types = data_schema,
+                                                    null_values=None,
+                                                    true_values=None,
+                                                    false_values=None,
+                                                    decimal_point=None,
+                                                    strings_can_be_null=None,
+                                                    quoted_strings_can_be_null=None,
+                                                    include_columns=None,
+                                                    include_missing_columns=None,
+                                                    auto_dict_encode=None,
+                                                    auto_dict_max_cardinality=None,
+                                                    timestamp_parsers=None
+                                                    )
+
+        csv_reader = pa.csv.open_csv(csv_file_path,
+                                     read_options=csv_read_options,
+                                     parse_options=None,
+                                     convert_options=None,
+                                     memory_pool=None
+                                     )
+
+
+        #write_version_target_schema
+
+        # For starters, read everything in the reader,
+        # and return a json binary dumped dictionary with number of rows in the metadatawriter
+        for n, batch in enumerate(csv_reader):
+            print(n, batch)
+
+
+
+
+    def _write_fact_data_file(self, command, reader, metadata_writer):
+        cube_data_version = command["parameters"]["version"].cube_data_version
+        fact_id = command["parameters"]["fact_id"]
+        partition = command["parameters"]["partition"]
+
+        # TODO - NEXT - read all data in to one big table
+        #  Sort the data
+        #  only then write it
+
+        # TODO - wrap the following functionality in the serializer
+
+        # Read the uploaded data and write to Parquet incrementally
+        with self._fact_data_persistor.open_data_file_write(cube_data_version=cube_data_version,
+                                                            fact_id=fact_id,
+                                                            partition=partition) as sink:
+            with pa.parquet.ParquetWriter(sink, reader.schema) as writer:
+                for chunk in reader:
+                    writer.write_table(pa.Table.from_batches([chunk.data]))
+
+    def _write_fact_partition_index(self, command, reader, metadata_writer):
+        cube_data_version = command["parameters"]["version"].cube_data_version
+        fact_id = command["parameters"]["fact_id"]
+
+        # Read the uploaded data and write to Parquet incrementally
+        with self._fact_data_persistor.open_partition_version_index_file_write(cube_data_version=cube_data_version,
+                                                            fact_id=fact_id) as sink:
+            with pa.parquet.ParquetWriter(sink, reader.schema) as writer:
+                for chunk in reader:
+                    writer.write_table(pa.Table.from_batches([chunk.data]))
+
+    def _write_fact_version_index(self, command, reader, metadata_writer):
+        cube_data_version = command["parameters"]["version"].cube_data_version
+
+        # Read the uploaded data and write to Parquet incrementally
+        with self._fact_data_persistor.open_version_index_file_write(cube_data_version=cube_data_version) as sink:
+            with pa.parquet.ParquetWriter(sink, reader.schema) as writer:
+                for chunk in reader:
+                    writer.write_table(pa.Table.from_batches([chunk.data]))
 
     def _sort_and_group_fact_partition_keys(self, command, reader, writer):
         """

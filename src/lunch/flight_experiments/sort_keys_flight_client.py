@@ -23,7 +23,7 @@ async def sort_keys_example():
     #await insert_dimension_data()
 
     start_time = datetime.datetime.now()
-    client = pa.flight.connect("grpc://0.0.0.0:8817")
+    client = pa.flight.connect("grpc://0.0.0.0:8818")
 
     call_options = pa.flight.FlightCallOptions(timeout=None, headers=[("foo".encode("utf8"), "bar".encode("utf8"))])
 

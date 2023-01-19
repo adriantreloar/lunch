@@ -60,7 +60,7 @@ async def insert_dimension_data():
 
     # TODO - This Time data is a bit naff, we could do with a better example
     time_data = [
-        {"thing1": f"Time {i}"} for i in range(10000)
+        {"thing2": f"Time {i}"} for i in range(10000)
     ]
 
     df_data_d_time = pd.DataFrame(data=time_data)

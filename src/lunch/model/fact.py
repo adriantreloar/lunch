@@ -117,6 +117,41 @@ class FactTransformer(Transformer):
     # TODO - all of these change the dimensions, maybe we should expose a class that changes dimensions
 
     @staticmethod
+    def to_dict(fact: Fact) -> dict:
+        if fact is None:
+            return None
+        return fact.serialize()
+
+    @staticmethod
+    def from_dict(fact_dict: dict) -> Fact:
+        if fact_dict is None:
+            return None
+        name = fact_dict["name"]
+        fact_id = fact_dict["fact_id"]
+        model_version = fact_dict["model_version"]
+        dimensions = fact_dict["dimensions"]
+        measures = fact_dict["measures"]
+        storage = fact_dict["storage"]
+        return Fact(
+            name=name,
+            fact_id=fact_id,
+            model_version=model_version,
+            dimensions=dimensions,
+            #field(type=_FactDimensionsMetadata,
+            #                   invariant=lambda v: (len({el.name for el in v}) == len(v), 'names not unique'),
+            #                   mandatory=True,
+            #                   )
+            measures=measures,
+            #field(type=_FactMeasuresMetadata,
+            #                 mandatory=True,
+            #                 )
+            storage=storage
+            #field(type=FactStorage,
+            #                mandatory=False,
+            #                )
+            )
+
+    @staticmethod
     def get_max_view_order(fact: Fact) -> int:
         if not fact.dimensions:
             return 0

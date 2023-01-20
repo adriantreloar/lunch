@@ -254,6 +254,17 @@ class LunchFlightServer(pa.flight.FlightServerBase):
         # Use the column name e.g. 'department_thing' to send each column to the translator service/function
         # use the target information as parameters in the translator service/function
 
+        # Create lookups for write version storage, so we can mark where each column is going to be stored
+
+        write_version_storage = {}
+        for n, index_column in enumerate(write_version_target_schema.fact.storage.index_columns):
+            write_version_storage[index_column] = {"location": "index", "position": n}
+        for n, data_column in enumerate(write_version_target_schema.fact.storage.data_columns):
+            write_version_storage[data_column] = {"location": "data", "position": n}
+
+        measure_name_lookup = {}
+        for measure in write_version_target_schema.fact.measures:
+            measure_name_lookup[measure.name] = measure
 
         # e.g.
         # column_mapping = [{"source": ["department_thing"],
@@ -285,11 +296,22 @@ class LunchFlightServer(pa.flight.FlightServerBase):
                 dimension_name_on_fact, _ = dimension_target
                 dimension_mappings[dimension_name_on_fact] = column_mapping
             else:
+                # For each mapped measure, decide the mapping type (e.g. translate/broadcast),
+                # and extra information like the value column and type,
+
                 measure_target = column_mapping.get("measure target")
                 _, measure_name = measure_target
                 measure_mappings[measure_name] = column_mapping
+                # We don't have logic to translate a measures column yet
+                # from e.g. ["sales","receipts","sales","sales"] to [1,2,1,1]
+                # Currently we can only map via the name of the column to a single measure id
+                measure_mappings[measure_name]["mapping_type"] = "broadcast"
+                measure_mappings[measure_name]["storage"] = write_version_storage[0].copy()
+                measure_mappings[measure_name]["storage"]["measure_id"] = measure_name_lookup[measure_name].measure_id
+                measure_mappings[measure_name]["storage"]["value_type"] = measure_name_lookup[measure_name].type
+                measure_mappings[measure_name]["storage"]["value_precision"] = measure_name_lookup[measure_name].precision
 
-        print(f"{dimension_mappings=}")
+        print(f"{measure_mappings=}")
 
         # 'write_version_target_schema':
         # {'fact':
@@ -360,20 +382,17 @@ class LunchFlightServer(pa.flight.FlightServerBase):
                     if attribute["name"] == dimension_attribute_name:
                         dimension_mapping["target_attribute_id"] = attribute["id_"]
                         break
+                dimension_mapping["storage"] = write_version_storage[dim_as_fact_sees_it.column_id]
             else:
                 # We need to map a default for this dimension, since we don't have a column mapping
-                dimension_mapping = {"mapping_type": "dimension_default"}
+                dimension_mapping = {"mapping_type": "dimension_default",
+                                     "storage": write_version_storage[dim_as_fact_sees_it.column_id]}
 
-            all_dimension_mappings[dim_as_fact_sees_it.dimension_id] = dimension_mapping
+            all_dimension_mappings[dim_as_fact_sees_it.name] = dimension_mapping
 
-        print(f"{all_dimension_mappings=}")
-
-        # For each mapped measure, decide the mapping type (e.g. translate/broadcast),
-        # and extra information like the value column and type,
-
-        #  TODO: NEXT
-
-
+        print(f"all_dimension_mappings")
+        for k, v in all_dimension_mappings.items():
+            print(k, v)
 
         # NOTE: pyarrow.csv.read_csv will read a single table, but will do it multithreaded
         # ideally we'd optimise to use pyarrow.csv.read_csv if the file size is small enough
@@ -425,7 +444,8 @@ class LunchFlightServer(pa.flight.FlightServerBase):
         for n, batch in enumerate(csv_reader):
             print(n, batch)
 
-
+        #  TODO: NEXT: send columns that needs translating to a translation service,
+        #   on a column within batch basis
 
 
     def _write_fact_data_file(self, command, reader, metadata_writer):

@@ -105,7 +105,7 @@ async def insert_fact_data_example():
     )
 
     start_time = datetime.datetime.now()
-    client = pa.flight.connect("grpc://0.0.0.0:8819")
+    client = pa.flight.connect("grpc://0.0.0.0:8816")
 
     call_options = pa.flight.FlightCallOptions(timeout=None)
 

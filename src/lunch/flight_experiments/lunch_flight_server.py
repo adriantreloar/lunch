@@ -1,5 +1,6 @@
 import logging
 import time
+import concurrent.futures
 
 import pyarrow as pa
 import pyarrow.flight
@@ -82,13 +83,30 @@ log = logging.getLogger()
 
 class LunchFlightServer(pa.flight.FlightServerBase):
 
-    def __init__(self, location="grpc://0.0.0.0:8819", **kwargs):
+    def __init__(self, location="grpc://0.0.0.0:8819", client_locations=[],  **kwargs):
+        '''
+
+        :param location:
+        :param flight_client_locations: connection strings for flight clients that this server can pass work on to
+        :param kwargs:
+        '''
 
         model_manager, reference_data_manager, dimension_data_storage, fact_data_persistor = self._setup_managers(path=Path("/home/treloarja/PycharmProjects/lunch/example_output"))
         self._model_manager = model_manager
         self._reference_data_manager = reference_data_manager
         self._dimension_data_store = dimension_data_storage
         self._fact_data_persistor = fact_data_persistor
+
+        if client_locations:
+            # Wait for client servers to come online
+            time.sleep(0.01)
+
+        # Start clients. We can use these to process remote work
+        self._clients = []
+        for client_location in client_locations:
+            client = pa.flight.connect(client_location)
+            self._clients.append(client)
+
         # super() starts serving immediately, so do set up before calling super()
         super(LunchFlightServer, self).__init__(location, **kwargs)
 
@@ -436,9 +454,6 @@ class LunchFlightServer(pa.flight.FlightServerBase):
                                      memory_pool=None
                                      )
 
-
-        #write_version_target_schema
-
         # For starters, read everything in the reader,
         # and return a json binary dumped dictionary with number of rows in the metadatawriter
         for n, batch in enumerate(csv_reader):
@@ -619,7 +634,25 @@ class LunchFlightServer(pa.flight.FlightServerBase):
 
         return lookup_table
 
+def serve_more_lunch(flight_location):
+    server = LunchFlightServer(location=flight_location)
+    print(f"LunchFlightServer at {flight_location}")
+    server.serve()
+
+
 if __name__ == '__main__':
 
-    server = LunchFlightServer()
-    server.serve()
+    main_server_location = "grpc://0.0.0.0:8816"
+
+    client_locations = ["grpc://0.0.0.0:8817", "grpc://0.0.0.0:8818"]
+
+    # Top keep track of the futures
+    client_futures = []
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        for client_location in client_locations:
+            client = executor.submit(serve_more_lunch, client_location)
+            client_futures.append(client)
+
+        server = LunchFlightServer(location=main_server_location, client_locations=client_locations)
+        print(f"Main LunchFlightServer at {main_server_location}")
+        server.serve()

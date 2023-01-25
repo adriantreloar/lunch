@@ -13,9 +13,7 @@ import asyncio
 from pathlib import Path
 import json
 
-
-
-from src.lunch.mvcc.version import Version, version_from_dict
+from src.lunch.mvcc.version import Version, version_from_dict, version_to_dict
 from src.lunch.import_engine.dimension_import_enactor import DimensionImportEnactor
 from src.lunch.import_engine.dimension_import_optimiser import DimensionImportOptimiser
 from src.lunch.import_engine.dimension_import_planner import DimensionImportPlanner
@@ -190,6 +188,7 @@ class LunchFlightServer(pa.flight.FlightServerBase):
 
 
     def _make_flight_info(self, dataset):
+        '''Hangover from the example'''
         # TODO - create one of these that takes versions and partition keys
         #  and hands out flight info
         dataset_path = self._repo / dataset
@@ -206,14 +205,15 @@ class LunchFlightServer(pa.flight.FlightServerBase):
                                         metadata.serialized_size)
 
     def list_flights(self, context, criteria):
+        '''Hangover from the example'''
         for dataset in self._repo.iterdir():
             yield self._make_flight_info(dataset.name)
 
     def get_flight_info(self, context, descriptor):
+        '''Hangover from the example'''
         return self._make_flight_info(descriptor.path[0].decode('utf-8'))
 
     def do_exchange(self, context, descriptor, reader, writer):
-        # Read the uploaded data and write it back immediately
         command = json.loads(descriptor.command.decode("utf8"))
         print(command)
         print()
@@ -412,13 +412,60 @@ class LunchFlightServer(pa.flight.FlightServerBase):
         for k, v in all_dimension_mappings.items():
             print(k, v)
 
+        call_options = pa.flight.FlightCallOptions(timeout=20,
+                                                   headers=[("foo".encode("utf8"), "bar".encode("utf8"))])
+
+        for n, mapping in enumerate(all_dimension_mappings.values()):
+
+            # Choose a different client to do the mapping for each mapping
+            # this loops around if there are more than len(self._clients) i.e. 2 at the time of writing mappings
+            mapping_client = self._clients[n % len(self._clients)]
+
+            if mapping["mapping_type"] == "dimension_column_lookup":
+                # Create Dimension Translate reader-writer pairs from a client(s)
+                # Store them in the mapping dictionary, unless somewhere better presents itself
+
+                command_dict = {"command": "dimension_lookup",
+                                "parameters":
+                                    {"version": version_to_dict(write_version),
+                                     "dimension_id": mapping["target_dimension_id"],
+                                     "attribute_id": mapping["target_attribute_id"]
+                                     }
+                                }
+                command = json.dumps(command_dict).encode("utf8")
+                print(command_dict)
+                print()
+
+                upload_descriptor = pa.flight.FlightDescriptor.for_command(command)
+
+                # FlightDescriptor_descriptor
+                # FlightCallOptions_options
+                writer, reader = mapping_client.do_exchange(descriptor=upload_descriptor, options=call_options)
+
+                # Note: we are storing the reader and writer in the mapping
+                # As the code progresses to other stages where there is not a one to one lookup
+                # It might make sense to store readers and writers in a different structure.
+                mapping["dimension_column_lookup_reader"] = reader
+                mapping["dimension_column_lookup_writer"] = writer
+
+                # NOTE: It may make more sense long term to send metadata
+                # to a 'translate n dimensions and group the key' service
+                # Obviously we can go back a step even from there,
+                # to a 'read csv and group the key' service
+                print(writer)
+                print(reader)
+
         # NOTE: pyarrow.csv.read_csv will read a single table, but will do it multithreaded
         # ideally we'd optimise to use pyarrow.csv.read_csv if the file size is small enough
+
+        # TODO: NEXT create column name to writer - reader pairs here
+        #  First create 'Translate' writer - reader pairs.
+        #  Later we'll work out how to tag the reader outputs to send them to the index grouping stage
 
         csv_read_options = pa.csv.ReadOptions(use_threads=None,
                                                    block_size=None,
                                                    skip_rows=None,
-                                                   column_names= column_names,
+                                                   column_names=column_names,
                                                    autogenerate_column_names=None,
                                                    encoding='utf8',
                                                    skip_rows_after_names=None)
@@ -433,7 +480,7 @@ class LunchFlightServer(pa.flight.FlightServerBase):
                                                      )
 
         csv_convert_options = pa.csv.ConvertOptions(check_utf8=None,
-                                                    column_types = data_schema,
+                                                    column_types=data_schema,
                                                     null_values=None,
                                                     true_values=None,
                                                     false_values=None,
@@ -459,8 +506,18 @@ class LunchFlightServer(pa.flight.FlightServerBase):
         for n, batch in enumerate(csv_reader):
             print(n, batch)
 
-        #  TODO: NEXT: send columns that needs translating to a translation service,
-        #   on a column within batch basis
+            #  TODO: NEXT: send columns that needs translating to a translation service,
+            #   on a column within batch basis
+
+            # First translate
+
+            # Then group by key, get sort index
+
+            # then use sort index on data columns + value columns
+
+            # then broadcast and save
+
+
 
 
     def _write_fact_data_file(self, command, reader, metadata_writer):
@@ -647,6 +704,7 @@ if __name__ == '__main__':
     client_locations = ["grpc://0.0.0.0:8817", "grpc://0.0.0.0:8818"]
 
     # Top keep track of the futures
+    # Note these are actually server futures which the clients in this server can access
     client_futures = []
     with concurrent.futures.ProcessPoolExecutor() as executor:
         for client_location in client_locations:

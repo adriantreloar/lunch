@@ -4,36 +4,32 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Environment Setup
 
-Uses conda with Python 3.10. Create the environment:
+Uses [uv](https://docs.astral.sh/uv/) with Python 3.10. Create/sync the environment:
 ```bash
-bash ci/make_env.sh
-conda activate lunch
+bash ci/make_env.sh   # installs uv if absent, then runs: uv sync --all-extras
 ```
 
-Key production dependencies: `numpy`, `pandas`, `pyarrow`, `dask`, `grpcio`, `tatsu`, `pyrsistent`, `yaml`.
-Key dev dependencies: `pytest`, `black`, `flake8`, `isort`, `mypy`, `coverage`.
+All commands below are prefixed with `uv run` so they use the managed `.venv` automatically.
 
 ## Commands
 
 **Lint (format + check):**
 ```bash
-isort .
-black -t py310 .
-flake8 --max-line-length=121
-mypy lunch/<module>
+uv run isort .
+uv run black -t py310 .
+uv run flake8
+uv run mypy src/lunch/<module>
 ```
 
 **Run all tests with coverage:**
 ```bash
-export PYTHONPATH=$PWD
-coverage run -m pytest lunch --junit-xml build/junit/pytest.xml
-coverage combine && coverage html
+uv run coverage run -m pytest src/lunch --junit-xml build/junit/pytest.xml
+uv run coverage combine && uv run coverage html
 ```
 
 **Run a single test:**
 ```bash
-export PYTHONPATH=$PWD
-pytest src/lunch/path/to/test_file.py::test_function_name
+uv run pytest src/lunch/path/to/test_file.py::test_function_name
 ```
 
 **Rebuild protobuf files:**
@@ -111,4 +107,4 @@ gRPC service with generated protobuf code. Used for query profiling.
 Standalone scripts showing how to wire up managers and run imports. `setup_managers.py` shows the canonical manager construction pattern. Note: hardcoded paths reference `/home/treloarja/...` — update for local use.
 
 ### Imports Convention
-All imports use `src.lunch.*` as the root (e.g. `from src.lunch.mvcc.version import Version`). `PYTHONPATH` must be set to the project root.
+All imports use `src.lunch.*` as the root (e.g. `from src.lunch.mvcc.version import Version`). The package is installed in editable mode via `uv sync`, so no manual `PYTHONPATH` manipulation is needed.

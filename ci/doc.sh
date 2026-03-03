@@ -7,9 +7,8 @@ set -o pipefail
 
 # Move to the project root directory
 cd "$( dirname "${BASH_SOURCE[0]}" )/.."
-export PYTHONPATH=$PWD
 
 rm -rf doc/build/doctrees doc/build/html
-sphinx-build -j auto -b html doc/source doc/build
+uv run sphinx-build -j auto -b html doc/source doc/build
 
 echo "Documentation generated at file://$PWD/doc/build/html/index.html"

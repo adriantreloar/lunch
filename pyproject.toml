@@ -1,0 +1,87 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lunch"
+version = "0.1.0"
+description = "MVCC Cube server"
+authors = [
+    {name = "jatreloar", email = "adrian.treloar@cubeshine.com"},
+]
+license = {text = "Proprietary"}
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "License :: Other/Proprietary License",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3.10",
+    "Topic :: Office/Business",
+]
+requires-python = ">=3.10"
+dependencies = [
+    "aiohttp",
+    "click",
+    "dask",
+    "distributed",
+    "grpcio",
+    "grpcio-tools",
+    "jsonschema",
+    "numpy",
+    "pandas",
+    "pyarrow",
+    "PyYAML",
+    "pyrsistent",
+    "tatsu",
+    "uvloop; sys_platform != 'win32'",
+]
+
+[project.optional-dependencies]
+dev = [
+    "black",
+    "coverage",
+    "flake8==5.0.4",
+    "flake8-junit-report",
+    "graphviz==0.20.1",
+    "isort",
+    "matplotlib==3.6.1",
+    "mock",
+    "mypy",
+    "pandas-stubs",
+    "pyinstrument",
+    "pytest",
+    "pytest-asyncio",
+    "pytest-rerunfailures",
+    "pytest-timeout",
+    "recursive_diff",
+    "sphinx",
+    "sphinx-argparse",
+    "sphinx-rtd-theme",
+    "types-PyYAML",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+addopts = "--strict-markers --verbose"
+asyncio_mode = "auto"
+junit_family = "xunit2"
+python_files = ["test_*.py"]
+timeout = 60
+log_cli = true
+log_cli_level = "INFO"
+
+[tool.mypy]
+python_version = "3.10"
+ignore_missing_imports = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+show_error_codes = true
+
+[tool.black]
+target-version = ["py310"]
+line-length = 121
+
+[tool.isort]
+profile = "black"
+line_length = 121

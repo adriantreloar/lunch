@@ -1,8 +1,11 @@
+import logging
 import os.path
 from contextlib import contextmanager
 from pathlib import Path
 
 from src.lunch.storage.persistence.fact_data_persistor import FactDataPersistor
+
+logger = logging.getLogger(__name__)
 
 
 class LocalFileColumnarFactDataPersistor(FactDataPersistor):
@@ -43,6 +46,7 @@ class LocalFileColumnarFactDataPersistor(FactDataPersistor):
     def open_version_index_file_write(self, version: int):
         file_path = self.fact_version_index_file(version=version)
         Path(os.path.dirname(file_path)).mkdir(parents=True, exist_ok=True)
+        logger.debug("Writing fact version index file: %s", file_path)
         with open(file_path, "w") as f:
             yield f
 

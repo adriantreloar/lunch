@@ -58,9 +58,10 @@ async def insert_dimension_data():
 
     df_data_d_department = pd.DataFrame(data=department_data)
 
-    # TODO - This Time data is a bit naff, we could do with a better example
     time_data = [
-        {"thing2": f"Time {i}"} for i in range(10000)
+        {"period": f"{year}-{month:02d}", "year": str(year), "month": f"{month:02d}"}
+        for year in range(2020, 2026)
+        for month in range(1, 13)
     ]
 
     df_data_d_time = pd.DataFrame(data=time_data)

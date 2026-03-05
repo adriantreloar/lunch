@@ -13,6 +13,7 @@ Queries and imports are parallelised via Apache Arrow Flight and Dask.
    :caption: Contents:
 
    data_model
+   base_classes
 
 
 Indices and tables

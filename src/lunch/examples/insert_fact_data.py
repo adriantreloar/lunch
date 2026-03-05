@@ -23,6 +23,9 @@ from src.lunch.managers.cube_data_manager import CubeDataManager
 
 from src.lunch.model.table_metadata import TableMetadata, TableMetadataTransformer
 
+_EXAMPLE_OUTPUT = Path(__file__).resolve().parents[3] / "example_output"
+
+
 async def insert_fact_data():
 
     await insert_dimension_data()
@@ -77,9 +80,7 @@ async def insert_fact_data():
 
 
     fact_data_persistor = LocalFileColumnarFactDataPersistor(
-        directory=Path(
-            "/home/treloarja/PycharmProjects/lunch/example_output/fact"
-        )
+        directory=_EXAMPLE_OUTPUT / "fact"
     )
     fact_data_cache = NullFactDataCache()
     fact_data_serializer = ColumnarFactDataSerializer(

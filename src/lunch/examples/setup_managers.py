@@ -29,6 +29,8 @@ from src.lunch.storage.transformers.dimension_model_index_transformer import (
 from src.lunch.storage.transformers.fact_model_index_transformer import FactModelIndexTransformer
 from src.lunch.storage.version_store import VersionStore
 
+_EXAMPLE_OUTPUT = Path(__file__).resolve().parents[3] / "example_output"
+
 # Constant Global State
 global_state = GlobalState()
 
@@ -46,10 +48,10 @@ fact_index_transformer = FactModelIndexTransformer()
 
 # Persistence
 version_persistor = LocalFileVersionPersistor(
-    directory=Path("/home/treloarja/PycharmProjects/lunch/example_output")
+    directory=_EXAMPLE_OUTPUT
 )
 model_persistor = LocalFileModelPersistor(
-    directory=Path("/home/treloarja/PycharmProjects/lunch/example_output/model")
+    directory=_EXAMPLE_OUTPUT / "model"
 )
 
 # Serializers

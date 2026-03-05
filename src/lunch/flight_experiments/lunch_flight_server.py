@@ -13,6 +13,8 @@ import asyncio
 from pathlib import Path
 import json
 
+_EXAMPLE_OUTPUT = Path(__file__).resolve().parents[3] / "example_output"
+
 from src.lunch.mvcc.version import Version, version_from_dict, version_to_dict
 from src.lunch.import_engine.dimension_import_enactor import DimensionImportEnactor
 from src.lunch.import_engine.dimension_import_optimiser import DimensionImportOptimiser
@@ -89,7 +91,7 @@ class LunchFlightServer(pa.flight.FlightServerBase):
         :param kwargs:
         '''
 
-        model_manager, reference_data_manager, dimension_data_storage, fact_data_persistor = self._setup_managers(path=Path("/home/treloarja/PycharmProjects/lunch/example_output"))
+        model_manager, reference_data_manager, dimension_data_storage, fact_data_persistor = self._setup_managers(path=_EXAMPLE_OUTPUT)
         self._model_manager = model_manager
         self._reference_data_manager = reference_data_manager
         self._dimension_data_store = dimension_data_storage

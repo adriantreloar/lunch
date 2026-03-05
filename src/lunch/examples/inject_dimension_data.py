@@ -11,6 +11,8 @@ from src.lunch.storage.serialization.yaml_reference_data_serializer import (
     YamlReferenceDataSerializer,
 )  # For indexes
 
+_EXAMPLE_OUTPUT = Path(__file__).resolve().parents[3] / "example_output"
+
 
 async def main():
     # Demonstrates the end-to-end flow for defining dimensions in the star schema and
@@ -21,9 +23,7 @@ async def main():
     # Wire up the storage stack for reference (dimension member) data:
     # persistor → serializer → store, with a no-op cache (caching disabled for this example).
     reference_data_persistor = LocalFileReferenceDataPersistor(
-        directory=Path(
-            "/example_output/reference/dimension"
-        )
+        directory=_EXAMPLE_OUTPUT / "reference" / "dimension"
     )
     reference_data_cache = NullReferenceDataCache()
     reference_data_serializer = YamlReferenceDataSerializer(

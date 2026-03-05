@@ -27,6 +27,9 @@ from src.lunch.storage.serialization.yaml_reference_data_serializer import (
 
 from src.lunch.examples.save_dimension import save_dimension
 
+_EXAMPLE_OUTPUT = Path(__file__).resolve().parents[3] / "example_output"
+
+
 async def insert_dimension_data():
 
     # Create d_test
@@ -68,9 +71,7 @@ async def insert_dimension_data():
 
 
     dimension_data_persistor = LocalFileColumnarDimensionDataPersistor(
-        directory=Path(
-            "/home/treloarja/PycharmProjects/lunch/example_output/reference/dimension"
-        )
+        directory=_EXAMPLE_OUTPUT / "reference" / "dimension"
     )
     dimension_data_cache = NullDimensionDataCache()
     dimension_serializer = ColumnarDimensionDataSerializer(
@@ -83,9 +84,7 @@ async def insert_dimension_data():
     )
 
     reference_data_persistor = LocalFileReferenceDataPersistor(
-        directory=Path(
-            "/home/treloarja/PycharmProjects/lunch/example_output/reference/dimension"
-        )
+        directory=_EXAMPLE_OUTPUT / "reference" / "dimension"
     )
     reference_data_cache = NullReferenceDataCache()
     reference_data_serializer = YamlReferenceDataSerializer(

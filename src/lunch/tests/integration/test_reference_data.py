@@ -3,6 +3,8 @@ from pathlib import Path
 
 import pandas as pd
 
+_EXAMPLE_OUTPUT = Path(__file__).resolve().parents[4] / "example_output"
+
 from src.lunch.mvcc.version import Version
 from src.lunch.examples.setup_managers import model_manager, version_manager
 from src.lunch.import_engine.dimension_import_enactor import DimensionImportEnactor
@@ -54,9 +56,7 @@ async def test_dimension_data_round_trip():
     df_data_d_test = pd.DataFrame(data=data)
 
     dimension_data_persistor = StringIOColumnarDimensionDataPersistor(
-        directory=Path(
-            "/home/treloarja/PycharmProjects/lunch/example_output/reference/dimension"
-        )
+        directory=_EXAMPLE_OUTPUT / "reference" / "dimension"
     )
     dimension_data_cache = NullDimensionDataCache()
     dimension_serializer = ColumnarDimensionDataSerializer(
@@ -69,9 +69,7 @@ async def test_dimension_data_round_trip():
     )
 
     reference_data_persistor = StringIOReferenceDataPersistor(
-        directory=Path(
-            "/home/treloarja/PycharmProjects/lunch/example_output/reference/dimension"
-        )
+        directory=_EXAMPLE_OUTPUT / "reference" / "dimension"
     )
     reference_data_cache = NullReferenceDataCache()
     reference_data_serializer = YamlReferenceDataSerializer(

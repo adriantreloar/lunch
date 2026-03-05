@@ -4,6 +4,8 @@ from pathlib import Path
 
 import pandas as pd
 
+_EXAMPLE_OUTPUT = Path(__file__).resolve().parents[3] / "example_output"
+
 import pyarrow as pa
 import pyarrow.flight
 import json
@@ -35,7 +37,7 @@ from src.lunch.model.table_metadata import TableMetadata, TableMetadataTransform
 
 async def insert_fact_data_example():
 
-    CSV_PATH = "/home/treloarja/PycharmProjects/lunch/example_output/fact1.csv"
+    CSV_PATH = str(_EXAMPLE_OUTPUT / "fact1.csv")
 
     await insert_dimension_data()
     await save_fact()
@@ -76,9 +78,7 @@ async def insert_fact_data_example():
                                     length=df_data.shape[0])
 
     fact_data_persistor = LocalFileColumnarFactDataPersistor(
-        directory=Path(
-            "/home/treloarja/PycharmProjects/lunch/example_output/fact"
-        )
+        directory=_EXAMPLE_OUTPUT / "fact"
     )
     fact_data_cache = NullFactDataCache()
     fact_data_serializer = ColumnarFactDataSerializer(

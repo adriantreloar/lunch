@@ -9,6 +9,8 @@ from src.lunch.model.dimension.dimension_structure_validator import (
 )
 from src.lunch.model.dimension.dimension_transformer import DimensionTransformer
 from src.lunch.model.fact import Fact, FactTransformer
+from src.lunch.model.old_fact.fact_comparer import FactComparer
+from src.lunch.model.old_fact.fact_reference_validator import FactReferenceValidator
 from src.lunch.model.star_schema import StarSchema, StarSchemaTransformer
 from src.lunch.mvcc.version import Version
 from src.lunch.storage.model_store import ModelStore
@@ -21,6 +23,8 @@ class ModelManager(Conductor):
         dimension_comparer: DimensionComparer,
         dimension_reference_validator: DimensionReferenceValidator,
         dimension_transformer: DimensionTransformer,
+        fact_comparer: FactComparer,
+        fact_reference_validator: FactReferenceValidator,
         storage: ModelStore,
         global_state: GlobalState,
     ):
@@ -29,6 +33,8 @@ class ModelManager(Conductor):
         self._dimension_comparer = dimension_comparer
         self._dimension_reference_validator = dimension_reference_validator
         self._dimension_transformer = dimension_transformer
+        self._fact_comparer = fact_comparer
+        self._fact_reference_validator = fact_reference_validator
 
         self._global_state = global_state
 
@@ -216,15 +222,18 @@ async def _update_model(
 
 
 async def _update_fact(
-    fact: dict,
+    fact: Fact,
     read_version: Version,
     write_version: Version,
     storage: ModelStore,
+    fact_comparer: FactComparer,
+    fact_reference_validator: FactReferenceValidator,
 ):
 
     # This could throw a validation error
     fact_structure_validator.validate(data=fact)
 
+    previous_fact: Fact | None = None
     try:
         # The fact may already have the id - if it is being edited
         fact_transformer.get_id_from_fact(fact)
@@ -241,20 +250,19 @@ async def _update_fact(
             )
         except KeyError:
             # There was no previous fact
-            previous_fact = {}
+            previous_fact = None
 
-    comparison = fact_comparer.compare(fact, previous_fact)
+    await _check_and_put_fact(
+        fact=fact,
+        previous_fact=previous_fact,
+        read_version=read_version,
+        write_version=write_version,
+        storage=storage,
+        fact_comparer=fact_comparer,
+        fact_reference_validator=fact_reference_validator,
+    )
 
-    # Only check and put the data if there is actually something to update
-    if comparison:
-        await _check_and_put_fact(
-            fact=fact,
-            read_version=read_version,
-            write_version=write_version,
-            storage=storage,
-        )
-
-        # TODO - notify changes - here? Or elsewhere?
+    # TODO - notify changes - here? Or elsewhere?
 
 
 async def _check_and_put_dimension(
@@ -274,11 +282,16 @@ async def _check_and_put_dimension(
 
 
 async def _check_and_put_fact(
-    fact: Fact, read_version: Version, write_version: Version, storage: ModelStore
+    fact: Fact,
+    previous_fact: Fact | None,
+    read_version: Version,
+    write_version: Version,
+    storage: ModelStore,
+    fact_comparer: FactComparer,
+    fact_reference_validator: FactReferenceValidator,
 ):
-    # TODO - check references - if we have made deletions we'll need to know
-    # Pass the comparison into the reference check, and check references at the write version
-    # Referred objects will be in
+    comparison = fact_comparer.compare(previous_fact, fact)
+    fact_reference_validator.validate(comparison)
 
     return await storage.put_facts(
         [fact], read_version=read_version, write_version=write_version

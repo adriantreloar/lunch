@@ -16,7 +16,7 @@ async def test_make_dataframe():
     #        await asyncio.sleep(0)
 
     columns = {-1: range(5), 0: ["foo", "bar", "baz", "guf", "gof"], 2: [5, 4, 3, 2, 1]}
-    dtypes = {-1: np.int, 0: np.object, 2: np.int}
+    dtypes = {-1: np.int64, 0: object, 2: np.int64}
 
     result = DimensionDataFrameTransformer.make_dataframe(
         columns=columns, dtypes=dtypes
@@ -95,7 +95,7 @@ def test_merge_with_id_column():
     expected = DataFrame(
         [
             {-1: 1, 1: "bar", 2: 21},
-            {-1: np.NaN, 1: "baz", 2: 30},
+            {-1: np.nan, 1: "baz", 2: 30},
             {-1: 0, 1: "foo", 2: 10},
         ]
     )
@@ -114,7 +114,7 @@ async def test_columnize():
     source_df = DataFrame(
         [
             {-1: 1, 1: "bar", 2: 21},
-            {-1: np.NaN, 1: "baz", 2: 30},
+            {-1: np.nan, 1: "baz", 2: 30},
             {-1: 0, 1: "foo", 2: 10},
         ]
     )

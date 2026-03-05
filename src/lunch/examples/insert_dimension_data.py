@@ -9,8 +9,10 @@ from src.lunch.import_engine.dimension_import_optimiser import DimensionImportOp
 from src.lunch.import_engine.dimension_import_planner import DimensionImportPlanner
 from src.lunch.managers.reference_data_manager import ReferenceDataManager
 from src.lunch.storage.cache.null_dimension_data_cache import NullDimensionDataCache
+from src.lunch.storage.cache.null_hierarchy_data_cache import NullHierarchyDataCache
 from src.lunch.storage.cache.null_reference_data_cache import NullReferenceDataCache
 from src.lunch.storage.dimension_data_store import DimensionDataStore
+from src.lunch.storage.hierarchy_data_store import HierarchyDataStore
 from src.lunch.storage.persistence.local_file_columnar_dimension_data_persistor import (
     LocalFileColumnarDimensionDataPersistor,
 )
@@ -21,6 +23,7 @@ from src.lunch.storage.reference_data_store import ReferenceDataStore
 from src.lunch.storage.serialization.columnar_dimension_data_serializer import (
     ColumnarDimensionDataSerializer,
 )
+from src.lunch.storage.serialization.null_hierarchy_data_serializer import NullHierarchyDataSerializer
 from src.lunch.storage.serialization.yaml_reference_data_serializer import (
     YamlReferenceDataSerializer,
 )  # For indexes
@@ -78,7 +81,6 @@ async def insert_dimension_data():
         persistor=dimension_data_persistor
     )
 
-    # TODO - this DimensionDataStore is redundant, we should be pointing stuff at the ReferenceDataStore
     dimension_data_storage = DimensionDataStore(
         serializer=dimension_serializer, cache=dimension_data_cache
     )
@@ -99,16 +101,19 @@ async def insert_dimension_data():
     )
     dimension_import_enactor = DimensionImportEnactor()
 
-    # Dimensions and Hierarchies deserve special structures, but they also need an overall indexer
-    # so that we can check whether Dimensional Data, Hierarchical Data or both have changed
-    # for a given version
+    # ReferenceDataStore is the top-level store that unifies dimension and hierarchy data.
+    # HierarchyDataStore is a placeholder — no hierarchy operations are implemented yet.
     reference_storage = ReferenceDataStore(
-        serializer=reference_data_serializer, cache=reference_data_cache
+        dimension_data_store=dimension_data_storage,
+        hierarchy_data_store=HierarchyDataStore(
+            serializer=NullHierarchyDataSerializer(), cache=NullHierarchyDataCache()
+        ),
+        serializer=reference_data_serializer,
+        cache=reference_data_cache,
     )
 
     reference_data_manager = ReferenceDataManager(
         reference_data_store=reference_storage,
-        dimension_data_store=dimension_data_storage,
         dimension_import_optimiser=dimension_import_optimiser,
         dimension_import_enactor=dimension_import_enactor,
     )

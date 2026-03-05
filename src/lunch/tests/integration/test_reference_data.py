@@ -12,8 +12,10 @@ from src.lunch.import_engine.dimension_import_optimiser import DimensionImportOp
 from src.lunch.import_engine.dimension_import_planner import DimensionImportPlanner
 from src.lunch.managers.reference_data_manager import ReferenceDataManager
 from src.lunch.storage.cache.null_dimension_data_cache import NullDimensionDataCache
+from src.lunch.storage.cache.null_hierarchy_data_cache import NullHierarchyDataCache
 from src.lunch.storage.cache.null_reference_data_cache import NullReferenceDataCache
 from src.lunch.storage.dimension_data_store import DimensionDataStore
+from src.lunch.storage.hierarchy_data_store import HierarchyDataStore
 from src.lunch.storage.persistence.stringio_columnar_dimension_data_persistor import (
     StringIOColumnarDimensionDataPersistor,
 )
@@ -24,6 +26,7 @@ from src.lunch.storage.reference_data_store import ReferenceDataStore
 from src.lunch.storage.serialization.columnar_dimension_data_serializer import (
     ColumnarDimensionDataSerializer,
 )
+from src.lunch.storage.serialization.null_hierarchy_data_serializer import NullHierarchyDataSerializer
 from src.lunch.storage.serialization.yaml_reference_data_serializer import (
     YamlReferenceDataSerializer,
 )  # For indexes
@@ -63,7 +66,6 @@ async def test_dimension_data_round_trip():
         persistor=dimension_data_persistor
     )
 
-    # TODO - this DimensionDataStore is redundant, we should be pointing stuff at the ReferenceDataStore
     dimension_data_storage = DimensionDataStore(
         serializer=dimension_serializer, cache=dimension_data_cache
     )
@@ -84,16 +86,19 @@ async def test_dimension_data_round_trip():
     )
     dimension_import_enactor = DimensionImportEnactor()
 
-    # Dimensions and Hierarchies deserve special structures, but they also need an overall indexer
-    # so that we can check whether Dimensional Data, Hierarchical Data or both have changed
-    # for a given version
+    # ReferenceDataStore is the top-level store that unifies dimension and hierarchy data.
+    # HierarchyDataStore is a placeholder — no hierarchy operations are implemented yet.
     reference_storage = ReferenceDataStore(
-        serializer=reference_data_serializer, cache=reference_data_cache
+        dimension_data_store=dimension_data_storage,
+        hierarchy_data_store=HierarchyDataStore(
+            serializer=NullHierarchyDataSerializer(), cache=NullHierarchyDataCache()
+        ),
+        serializer=reference_data_serializer,
+        cache=reference_data_cache,
     )
 
     reference_data_manager = ReferenceDataManager(
         reference_data_store=reference_storage,
-        dimension_data_store=dimension_data_storage,
         dimension_import_optimiser=dimension_import_optimiser,
         dimension_import_enactor=dimension_import_enactor,
     )
@@ -128,7 +133,7 @@ async def test_dimension_data_round_trip():
     )
 
     # NOTE - column 0 is id column
-    columns = await dimension_data_storage.get_columns(
+    columns = await reference_storage.dimension_data_store.get_columns(
                                                  read_version=write_version,
                                                  dimension_id=1,
                                                  column_types={"foo": str,"bar": str,"baz": str},

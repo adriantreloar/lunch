@@ -1,5 +1,5 @@
 # TODO - I don't like these imports - it suggests that update_dimension_from_dataframe is a method in the wrong place
-#  Ideally a smidgeon will be left for typing, e.f. pd.DataFrame, dd.DataFrame etc.
+#  Ideally a smidgeon will be left for typing, e.g. pd.DataFrame, dd.DataFrame etc.
 import pandas as pd
 
 from src.lunch.base_classes.conductor import Conductor
@@ -15,13 +15,12 @@ class ReferenceDataManager(Conductor):
     def __init__(
         self,
         reference_data_store: ReferenceDataStore,
-        dimension_data_store: DimensionDataStore,
         dimension_import_optimiser: DimensionImportOptimiser,
         dimension_import_enactor: DimensionImportEnactor,
     ):
 
         self._reference_data_store = reference_data_store
-        self._dimension_data_store = dimension_data_store
+        self._dimension_data_store = reference_data_store.dimension_data_store
 
         self._dimension_import_optimiser = dimension_import_optimiser
         self._dimension_import_enactor = dimension_import_enactor

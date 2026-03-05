@@ -190,7 +190,7 @@ async def _update_model(
         # TODO - package this into a function
         dimensions = []
         # Gather canonical versions of all of the dimensions used in the fact
-        # validate fact cross references (and fill in dimension ids) against WRITE version of dimension
+        # validate fact cross-references (and fill in dimension ids) against WRITE version of dimension
         for dimension_metadata in fact.dimensions:
             dimension_id = dimension_metadata.dimension_id
             dimension: dict = None

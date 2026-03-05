@@ -1,8 +1,11 @@
+import logging
 import os.path
 from contextlib import contextmanager
 from pathlib import Path
 
 from src.lunch.storage.persistence.model_persistor import ModelPersistor
+
+logger = logging.getLogger(__name__)
 
 
 class LocalFileModelPersistor(ModelPersistor):
@@ -43,6 +46,7 @@ class LocalFileModelPersistor(ModelPersistor):
     def open_dimension_version_index_file_write(self, version: int):
         file_path = self.dimension_version_index_file(version)
         Path(os.path.dirname(file_path)).mkdir(parents=True, exist_ok=True)
+        logger.debug("Writing dimension version index: %s", file_path)
         with open(file_path, "w") as f:
             yield f
 
@@ -55,6 +59,8 @@ class LocalFileModelPersistor(ModelPersistor):
     @contextmanager
     def open_dimension_name_index_file_write(self, version: int):
         file_path = self.dimension_name_index_file(version)
+        Path(os.path.dirname(file_path)).mkdir(parents=True, exist_ok=True)
+        logger.debug("Writing dimension name index: %s", file_path)
         with open(file_path, "w") as f:
             yield f
 
@@ -68,6 +74,7 @@ class LocalFileModelPersistor(ModelPersistor):
     def open_dimension_file_write(self, id_: int, version: int):
         file_path = self.dimension_file(id_, version)
         Path(os.path.dirname(file_path)).mkdir(parents=True, exist_ok=True)
+        logger.debug("Writing dimension file: %s", file_path)
         with open(file_path, "w") as f:
             yield f
 
@@ -80,6 +87,8 @@ class LocalFileModelPersistor(ModelPersistor):
     @contextmanager
     def open_fact_version_index_file_write(self, version: int):
         file_path = self.fact_version_index_file(version)
+        Path(os.path.dirname(file_path)).mkdir(parents=True, exist_ok=True)
+        logger.debug("Writing fact version index: %s", file_path)
         with open(file_path, "w") as f:
             yield f
 
@@ -92,6 +101,8 @@ class LocalFileModelPersistor(ModelPersistor):
     @contextmanager
     def open_fact_name_index_file_write(self, version: int):
         file_path = self.fact_name_index_file(version)
+        Path(os.path.dirname(file_path)).mkdir(parents=True, exist_ok=True)
+        logger.debug("Writing fact name index: %s", file_path)
         with open(file_path, "w") as f:
             yield f
 
@@ -105,6 +116,7 @@ class LocalFileModelPersistor(ModelPersistor):
     def open_fact_file_write(self, id_: int, version: int):
         file_path = self.fact_file(id_, version)
         Path(os.path.dirname(file_path)).mkdir(parents=True, exist_ok=True)
+        logger.debug("Writing fact file: %s", file_path)
         with open(file_path, "w") as f:
             yield f
 

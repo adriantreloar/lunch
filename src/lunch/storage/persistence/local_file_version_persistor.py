@@ -1,7 +1,10 @@
+import logging
 from contextlib import contextmanager
 from pathlib import Path
 
 from src.lunch.storage.persistence.model_persistor import ModelPersistor
+
+logger = logging.getLogger(__name__)
 
 
 class LocalFileVersionPersistor(ModelPersistor):
@@ -30,6 +33,7 @@ class LocalFileVersionPersistor(ModelPersistor):
     @contextmanager
     def open_version_file_write(self):
         file_path = self.version_file()
+        logger.debug("Writing version file: %s", file_path)
         with open(file_path, mode="w") as f:
             yield f
 

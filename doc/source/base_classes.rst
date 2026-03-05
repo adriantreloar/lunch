@@ -122,9 +122,15 @@ optimiser and an enactor.
 Stateful
 ~~~~~~~~
 
-A ``Stateful`` class **holds mutable state**.  Caches and persistors are
-``Stateful``.  A ``Stateful`` may call ``Transformer`` classes to prepare
-data, but must not contain transformation logic itself.
+A ``Stateful`` class holds mutable state, but the **data it stores is
+immutable once written**.  Caches and persistors are ``Stateful``.  A
+``Stateful`` may call ``Transformer`` classes to prepare data, but must not
+contain transformation logic itself.
+
+The immutability constraint is the MVCC guarantee: a ``put`` at version *N*
+creates a new record; it never overwrites the record at version *N*.  A
+``get`` at version *N* must always return the same data regardless of how
+many subsequent ``put`` calls have occurred at later versions.
 
 .. code-block:: python
 
@@ -134,13 +140,30 @@ data, but must not contain transformation logic itself.
 
 **Rules:**
 
-- Owns and mutates state.
+- Holds state; the state it holds is immutable per version.
+- A ``put`` at a given version writes new data — it does not overwrite
+  existing data at that version.
 - May delegate to ``Transformer`` classes; must not contain transformation
   logic itself.
 - ``Null*`` implementations (e.g. ``NullModelCache``) are no-ops used when
   caching is disabled or in tests.
 
-**Testing:** Before/after scenarios; may require async correctness tests.
+**Testing:** Tests must verify both the write and the read, and must
+confirm that a second ``put`` at the same version does not corrupt the
+first.  For example:
+
+.. code-block:: python
+
+    async def test_put_dimension_is_immutable_per_version(store):
+        dim_v1 = {"name": "Department", "id_": 1}
+        dim_v1_overwrite = {"name": "Department_modified", "id_": 1}
+
+        await store.put(dim_v1, model_version=1)
+        await store.put(dim_v1_overwrite, model_version=1)
+
+        result = await store.get(id_=1, model_version=1)
+        assert result["name"] == "Department"  # first write wins; not overwritten
+
 Because ``Stateful`` classes are deliberately few, the test surface for
 concurrency bugs is kept small.
 
@@ -236,8 +259,10 @@ Testing Strategy by Role
      - Mock all collaborators; assert call arguments and that errors from
        collaborators are propagated or handled correctly
    * - ``Stateful``
-     - State before and after mutation
-     - Before/after assertions; test async correctness
+     - Data written at a version is readable at that version; a second
+       write at the same version does not overwrite the first
+     - Write then read assertions; verify a second ``put`` at the same
+       version does not corrupt the original; test async correctness
    * - ``Data``
      - Field values; immutability if using pyrsistent
      - Construct and inspect; rarely needs dedicated tests

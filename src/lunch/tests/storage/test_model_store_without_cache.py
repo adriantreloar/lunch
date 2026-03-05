@@ -3,8 +3,8 @@ from mock import Mock
 
 from src.lunch.model.dimension.dimension_comparer import DimensionComparer
 from src.lunch.model.dimension.dimension_transformer import DimensionTransformer
-from src.lunch.model.fact.fact_comparer import FactComparer
-from src.lunch.model.fact.fact_transformer import FactTransformer
+from src.lunch.model.old_fact.fact_comparer import FactComparer
+from src.lunch.model.old_fact.fact_transformer import FactTransformer
 from src.lunch.mvcc.version import Version
 from src.lunch.storage.cache.null_model_cache import NullModelCache
 from src.lunch.storage.model_store import ModelStore

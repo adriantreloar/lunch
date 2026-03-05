@@ -26,7 +26,7 @@ A :class:`StarSchema` is the top-level container returned by
 
 The ``dimensions`` map is keyed by integer ``dimension_id``, matching the
 ``dimension_id`` values stored in each ``FactDimensionMetadatum`` (see
-`Cross-References`_ below).
+`Fact Dimension Links`_ below).
 
 ``StarSchema`` is a read-only view assembled at query time.  It is **not**
 persisted directly; facts and dimensions are stored independently and joined
@@ -72,13 +72,20 @@ Structure
 Reference Data
 ~~~~~~~~~~~~~~
 
-The *reference data* layer (``ReferenceDataStore``) holds the **member data**
-for each dimension — the actual rows that populate the attribute columns.
-Reference data is stored separately from the dimension schema and versioned
-independently via ``reference_data_version``.
+The *reference data* layer (``ReferenceDataStore``) provides a unified,
+versioned interface to two sub-stores:
 
-Each dimension's member data is stored as columnar arrays, one array per
-attribute, accessed by ``(dimension_id, attribute_id)``.
+- ``DimensionDataStore`` — holds the **member data** for each dimension: the
+  actual rows that populate the attribute columns.  Each dimension's member
+  data is stored as columnar arrays, one array per attribute, accessed by
+  ``(dimension_id, attribute_id)``.
+- ``HierarchyDataStore`` — holds parent–child relationship data for dimension
+  hierarchies (planned; not yet implemented).
+
+Both types of data are grouped under a **single** ``reference_data_version``
+sub-version.  This is intentional: dimensions and hierarchies change at a much
+lower frequency than fact (cube) data, so sharing one version counter keeps
+the MVCC version record compact and avoids unnecessary version churn.
 
 Hierarchies
 ~~~~~~~~~~~
@@ -87,9 +94,10 @@ Hierarchies are a planned extension to the dimension model.  A hierarchy
 defines a parent–child ordering of members within a dimension — for example a
 *Time* dimension might expose a ``Year → Quarter → Month`` hierarchy.
 
-No ``Hierarchy`` class exists yet; the ``ReferenceDataStore`` and its
-persistor are designed to accommodate hierarchy data alongside flat dimension
-data once the structure is defined.
+No ``Hierarchy`` class exists yet; the ``HierarchyDataStore`` (held by
+``ReferenceDataStore``) is a stub whose methods all raise
+``NotImplementedError``.  When implemented, hierarchy data will share the same
+``reference_data_version`` as dimension member data.
 
 
 Facts
@@ -151,8 +159,8 @@ All column ids within a ``FactStorage`` must be non-negative integers and
 unique within ``index_columns``.
 
 
-Cross-References
-----------------
+Fact Dimension Links
+--------------------
 
 A fact references dimensions through its ``dimensions`` field, which is a
 vector of ``FactDimensionMetadatum`` objects — one per dimension foreign key.
@@ -207,8 +215,16 @@ attribute that a fact column maps to) is defined in
 Version Isolation
 ~~~~~~~~~~~~~~~~~
 
-Fact schema changes and dimension schema changes each advance their own
-sub-version (``model_version``), while reference data (dimension member rows)
-advances ``reference_data_version``.  A ``StarSchema`` read at a given
-``Version`` is therefore a consistent snapshot: the fact schema, dimension
-schemas, and member data are all pinned to the versions present at read time.
+The ``Version`` object carries one sub-version per data domain:
+
+- ``model_version`` — advances when the star schema definition changes (facts
+  or dimension schemas).
+- ``reference_data_version`` — advances when dimension member data **or**
+  hierarchy data changes.  Both are grouped under a single counter because
+  they change infrequently compared with fact data, making a shared version
+  number more compact.
+- ``cube_data_version`` — advances on every fact data import.
+
+A ``StarSchema`` read at a given ``Version`` is therefore a consistent
+snapshot: the fact schema, dimension schemas, member data, and hierarchies are
+all pinned to the versions present at read time.

@@ -78,8 +78,10 @@ automatically.
 Calls ``save_dimension()`` first to ensure the ``Department`` and ``Time``
 dimensions exist, then defines the ``f_sales`` fact:
 
-- **Dimensions:** ``Department`` (foreign key) and ``Time`` (foreign key).
-- **Measures:** ``sales`` (decimal, precision 2).
+- **Dimensions:** ``Department`` (storage column id 0, auto-promoted to 3 by
+  ``fill_default_column_ids`` since 0 is falsy) and ``Time`` (storage column
+  id 2).
+- **Measures:** ``sales`` (decimal, precision 2; ``measure_id=1``).
 - **Storage:** index columns ``[1]``; data columns ``[2, 0]``.
 
 The fact references dimensions by name (``dimension_id=0``); the manager
@@ -161,35 +163,40 @@ written to disk is printed to stdout.
 ``insert_fact_data.py``
 -----------------------
 
-**Purpose:** Demonstrates the fact data import pipeline.
+**Purpose:** Demonstrates the full end-to-end fact data import pipeline,
+from a raw ``pd.DataFrame`` to persisted columnar column files on disk.
 
 The script:
 
 1. Calls ``insert_dimension_data()`` and ``save_fact()`` to ensure the full
    model and reference data are present.
-2. Constructs the fact data storage stack:
+2. Builds a three-row ``Sales`` DataFrame with columns ``department_id``,
+   ``thing 2``, and ``sales value``.
+3. Declares a ``column_mapping`` that maps each source column to a target in
+   the star schema (dimension foreign key or measure).
+4. Constructs the fact data storage stack:
 
    .. code-block:: text
 
-       LocalFileColumnarFactDataPersistor
+       LocalFileColumnarFactDataPersistor  (example_output/fact/)
            └─ ColumnarFactDataSerializer
                   └─ FactDataStore
 
-3. Wires the fact import pipeline:
+5. Wires the fact import pipeline:
    ``FactAppendPlanner`` → ``FactImportOptimiser`` → ``FactImportEnactor``,
    assembled into a ``CubeDataManager``.
+6. Opens a ``write_reference_data_version`` transaction, calls
+   ``fact_import_optimiser.create_dataframe_append_plan`` to produce a plan,
+   then passes the plan and the source DataFrame to
+   ``cube_data_manager.append_fact_from_dataframe``.
 
-4. Opens a ``write_reference_data_version`` transaction and calls
-   ``fact_import_optimiser.create_dataframe_append_plan`` to produce an
-   import plan for three sample ``Sales`` rows.
+Output files written under ``example_output/fact/<version>/``:
 
-.. note::
+- ``fact_data.version.index.yaml`` — maps fact id → reference data version.
+- ``fact_data/<fact_id>/column.<column_id>.column`` — one text file per
+  storage column containing the column's values (one per line).
 
-   The actual ``cube_data_manager.append_fact_from_dataframe`` call is
-   currently commented out.  The plan is printed to stdout for inspection.
-   This script serves as a scaffold for the fact import implementation.
-
-Debug-level logging is enabled when run directly.
+Debug-level logging is enabled when run directly, printing every file write.
 
 **Run order:** Depends on ``insert_dimension_data`` and ``save_fact``.
 
@@ -207,7 +214,9 @@ To exercise the complete pipeline from scratch:
     # 2. Load dimension member data
     uv run python -m src.lunch.examples.insert_dimension_data
 
-    # 3. Run the fact import pipeline (plan printed; write currently disabled)
+    # 3. Append fact data rows
     uv run python -m src.lunch.examples.insert_fact_data
 
 All output is written under ``example_output/`` at the repository root.
+Running ``insert_fact_data`` is sufficient to trigger the full chain — it
+calls ``insert_dimension_data`` and ``save_fact`` internally.

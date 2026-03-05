@@ -50,6 +50,20 @@ class LocalFileColumnarFactDataPersistor(FactDataPersistor):
         with open(file_path, "w") as f:
             yield f
 
+    @contextmanager
+    def open_attribute_file_write(self, dimension_id: int, attribute_id: int, version: int):
+        file_path = self._directory / f"{version}/fact_data/{dimension_id}/column.{attribute_id}.column"
+        Path(os.path.dirname(file_path)).mkdir(parents=True, exist_ok=True)
+        logger.debug("Writing fact column file: %s", file_path)
+        with open(file_path, "w") as f:
+            yield f
+
+    @contextmanager
+    def open_attribute_file_read(self, dimension_id: int, attribute_id: int, version: int):
+        file_path = self._directory / f"{version}/fact_data/{dimension_id}/column.{attribute_id}.column"
+        with open(file_path, "r") as f:
+            yield f
+
 def _fact_version_index_file(directory: Path, version: int) -> Path:
     return directory.joinpath(f"{version}/fact_data.version.index.yaml")
 

@@ -134,12 +134,12 @@ async def insert_fact_data():
             # TODO match this plan with what _enact_plan needs
             print(plan)
 
-            #await cube_data_manager.append_fact_from_dataframe(
-            #    plan=plan,
-            #    source_data=df_data,
-            #    read_version=read_version,
-            #    write_version=write_version,
-            #)
+            await cube_data_manager.append_fact_from_dataframe(
+                plan=plan,
+                source_data=df_data,
+                read_version=read_version,
+                write_version=write_version,
+            )
 
 
 # And run it

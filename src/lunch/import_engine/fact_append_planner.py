@@ -19,24 +19,40 @@ class FactAppendPlanner(Transformer):
         read_version: Version,
         write_version: Version,
     ) -> Plan:
-        print(write_version_target_model)
-        print(source_metadata)
-        for m in column_mapping:
-            print(m)
+        write_fact = write_version_target_model.fact
 
-        # Check every dimension is mapped (in theory there could be a default - 0? meaning ALL?)
-        # Check every mapping maps a source to a target
-        # for each mapping work out what the target type is - id, translate, measure_name, or measure
+        source_column_definition = {
+            name: str(dtype_)
+            for name, dtype_ in zip(source_metadata.column_names, source_metadata.column_types)
+        }
+        source_length = source_metadata.length
 
-        # Translate, and Broadcast Measures in parallel
-
-        #Combine - all? - in storage order index followed by data followed by values
-        # Sort by key
-        #
+        column_id_mapping: dict[str, int] = {}
+        for mapping in column_mapping:
+            source_col = mapping["source"][0]
+            if "target" in mapping:
+                dim_name = mapping["target"][0]
+                dim_meta = next(d for d in write_fact.dimensions if d.dimension_name == dim_name)
+                column_id_mapping[source_col] = dim_meta.column_id
+            elif "measure target" in mapping:
+                measure_name = mapping["measure target"][1]
+                measure_meta = next(m for m in write_fact.measures if m.name == measure_name)
+                column_id_mapping[source_col] = measure_meta.measure_id
 
         return BasicPlan(
-            name="",
+            name="_import_fact_append_locally_from_dataframe",
             inputs={
-                    },
-            outputs={}
+                "source_definition": {
+                    "type": "pd.DataFrame",
+                    "length": source_length,
+                    "columns": source_column_definition,
+                },
+                "read_fact": read_version_target_model.fact,
+                "column_id_mapping": column_id_mapping,
+                "merge_key": list(write_version_target_model.fact.storage.index_columns),
+                "read_filter": None,
+            },
+            outputs={
+                "write_fact": write_version_target_model.fact,
+            },
         )

@@ -75,6 +75,12 @@ class ColumnarFactDataSerializer(FactDataSerializer):
             persistor=self._persistor,
         )
 
+    async def get_partition_index(self, version: Version) -> dict:
+        return {}
+
+    async def put_partition_index(self, index_: dict, version: Version) -> None:
+        pass
+
     async def put_columns(
         self,
         version: Version,
@@ -101,9 +107,9 @@ async def _get_version_index(
         ) as stream:
             version_index = yaml.safe_load(stream)
     except FileNotFoundError:
-        raise KeyError(version)
+        return {}
 
-    return version_index
+    return version_index or {}
 
 
 async def _put_version_index(

@@ -69,7 +69,7 @@ class FactDataStore(Store):
             )
         except KeyError:
             column_data = await self._serializer.get_columns(
-                fact_id=fact_id,
+                dimension_id=fact_id,
                 reference_data_version=reference_data_version,
                 column_types=column_types,
             )
@@ -87,8 +87,6 @@ async def _put(
     columnar_data: dict[int, Iterable], # -1 -> value, 0-n -> fact dimension indices
     read_version: Version,
     write_version: Version,
-    fact_partition_indices: tuple[int, ...],  # From the model
-    fact_data_indices: tuple[int, ...],  # From the model
     fact_data_version_index_transformer: FactDataIndexTransformer,
     fact_data_partition_index_transformer: FactDataIndexTransformer,
     serializer: FactDataSerializer,
@@ -109,7 +107,7 @@ async def _put(
     # All the changed facts will be in facts_with_ids now
     # All of these have a version of the write-version
     facts_version_index_write = (
-        fact_data_version_index_transformer.update_fact_version_index(
+        fact_data_version_index_transformer.update_fact_data_version_index(
             index_=facts_version_index_write,
             write_version=write_version,
             changed_ids=[fact_id],
@@ -127,7 +125,7 @@ async def _put(
     # Note - we cache as we put, so that later puts in a transaction can validate against cached data
     # Note, as we serialize we collect the changed partition ids
     changed_partition_ids = await serializer.put_columns(
-        fact_id=fact_id,
+        dimension_id=fact_id,
         columns=columnar_data,
         version=write_version,
     )
@@ -149,15 +147,15 @@ async def _put(
         )
 
     facts_partition_index_write = (
-        fact_data_partition_index_transformer.update_fact_partition_index(
+        fact_data_partition_index_transformer.update_fact_partition_version_index(
             index_=facts_partition_index_write,
             write_version=write_version,
             changed_ids=[changed_partition_ids],
         )
     )
 
-    await _put_version_index(
-        index_=facts_version_index_write,
+    await _put_partition_index(
+        index_=facts_partition_index_write,
         version=write_version,
         serializer=serializer,
         cache=cache,

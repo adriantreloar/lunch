@@ -1,3 +1,5 @@
+from typing import Iterable, Mapping
+
 from src.lunch.mvcc.version import Version
 from src.lunch.storage.cache.fact_data_cache import FactDataCache
 
@@ -12,4 +14,22 @@ class NullFactDataCache(FactDataCache):
         :param version: Write version that has been aborted
         :return:
         """
+        pass
+
+    async def get_version_index(self, version: Version) -> dict:
+        raise KeyError(version)
+
+    async def put_version_index(self, index_: dict, version: Version) -> None:
+        pass
+
+    async def get_partition_index(self, version: Version) -> dict:
+        raise KeyError(version)
+
+    async def put_partition_index(self, index_: dict, version: Version) -> None:
+        pass
+
+    async def get_columns(self, fact_id: int, reference_data_version: int) -> Mapping:
+        raise KeyError(fact_id)
+
+    async def put_columns(self, fact_id: int, columns: Mapping, version: Version) -> None:
         pass

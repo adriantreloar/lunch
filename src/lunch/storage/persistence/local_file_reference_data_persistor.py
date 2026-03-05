@@ -1,8 +1,11 @@
+import logging
 import os.path
 from contextlib import contextmanager
 from pathlib import Path
 
 from src.lunch.storage.persistence.reference_data_persistor import ReferenceDataPersistor
+
+logger = logging.getLogger(__name__)
 
 
 class LocalFileReferenceDataPersistor(ReferenceDataPersistor):
@@ -33,6 +36,7 @@ class LocalFileReferenceDataPersistor(ReferenceDataPersistor):
     def open_dimension_data_version_index_file_write(self, version: int):
         file_path = self.dimension_data_version_index_file(version)
         Path(os.path.dirname(file_path)).mkdir(parents=True, exist_ok=True)
+        logger.debug("Writing reference data version index file: %s", file_path)
         with open(file_path, "w") as f:
             yield f
 

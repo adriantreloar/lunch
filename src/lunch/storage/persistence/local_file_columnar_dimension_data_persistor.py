@@ -1,8 +1,11 @@
+import logging
 import os.path
 from contextlib import contextmanager
 from pathlib import Path
 
 from src.lunch.storage.persistence.dimension_data_persistor import DimensionDataPersistor
+
+logger = logging.getLogger(__name__)
 
 
 class LocalFileColumnarDimensionDataPersistor(DimensionDataPersistor):
@@ -48,6 +51,7 @@ class LocalFileColumnarDimensionDataPersistor(DimensionDataPersistor):
             dimension_id=dimension_id, attribute_id=attribute_id, version=version
         )
         Path(os.path.dirname(file_path)).mkdir(parents=True, exist_ok=True)
+        logger.debug("Writing attribute file: %s", file_path)
         with open(file_path, "w") as f:
             yield f
 
@@ -61,6 +65,7 @@ class LocalFileColumnarDimensionDataPersistor(DimensionDataPersistor):
     def open_version_index_file_write(self, version: int):
         file_path = self.dimension_version_index_file(version=version)
         Path(os.path.dirname(file_path)).mkdir(parents=True, exist_ok=True)
+        logger.debug("Writing version index file: %s", file_path)
         with open(file_path, "w") as f:
             yield f
 

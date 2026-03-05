@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from pathlib import Path
 
 import pandas as pd
@@ -147,4 +148,5 @@ async def insert_dimension_data():
 
 # And run it
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.DEBUG, format="%(name)s %(levelname)s %(message)s")
     asyncio.run(insert_dimension_data())

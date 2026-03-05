@@ -99,7 +99,19 @@ routes calls to the right private function.
 - Logic lives in private module-level functions, not in methods.
 
 **Testing:** Mock all collaborators; assert the right calls were made with
-the right arguments.
+the right arguments.  Critically, **error handling is a first-class
+responsibility of the Conductor** — tests must cover what happens when a
+collaborator raises an exception.  A Conductor that silently swallows
+errors, re-raises the wrong type, or fails to clean up on error is broken
+even if its happy-path tests all pass.
+
+.. code-block:: python
+
+    async def test_update_dimension_propagates_validation_error(mock_store, mock_validator):
+        mock_validator.validate.side_effect = DimensionValidationError("bad input")
+        with pytest.raises(DimensionValidationError):
+            await manager.update_dimension(bad_dim, read_version, write_version)
+        mock_store.put_dimensions.assert_not_called()
 
 **Example:** ``ModelManager`` routes ``update_dimension`` and
 ``update_fact`` calls to validators, transformers, and storage.
@@ -220,8 +232,9 @@ Testing Strategy by Role
      - Input → output correctness
      - Plain ``assert`` statements; no mocks needed
    * - ``Conductor``
-     - Correct calls to collaborators
-     - Mock all collaborators; assert call arguments
+     - Correct calls to collaborators; correct error handling
+     - Mock all collaborators; assert call arguments and that errors from
+       collaborators are propagated or handled correctly
    * - ``Stateful``
      - State before and after mutation
      - Before/after assertions; test async correctness

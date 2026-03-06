@@ -1,7 +1,5 @@
 from typing import Any
 
-from numpy import dtype
-
 from src.lunch.base_classes.conductor import Conductor
 from src.lunch.plans.plan import Plan
 from src.lunch.plans.basic_plan import BasicPlan
@@ -63,9 +61,8 @@ async def _import_fact_append_locally_from_dataframe(data: Any,
     read_filter = append_plan.inputs["read_filter"]
     write_fact = append_plan.outputs["write_fact"]
 
-    renamed_df = data.rename(columns=column_id_mapping)
-
-    column_types = {col_id: dtype(str) for col_id in column_id_mapping.values()}
+    renamed_df = FactDataFrameTransformer.rename(data, column_id_mapping)
+    column_types = FactDataFrameTransformer.column_types_from_mapping(column_id_mapping)
 
     try:
         read_columns = await fact_data_store.get_columns(

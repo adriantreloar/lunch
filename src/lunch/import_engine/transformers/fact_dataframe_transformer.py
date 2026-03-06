@@ -52,6 +52,14 @@ class FactDataFrameTransformer(Transformer):
         return df
 
     @staticmethod
+    def rename(df: pd.DataFrame, column_id_mapping: dict) -> pd.DataFrame:
+        return df.rename(columns=column_id_mapping)
+
+    @staticmethod
+    def column_types_from_mapping(column_id_mapping: dict) -> dict[int, np.dtype]:
+        return {col_id: np.dtype(str) for col_id in column_id_mapping.values()}
+
+    @staticmethod
     def columnize(data: pd.DataFrame) -> dict[int, Iterable]:
         # dictionary of columns? attribute_id : column/iterator
         # index is -1?

@@ -88,12 +88,23 @@ class ModelManager(Conductor):
     async def get_star_schema_model_by_fact_name(
         self, name: str, version: Version
     ) -> StarSchema:
-        fact = await _get_fact_by_name(name=name, version=version, storage=self._storage)
-        dimensions_by_id = {}
-        for dimension_id in FactTransformer.get_unique_dimension_ids(fact):
-            dimensions_by_id[dimension_id] = await _get_dimension(id_=dimension_id, version=version, storage=self._storage)
+        return await _get_star_schema_model_by_fact_name(
+            name=name, version=version, storage=self._storage
+        )
 
-        return StarSchema(fact=fact, dimensions=dimensions_by_id)
+async def _get_star_schema_model_by_fact_name(
+    name: str,
+    version: Version,
+    storage: ModelStore,
+) -> StarSchema:
+    fact = await _get_fact_by_name(name=name, version=version, storage=storage)
+    dimensions_by_id = {}
+    for dimension_id in FactTransformer.get_unique_dimension_ids(fact):
+        dimensions_by_id[dimension_id] = await _get_dimension(
+            id_=dimension_id, version=version, storage=storage
+        )
+    return StarSchema(fact=fact, dimensions=dimensions_by_id)
+
 
 async def _get_dimension_id(
     name: str,
@@ -154,6 +165,31 @@ async def _get_fact(
     return await storage.get_fact(id_=id_, version=version)
 
 
+async def _resolve_dimensions_for_fact(
+    fact: Fact,
+    write_version: Version,
+    storage: ModelStore,
+    dimension_transformer: DimensionTransformer,
+) -> list[dict]:
+    dimensions = []
+    for dimension_metadata in fact.dimensions:
+        dimension_id = dimension_metadata.dimension_id
+        dimension: dict = None
+        if dimension_id != 0:
+            dimension = await _get_dimension(id_=dimension_id, version=write_version, storage=storage)
+        if dimension is None:
+            dimension = await _get_dimension_by_name(
+                name=dimension_metadata.dimension_name,
+                version=write_version,
+                storage=storage,
+                add_default_storage=False,
+                default_storage=None,
+                dimension_transformer=dimension_transformer,
+            )
+        dimensions.append(dimension)
+    return dimensions
+
+
 async def _update_model(
     dimensions: list[dict],
     facts: list[Fact],
@@ -185,35 +221,17 @@ async def _update_model(
     #  for dimensions and facts everytime
 
 
-    # TODO - package this into a function
     out_facts = []
     for fact in facts:
-        # add default view order if there is none
         fact = FactTransformer.fill_default_view_order(fact=fact)
-        # add column ids if we don't have them
         fact = FactTransformer.fill_default_column_ids(fact=fact)
-
-        # TODO - package this into a function
-        dimensions = []
-        # Gather canonical versions of all of the dimensions used in the fact
-        # validate fact cross-references (and fill in dimension ids) against WRITE version of dimension
-        for dimension_metadata in fact.dimensions:
-            dimension_id = dimension_metadata.dimension_id
-            dimension: dict = None
-            if dimension_id != 0:
-                dimension = await _get_dimension(id_=dimension_id, version=write_version, storage=storage)
-            if dimension is None:
-                dimension_name = dimension_metadata.dimension_name
-                dimension = await _get_dimension_by_name(name=dimension_name,
-                                                         version=write_version,
-                                                         storage=storage,
-                                                         add_default_storage=False,
-                                                         default_storage=None,
-                                                         dimension_transformer=dimension_transformer)
-            dimensions.append(dimension)
-
+        dimensions = await _resolve_dimensions_for_fact(
+            fact=fact,
+            write_version=write_version,
+            storage=storage,
+            dimension_transformer=dimension_transformer,
+        )
         fact = FactTransformer.fill_dimension_info(fact=fact, dimensions=dimensions)
-
         out_facts.append(fact)
 
     await storage.put_facts(

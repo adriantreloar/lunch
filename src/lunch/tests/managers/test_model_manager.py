@@ -17,6 +17,7 @@ from src.lunch.model.fact import (
 )
 from src.lunch.model.old_fact.fact_comparer import FactComparer
 from src.lunch.model.old_fact.fact_reference_validator import FactReferenceValidator
+from src.lunch.model.star_schema import StarSchema
 from src.lunch.mvcc.version import Version
 from src.lunch.storage.model_store import ModelStore
 
@@ -190,6 +191,25 @@ async def test_get_dimension_by_name_id_found_but_data_missing_raises_key_error(
 
 
 # ---------------------------------------------------------------------------
+# get_star_schema_model_by_fact_name — happy path
+# ---------------------------------------------------------------------------
+
+async def test_get_star_schema_returns_star_schema(manager_and_mocks):
+    manager, storage, _, _ = manager_and_mocks
+    fact = _fact_referencing_dim_by_id(42)
+    _dim_42 = {"name": "Department", "attributes": [{"name": "name", "id_": 1}], "id_": 42}
+    storage.get_fact_id.return_value = 1
+    storage.get_fact.return_value = fact
+    storage.get_dimension.return_value = _dim_42
+
+    result = await manager.get_star_schema_model_by_fact_name(name="Sales", version=v1)
+
+    assert isinstance(result, StarSchema)
+    assert result.fact == fact
+    assert result.dimensions[42] == _dim_42
+
+
+# ---------------------------------------------------------------------------
 # get_star_schema_model_by_fact_name — missing referenced dimension
 # ---------------------------------------------------------------------------
 
@@ -209,3 +229,29 @@ async def test_get_star_schema_fact_found_but_dimension_missing_raises_key_error
 
     with pytest.raises(KeyError):
         await manager.get_star_schema_model_by_fact_name(name="Sales", version=v1)
+
+
+# ---------------------------------------------------------------------------
+# update_model — dimension resolved by id (not by name lookup)
+# ---------------------------------------------------------------------------
+
+async def test_update_model_resolves_fact_dimension_by_id(manager_and_mocks):
+    manager, storage, validator, transformer = manager_and_mocks
+    validator.validate.return_value = None
+    transformer.add_attribute_ids_to_dimension.side_effect = lambda dimension: dimension
+    storage.put_dimensions.return_value = None
+    _dim_42 = {"name": "Department", "attributes": [{"name": "name", "id_": 1}], "id_": 42}
+    storage.get_dimension.return_value = _dim_42
+    storage.put_facts.return_value = None
+
+    await manager.update_model(
+        dimensions=[],
+        facts=[_fact_referencing_dim_by_id(42)],
+        read_version=v0,
+        write_version=v1,
+    )
+
+    # dimension resolved directly by id — get_dimension_id must NOT be called
+    storage.get_dimension_id.assert_not_called()
+    storage.get_dimension.assert_called_once()
+    storage.put_facts.assert_called_once()

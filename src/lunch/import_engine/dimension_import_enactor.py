@@ -1,7 +1,5 @@
 from typing import Any
 
-from numpy import dtype
-
 from src.lunch.base_classes.conductor import Conductor
 from src.lunch.plans.plan import Plan
 from src.lunch.plans.basic_plan import BasicPlan
@@ -83,10 +81,7 @@ async def _import_locally_from_dataframe(
         # it must have been created as part of the write transaction
         merged_df = data
     else:
-        column_types = {
-            attribute_id: dtype(str)
-            for attribute_id in (d["id_"] for d in read_dimension["attributes"])
-        }
+        column_types = DimensionDataFrameTransformer.column_types_from_dimension(read_dimension)
         # Could throw a key error so keep this lookup outside the next try block
         dimension_id = read_dimension["id_"]
 

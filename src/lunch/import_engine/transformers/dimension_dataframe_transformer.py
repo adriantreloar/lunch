@@ -52,6 +52,10 @@ class DimensionDataFrameTransformer(Transformer):
         return df
 
     @staticmethod
+    def column_types_from_dimension(dimension: dict) -> dict[int, np.dtype]:
+        return {d["id_"]: np.dtype(str) for d in dimension["attributes"]}
+
+    @staticmethod
     def columnize(data: pd.DataFrame) -> dict[int, Iterable]:
         # dictionary of columns? attribute_id : column/iterator
         # index is -1?

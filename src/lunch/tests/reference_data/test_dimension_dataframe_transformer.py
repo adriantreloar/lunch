@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+from numpy import dtype
 from pandas import DataFrame
 
 from src.lunch.import_engine.transformers.dimension_dataframe_transformer import (
@@ -103,6 +104,25 @@ def test_merge_with_id_column():
     assert (expected[-1].fillna(-1) == result[-1].fillna(-1)).all(), (expected, result)
     assert (expected[1] == result[1]).all(), (expected, result)
     assert (expected[2] == result[2]).all(), (expected, result)
+
+
+def test_column_types_from_dimension():
+    dimension = {
+        "name": "Department",
+        "id_": 1,
+        "attributes": [
+            {"name": "name", "id_": 1},
+            {"name": "code", "id_": 2},
+        ],
+    }
+    result = DimensionDataFrameTransformer.column_types_from_dimension(dimension)
+    assert result == {1: dtype(str), 2: dtype(str)}
+
+
+def test_column_types_from_dimension_no_attributes():
+    dimension = {"name": "Empty", "id_": 1, "attributes": []}
+    result = DimensionDataFrameTransformer.column_types_from_dimension(dimension)
+    assert result == {}
 
 
 @pytest.mark.asyncio

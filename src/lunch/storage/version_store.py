@@ -45,9 +45,15 @@ class VersionStore(Store):
         :param read_version:
         :return:
         """
-        return await _begin_write_reference_data(
-            read_version, self._serializer, self._cache
-        )
+        return await _begin_write_reference_data(read_version, self._serializer, self._cache)
+
+    async def begin_write_cube_data(self, read_version: Version) -> Version:
+        """
+
+        :param read_version:
+        :return:
+        """
+        return await _begin_write_cube_data(read_version, self._serializer, self._cache)
 
     async def abort(self, version: Version) -> Version:
         """
@@ -55,9 +61,7 @@ class VersionStore(Store):
         :param version:
         :return: The latest version
         """
-        return await _commit(
-            version=version, serializer=self._serializer, cache=self._cache
-        )
+        return await _commit(version=version, serializer=self._serializer, cache=self._cache)
 
     async def commit(self, version: Version) -> Version:
         """
@@ -65,9 +69,7 @@ class VersionStore(Store):
         :param version:
         :return: The latest version
         """
-        return await _commit(
-            version=version, serializer=self._serializer, cache=self._cache
-        )
+        return await _commit(version=version, serializer=self._serializer, cache=self._cache)
 
 
 async def _begin_read(serializer: VersionSerializer, cache: VersionCache) -> Version:
@@ -84,9 +86,7 @@ async def _begin_read(serializer: VersionSerializer, cache: VersionCache) -> Ver
     return current_version
 
 
-async def _end_read(
-    version: Version, serializer: VersionSerializer, cache: VersionCache
-) -> Version:
+async def _end_read(version: Version, serializer: VersionSerializer, cache: VersionCache) -> Version:
     """
 
     :param version:
@@ -102,9 +102,7 @@ async def _end_read(
     return current_version
 
 
-async def _begin_write_model(
-    read_version: Version, serializer: VersionSerializer, cache: VersionCache
-) -> Version:
+async def _begin_write_model(read_version: Version, serializer: VersionSerializer, cache: VersionCache) -> Version:
     """
 
     :param read_version:
@@ -154,9 +152,26 @@ async def _begin_write_reference_data(
     #  REFACTOR with the other begin writes
 
 
-async def _abort(
-    version: Version, serializer: VersionSerializer, cache: VersionCache
-) -> Version:
+async def _begin_write_cube_data(read_version: Version, serializer: VersionSerializer, cache: VersionCache) -> Version:
+    """
+
+    :param read_version:
+    :param serializer:
+    :param cache:
+    :return: Full write version
+    """
+
+    return await serializer.begin_write(
+        read_version=read_version,
+        model=False,
+        reference=False,
+        cube=True,
+        operations=False,
+        website=False,
+    )
+
+
+async def _abort(version: Version, serializer: VersionSerializer, cache: VersionCache) -> Version:
     """
 
     :param read_version:
@@ -170,9 +185,7 @@ async def _abort(
     return current_version
 
 
-async def _commit(
-    version: Version, serializer: VersionSerializer, cache: VersionCache
-) -> Version:
+async def _commit(version: Version, serializer: VersionSerializer, cache: VersionCache) -> Version:
     """
 
     :param version:

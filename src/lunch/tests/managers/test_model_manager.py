@@ -21,30 +21,42 @@ from src.lunch.model.star_schema import StarSchema
 from src.lunch.mvcc.version import Version
 from src.lunch.storage.model_store import ModelStore
 
-v0 = Version(version=0, model_version=0, reference_data_version=0,
-             cube_data_version=0, operations_version=0, website_version=0)
-v1 = Version(version=1, model_version=1, reference_data_version=0,
-             cube_data_version=0, operations_version=0, website_version=0)
+v0 = Version(
+    version=0, model_version=0, reference_data_version=0, cube_data_version=0, operations_version=0, website_version=0
+)
+v1 = Version(
+    version=1, model_version=1, reference_data_version=0, cube_data_version=0, operations_version=0, website_version=0
+)
 
 _DIM = {"name": "Department", "attributes": [{"name": "name", "id_": 1}], "id_": 1}
 
 
 def _fact_referencing_dim_by_name(dim_name: str) -> Fact:
-    dims = _FactDimensionsMetadata([
-        FactDimensionMetadatum(
-            name="dim_fk", view_order=1, column_id=1, dimension_id=0,
-            dimension_name=dim_name,
-        )
-    ])
+    dims = _FactDimensionsMetadata(
+        [
+            FactDimensionMetadatum(
+                name="dim_fk",
+                view_order=1,
+                column_id=1,
+                dimension_id=0,
+                dimension_name=dim_name,
+            )
+        ]
+    )
     return Fact(name="Sales", dimensions=dims, measures=_FactMeasuresMetadata([]))
 
 
 def _fact_referencing_dim_by_id(dim_id: int) -> Fact:
-    dims = _FactDimensionsMetadata([
-        FactDimensionMetadatum(
-            name="dim_fk", view_order=1, column_id=1, dimension_id=dim_id,
-        )
-    ])
+    dims = _FactDimensionsMetadata(
+        [
+            FactDimensionMetadatum(
+                name="dim_fk",
+                view_order=1,
+                column_id=1,
+                dimension_id=dim_id,
+            )
+        ]
+    )
     return Fact(name="Sales", dimensions=dims, measures=_FactMeasuresMetadata([]))
 
 
@@ -82,14 +94,17 @@ def manager_and_mocks():
 # update_model — dimension validation failure
 # ---------------------------------------------------------------------------
 
+
 async def test_update_model_validation_error_prevents_dimension_write(manager_and_mocks):
     manager, storage, validator, _ = manager_and_mocks
     validator.validate.side_effect = DimensionValidationError("bad dimension")
 
     with pytest.raises(DimensionValidationError):
         await manager.update_model(
-            dimensions=[{"name": "Bad"}], facts=[],
-            read_version=v0, write_version=v1,
+            dimensions=[{"name": "Bad"}],
+            facts=[],
+            read_version=v0,
+            write_version=v1,
         )
 
     storage.put_dimensions.assert_not_called()
@@ -104,8 +119,10 @@ async def test_update_model_validation_error_on_second_dimension_prevents_write(
 
     with pytest.raises(DimensionValidationError):
         await manager.update_model(
-            dimensions=[{"name": "Dept"}], facts=[],
-            read_version=v0, write_version=v1,
+            dimensions=[{"name": "Dept"}],
+            facts=[],
+            read_version=v0,
+            write_version=v1,
         )
 
     storage.put_dimensions.assert_not_called()
@@ -115,6 +132,7 @@ async def test_update_model_validation_error_on_second_dimension_prevents_write(
 # update_model — storage failure
 # ---------------------------------------------------------------------------
 
+
 async def test_update_model_put_dimensions_error_propagates(manager_and_mocks):
     manager, storage, validator, transformer = manager_and_mocks
     validator.validate.return_value = None
@@ -123,8 +141,10 @@ async def test_update_model_put_dimensions_error_propagates(manager_and_mocks):
 
     with pytest.raises(IOError):
         await manager.update_model(
-            dimensions=[{"name": "Dept"}], facts=[],
-            read_version=v0, write_version=v1,
+            dimensions=[{"name": "Dept"}],
+            facts=[],
+            read_version=v0,
+            write_version=v1,
         )
 
 
@@ -140,14 +160,17 @@ async def test_update_model_put_facts_error_propagates(manager_and_mocks):
 
     with pytest.raises(IOError):
         await manager.update_model(
-            dimensions=[], facts=[_fact_referencing_dim_by_name("Department")],
-            read_version=v0, write_version=v1,
+            dimensions=[],
+            facts=[_fact_referencing_dim_by_name("Department")],
+            read_version=v0,
+            write_version=v1,
         )
 
 
 # ---------------------------------------------------------------------------
 # update_model — unknown dimension referenced by a fact
 # ---------------------------------------------------------------------------
+
 
 async def test_update_model_fact_references_unknown_dimension_raises_key_error(manager_and_mocks):
     manager, storage, validator, transformer = manager_and_mocks
@@ -159,7 +182,8 @@ async def test_update_model_fact_references_unknown_dimension_raises_key_error(m
         await manager.update_model(
             dimensions=[],
             facts=[_fact_referencing_dim_by_name("NoSuchDim")],
-            read_version=v0, write_version=v1,
+            read_version=v0,
+            write_version=v1,
         )
 
     storage.put_facts.assert_not_called()
@@ -169,14 +193,13 @@ async def test_update_model_fact_references_unknown_dimension_raises_key_error(m
 # get_dimension_by_name — not found
 # ---------------------------------------------------------------------------
 
+
 async def test_get_dimension_by_name_not_found_raises_key_error(manager_and_mocks):
     manager, storage, _, _ = manager_and_mocks
     storage.get_dimension_id.side_effect = KeyError("Department")
 
     with pytest.raises(KeyError):
-        await manager.get_dimension_by_name(
-            name="Department", version=v1, add_default_storage=False
-        )
+        await manager.get_dimension_by_name(name="Department", version=v1, add_default_storage=False)
 
 
 async def test_get_dimension_by_name_id_found_but_data_missing_raises_key_error(manager_and_mocks):
@@ -185,14 +208,13 @@ async def test_get_dimension_by_name_id_found_but_data_missing_raises_key_error(
     storage.get_dimension.side_effect = KeyError(1)
 
     with pytest.raises(KeyError):
-        await manager.get_dimension_by_name(
-            name="Department", version=v1, add_default_storage=False
-        )
+        await manager.get_dimension_by_name(name="Department", version=v1, add_default_storage=False)
 
 
 # ---------------------------------------------------------------------------
 # get_star_schema_model_by_fact_name — happy path
 # ---------------------------------------------------------------------------
+
 
 async def test_get_star_schema_returns_star_schema(manager_and_mocks):
     manager, storage, _, _ = manager_and_mocks
@@ -212,6 +234,7 @@ async def test_get_star_schema_returns_star_schema(manager_and_mocks):
 # ---------------------------------------------------------------------------
 # get_star_schema_model_by_fact_name — missing referenced dimension
 # ---------------------------------------------------------------------------
+
 
 async def test_get_star_schema_missing_fact_raises_key_error(manager_and_mocks):
     manager, storage, _, _ = manager_and_mocks
@@ -234,6 +257,7 @@ async def test_get_star_schema_fact_found_but_dimension_missing_raises_key_error
 # ---------------------------------------------------------------------------
 # update_model — dimension resolved by id (not by name lookup)
 # ---------------------------------------------------------------------------
+
 
 async def test_update_model_resolves_fact_dimension_by_id(manager_and_mocks):
 

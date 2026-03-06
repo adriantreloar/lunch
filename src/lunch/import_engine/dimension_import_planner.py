@@ -1,6 +1,6 @@
 from src.lunch.base_classes.transformer import Transformer
-from src.lunch.plans.plan import Plan
 from src.lunch.plans.basic_plan import BasicPlan
+from src.lunch.plans.plan import Plan
 
 
 class DimensionImportPlanner(Transformer):
@@ -26,13 +26,14 @@ class DimensionImportPlanner(Transformer):
 
         return BasicPlan(
             name="_import_locally_from_dataframe",
-            inputs={"read_dimension": read_dimension,
-                    "write_dimension": write_dimension,
-                    "read_filter":read_filter,
-                    "merge_key":merge_key,
-                    "read_dimension_storage_instructions": read_dimension_storage_instructions,
-                    "write_dimension_storage_instructions": write_dimension_storage_instructions,
-                    "data_columns": data_columns
-                    },
-            outputs={}
+            inputs={
+                "read_dimension": read_dimension,
+                "write_dimension": write_dimension,
+                "read_filter": read_filter,
+                "merge_key": merge_key,
+                "read_dimension_storage_instructions": read_dimension_storage_instructions,
+                "write_dimension_storage_instructions": write_dimension_storage_instructions,
+                "data_columns": data_columns,
+            },
+            outputs={},
         )

@@ -18,9 +18,7 @@ class VersionManager(Conductor):
 
         :param last_known_version:
         """
-        version = await _begin_write_model(
-            read_version=read_version, storage=self._storage
-        )
+        version = await _begin_write_model(read_version=read_version, storage=self._storage)
         try:
             yield version
         except Exception:
@@ -37,10 +35,25 @@ class VersionManager(Conductor):
 
         :param read_version:
         """
-        version = await _begin_write_reference_data(
-            read_version=read_version, storage=self._storage
-        )
+        version = await _begin_write_reference_data(read_version=read_version, storage=self._storage)
         # TODO refactor this, along with write_model_version
+        try:
+            yield version
+        except Exception:
+            await _abort(version=version, storage=self._storage)
+            raise
+        else:
+            # Commit can also throw an exception
+            await _commit(version=version, storage=self._storage)
+
+    @asynccontextmanager
+    async def write_cube_data_version(self, read_version: Version):
+        """
+        Context manager for CubeDataVersion, to ensure that the version is aborted in case of exception
+
+        :param read_version:
+        """
+        version = await _begin_write_cube_data(read_version=read_version, storage=self._storage)
         try:
             yield version
         except Exception:
@@ -87,11 +100,14 @@ async def _begin_write_model(read_version: Version, storage: VersionStore) -> Ve
     return await storage.begin_write_model(read_version)
 
 
-async def _begin_write_reference_data(
-    read_version: Version, storage: VersionStore
-) -> Version:
+async def _begin_write_reference_data(read_version: Version, storage: VersionStore) -> Version:
     """ """
     return await storage.begin_write_reference_data(read_version)
+
+
+async def _begin_write_cube_data(read_version: Version, storage: VersionStore) -> Version:
+    """ """
+    return await storage.begin_write_cube_data(read_version)
 
 
 async def _commit(version: Version, storage: VersionStore) -> Version:

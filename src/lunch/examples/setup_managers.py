@@ -47,17 +47,11 @@ fact_index_transformer = FactModelIndexTransformer()
 
 
 # Persistence
-version_persistor = LocalFileVersionPersistor(
-    directory=_EXAMPLE_OUTPUT
-)
-model_persistor = LocalFileModelPersistor(
-    directory=_EXAMPLE_OUTPUT / "model"
-)
+version_persistor = LocalFileVersionPersistor(directory=_EXAMPLE_OUTPUT)
+model_persistor = LocalFileModelPersistor(directory=_EXAMPLE_OUTPUT / "model")
 
 # Serializers
-version_serializer = YamlVersionSerializer(
-    persistor=version_persistor, transformer=version_transformer
-)
+version_serializer = YamlVersionSerializer(persistor=version_persistor, transformer=version_transformer)
 model_serializer = YamlModelSerializer(persistor=model_persistor)
 
 # Caches
@@ -70,9 +64,9 @@ model_store = ModelStore(
     dimension_comparer=dimension_comparer,
     dimension_transformer=dimension_transformer,
     dimension_index_transformer=dimension_index_transformer,
-    #fact_transformer=fact_transformer,
+    # fact_transformer=fact_transformer,
     fact_index_transformer=fact_index_transformer,
-    #fact_comparer=fact_comparer,
+    # fact_comparer=fact_comparer,
     serializer=model_serializer,
     cache=model_cache,
 )

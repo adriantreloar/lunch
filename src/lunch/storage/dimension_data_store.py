@@ -106,12 +106,10 @@ async def _put(
 
     # All the changed dimensions will be in dimensions_with_ids now
     # All of these have a version of the write-version
-    dimensions_version_index_write = (
-        dimension_data_index_transformer.update_dimension_version_index(
-            index_=dimensions_version_index_write,
-            write_version=write_version,
-            changed_ids=[dimension_id],
-        )
+    dimensions_version_index_write = dimension_data_index_transformer.update_dimension_version_index(
+        index_=dimensions_version_index_write,
+        write_version=write_version,
+        changed_ids=[dimension_id],
     )
 
     await _put_version_index(
@@ -147,6 +145,7 @@ async def _get_version_index(
         return await cache.get_version_index(version=version)
     except KeyError:
         return await serializer.get_version_index(version=version)
+
 
 async def _put_version_index(
     index_: dict,

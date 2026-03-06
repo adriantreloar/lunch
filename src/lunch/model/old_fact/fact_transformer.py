@@ -49,7 +49,6 @@ class FactTransformer(Transformer):
         out_fact["model_version"] = model_version
         return out_fact
 
-
     @staticmethod
     def add_default_storage(fact: dict, default_storage: dict) -> dict:
         """

@@ -1,7 +1,10 @@
-import pytest
 from pathlib import Path
 
-from src.lunch.storage.persistence.stringio_columnar_dimension_data_persistor import StringIOColumnarDimensionDataPersistor
+import pytest
+
+from src.lunch.storage.persistence.stringio_columnar_dimension_data_persistor import (
+    StringIOColumnarDimensionDataPersistor,
+)
 
 DIRECTORY = Path("/fake/dimension_data")
 
@@ -14,6 +17,7 @@ def persistor():
 # ------------------------------------------------------------------ #
 # Attribute files
 # ------------------------------------------------------------------ #
+
 
 def test_attribute_file_roundtrip(persistor):
     with persistor.open_attribute_file_write(dimension_id=1, attribute_id=0, version=1) as f:
@@ -61,6 +65,7 @@ def test_attribute_read_is_repeatable(persistor):
 # ------------------------------------------------------------------ #
 # Version index files
 # ------------------------------------------------------------------ #
+
 
 def test_version_index_roundtrip(persistor):
     with persistor.open_version_index_file_write(version=3) as f:

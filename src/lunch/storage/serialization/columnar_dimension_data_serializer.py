@@ -24,28 +24,19 @@ class ColumnarDimensionDataSerializer(DimensionDataSerializer):
         return await _get_version_index(version=version, persistor=self._persistor)
 
     async def put_version_index(self, index_: dict[int, int], version: Version):
-        return await _put_version_index(
-            index_=index_, version=version, persistor=self._persistor
-        )
+        return await _put_version_index(index_=index_, version=version, persistor=self._persistor)
 
-    def get_attribute_data(
-        self, dimension_id: int, attribute_id: int, reference_data_version: int
-    ) -> Iterable[str]:
-        for i in _get_attribute_data(
-            dimension_id, attribute_id, reference_data_version, self._persistor
-        ):
+    def get_attribute_data(self, dimension_id: int, attribute_id: int, reference_data_version: int) -> Iterable[str]:
+        for i in _get_attribute_data(dimension_id, attribute_id, reference_data_version, self._persistor):
             yield i
 
-    async def put_index_data(
-        self, dimension_id: int, version: Version, index_iterator
-    ) -> None:
+    async def put_index_data(self, dimension_id: int, version: Version, index_iterator) -> None:
         await _put_index_data(
             dimension_id=dimension_id,
             version=version,
             index_iterator=index_iterator,
             persistor=self._persistor,
         )
-
 
     async def put_attribute_data(
         self,
@@ -89,9 +80,7 @@ class ColumnarDimensionDataSerializer(DimensionDataSerializer):
         )
 
 
-async def _get_version_index(
-    version: Version, persistor: LocalFileColumnarDimensionDataPersistor
-) -> dict[int, int]:
+async def _get_version_index(version: Version, persistor: LocalFileColumnarDimensionDataPersistor) -> dict[int, int]:
     if not version.reference_data_version:
         return {}
 
@@ -106,12 +95,8 @@ async def _get_version_index(
     return version_index
 
 
-async def _put_version_index(
-    index_: dict, version: Version, persistor: LocalFileColumnarDimensionDataPersistor
-):
-    with persistor.open_version_index_file_write(
-        version=version.reference_data_version
-    ) as stream:
+async def _put_version_index(index_: dict, version: Version, persistor: LocalFileColumnarDimensionDataPersistor):
+    with persistor.open_version_index_file_write(version=version.reference_data_version) as stream:
         yaml.safe_dump(index_, stream)
 
 

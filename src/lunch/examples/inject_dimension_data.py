@@ -3,13 +3,13 @@ from pathlib import Path
 
 from src.lunch.examples.setup_managers import model_manager, version_manager
 from src.lunch.storage.cache.null_reference_data_cache import NullReferenceDataCache
-from src.lunch.storage.persistence.local_file_reference_data_persistor import (
+from src.lunch.storage.persistence.local_file_reference_data_persistor import (  # index etc.
     LocalFileReferenceDataPersistor,
-)  # index etc.
+)
 from src.lunch.storage.reference_data_store import ReferenceDataStore
-from src.lunch.storage.serialization.yaml_reference_data_serializer import (
+from src.lunch.storage.serialization.yaml_reference_data_serializer import (  # For indexes
     YamlReferenceDataSerializer,
-)  # For indexes
+)
 
 _EXAMPLE_OUTPUT = Path(__file__).resolve().parents[3] / "example_output"
 
@@ -22,20 +22,14 @@ async def main():
 
     # Wire up the storage stack for reference (dimension member) data:
     # persistor → serializer → store, with a no-op cache (caching disabled for this example).
-    reference_data_persistor = LocalFileReferenceDataPersistor(
-        directory=_EXAMPLE_OUTPUT / "reference" / "dimension"
-    )
+    reference_data_persistor = LocalFileReferenceDataPersistor(directory=_EXAMPLE_OUTPUT / "reference" / "dimension")
     reference_data_cache = NullReferenceDataCache()
-    reference_data_serializer = YamlReferenceDataSerializer(
-        persistor=reference_data_persistor
-    )
+    reference_data_serializer = YamlReferenceDataSerializer(persistor=reference_data_persistor)
 
     # Dimensions and Hierarchies deserve special structures, but they also need an overall indexer
     # so that we can check whether Dimensional Data, Hierarchical Data or both have changed
     # for a given version
-    reference_data_store = ReferenceDataStore(
-        serializer=reference_data_serializer, cache=reference_data_cache
-    )
+    reference_data_store = ReferenceDataStore(serializer=reference_data_serializer, cache=reference_data_cache)
 
     # Define two dimensions as raw dicts; these will be written into the star schema model.
     d_department = {
@@ -47,9 +41,7 @@ async def main():
     # Open a read/write version pair and update the star schema model with the two dimensions.
     # This creates a new model_version that records the dimension definitions.
     async with version_manager.read_version() as read_version:
-        async with version_manager.write_model_version(
-            read_version=read_version
-        ) as write_version:
+        async with version_manager.write_model_version(read_version=read_version) as write_version:
             await model_manager.update_model(
                 dimensions=[d_department, d_time],
                 facts=[],
@@ -60,9 +52,7 @@ async def main():
     # Open a fresh read/write version pair and write the actual dimension member data.
     # This advances reference_data_version independently of model_version.
     async with version_manager.read_version() as read_version:
-        async with version_manager.write_reference_data_version(
-            read_version=read_version
-        ) as write_version:
+        async with version_manager.write_reference_data_version(read_version=read_version) as write_version:
             # At time of writing we are doing a fairly raw dimension data put()
             # No key checking, no update capability, no parallel writes for big data, no caching
             # Just put the data into storage

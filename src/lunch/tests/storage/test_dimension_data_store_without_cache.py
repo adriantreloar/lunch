@@ -115,9 +115,7 @@ v2 = Version(
         ),
     ],
 )
-async def test_get_dimension_columns(
-    null_cache_dimension_data_store, test_input, test_setup, expected_result
-):
+async def test_get_dimension_columns(null_cache_dimension_data_store, test_input, test_setup, expected_result):
 
     testee_dimension_data_store, serializer, _ = null_cache_dimension_data_store
 

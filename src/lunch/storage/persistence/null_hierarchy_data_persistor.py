@@ -6,4 +6,5 @@ class NullHierarchyDataPersistor(HierarchyDataPersistor):
     Placeholder null persistor for hierarchy data.
     All methods raise NotImplementedError — hierarchy storage is not yet implemented.
     """
+
     pass

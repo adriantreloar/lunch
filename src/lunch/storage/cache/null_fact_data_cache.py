@@ -1,4 +1,4 @@
-from typing import Iterable, Mapping
+from typing import Mapping
 
 from src.lunch.mvcc.version import Version
 from src.lunch.storage.cache.fact_data_cache import FactDataCache
@@ -28,7 +28,7 @@ class NullFactDataCache(FactDataCache):
     async def put_partition_index(self, index_: dict, version: Version) -> None:
         pass
 
-    async def get_columns(self, fact_id: int, reference_data_version: int) -> Mapping:
+    async def get_columns(self, fact_id: int, cube_data_version: int) -> Mapping:
         raise KeyError(fact_id)
 
     async def put_columns(self, fact_id: int, columns: Mapping, version: Version) -> None:

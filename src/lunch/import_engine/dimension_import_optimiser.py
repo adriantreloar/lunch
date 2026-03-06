@@ -1,11 +1,11 @@
 from pandas import DataFrame
 
 from src.lunch.base_classes.conductor import Conductor
-from src.lunch.plans.plan import Plan
-from src.lunch.plans.basic_plan import BasicPlan
 from src.lunch.import_engine.dimension_import_planner import DimensionImportPlanner
 from src.lunch.managers.model_manager import ModelManager
 from src.lunch.mvcc.version import Version
+from src.lunch.plans.basic_plan import BasicPlan
+from src.lunch.plans.plan import Plan
 from src.lunch.storage.dimension_data_store import DimensionDataStore
 
 
@@ -79,12 +79,8 @@ async def _create_dataframe_import_plan(
         # or to get e.g. filenames
         # The store is handing these out, so it had better understand them when they are
         # requested later
-        read_dimension_storage_instructions=dimension_data_store.storage_instructions(
-            read_version
-        ),
-        write_dimension_storage_instructions=dimension_data_store.storage_instructions(
-            write_version
-        ),
+        read_dimension_storage_instructions=dimension_data_store.storage_instructions(read_version),
+        write_dimension_storage_instructions=dimension_data_store.storage_instructions(write_version),
         read_filter={},
         merge_key=[0],
     )

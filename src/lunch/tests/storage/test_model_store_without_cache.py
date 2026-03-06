@@ -118,9 +118,7 @@ v2 = Version(
         ),
     ],
 )
-async def test_get_dimension_id(
-    null_cache_model_store, test_setup, test_input, expected_result
-):
+async def test_get_dimension_id(null_cache_model_store, test_setup, test_input, expected_result):
 
     testee_model_store, serializer, _ = null_cache_model_store
 
@@ -137,14 +135,10 @@ async def test_get_dimension_id(
 
         # If we don't expect a dimension id to be there, we should get a key error
         with pytest.raises(KeyError):
-            await testee_model_store.get_dimension_id(
-                name=dimension_name, version=read_version
-            )
+            await testee_model_store.get_dimension_id(name=dimension_name, version=read_version)
     else:
 
-        returned_dimension_id = await testee_model_store.get_dimension_id(
-            name=dimension_name, version=read_version
-        )
+        returned_dimension_id = await testee_model_store.get_dimension_id(name=dimension_name, version=read_version)
 
         assert expected_dimension_id == returned_dimension_id
 
@@ -180,9 +174,7 @@ async def test_get_dimension_id(
         ),
     ],
 )
-async def test_get_dimension(
-    null_cache_model_store, test_setup, test_input, expected_result
-):
+async def test_get_dimension(null_cache_model_store, test_setup, test_input, expected_result):
 
     testee_model_store, serializer, _ = null_cache_model_store
 
@@ -201,23 +193,15 @@ async def test_get_dimension(
         serializer.get_dimension.side_effect = KeyError
         # If we don't expect a dimension id to be there, we should get a key error
         with pytest.raises(KeyError):
-            print(
-                await testee_model_store.get_dimension(
-                    id_=dimension_id, version=read_version
-                )
-            )
+            print(await testee_model_store.get_dimension(id_=dimension_id, version=read_version))
     else:
         serializer.get_dimension.return_value = read_dimension
 
-        returned_dimension = await testee_model_store.get_dimension(
-            id_=dimension_id, version=read_version
-        )
+        returned_dimension = await testee_model_store.get_dimension(id_=dimension_id, version=read_version)
 
         assert expected_dimension == returned_dimension
 
-        serializer.get_dimension.assert_called_with(
-            id_=dimension_id, model_version=redirect_version.model_version
-        )
+        serializer.get_dimension.assert_called_with(id_=dimension_id, model_version=redirect_version.model_version)
 
     serializer.get_dimension_version_index.assert_called_with(version=read_version)
 
@@ -260,9 +244,7 @@ async def test_get_dimension(
         ),
         pytest.param(
             {
-                "put_dimensions": [
-                    {**d_test, **{"id_": 1, "model_version": 1, "name": "Test_Update"}}
-                ],
+                "put_dimensions": [{**d_test, **{"id_": 1, "model_version": 1, "name": "Test_Update"}}],
                 "read_version": v1,
                 "write_version": v2,
             },
@@ -270,14 +252,10 @@ async def test_get_dimension(
                 "read_version_index": {1: 1},  # dimension 1 is at version 1
                 "read_name_index": {"Test": 1},
                 "read_max_dimension_id": 1,
-                "read_dimensions": {
-                    (1, 1): {**d_test, **{"id_": 1, "model_version": 1}}
-                },
+                "read_dimensions": {(1, 1): {**d_test, **{"id_": 1, "model_version": 1}}},
             },
             {
-                "written_dimensions": [
-                    {**d_test, **{"id_": 1, "model_version": 2, "name": "Test_Update"}}
-                ],
+                "written_dimensions": [{**d_test, **{"id_": 1, "model_version": 2, "name": "Test_Update"}}],
                 "written_name_index": {"Test_Update": 1},
                 "written_version_index": {1: 2},  # dimension 1 is at version 2
             },
@@ -285,9 +263,7 @@ async def test_get_dimension(
         ),
     ],
 )
-async def test_put_dimensions(
-    null_cache_model_store, test_setup, test_input, expected_result
-):
+async def test_put_dimensions(null_cache_model_store, test_setup, test_input, expected_result):
 
     testee_model_store, serializer, _ = null_cache_model_store
 
@@ -342,17 +318,11 @@ async def test_put_dimensions(
     serializer.get_dimension_version_index.assert_called_with(version=read_version)
     serializer.get_dimension_name_index.assert_called_with(version=read_version)
     for id_, model_version in test_setup["read_dimensions"].keys():
-        serializer.get_dimension.assert_called_with(
-            model_version=model_version, id_=id_
-        )
+        serializer.get_dimension.assert_called_with(model_version=model_version, id_=id_)
 
     # Check that all of the puts have been put with the write version
-    serializer.put_dimension_version_index.assert_called_with(
-        index_=written_version_index, version=write_version
-    )
-    serializer.put_dimension_name_index.assert_called_with(
-        index_=written_name_index, version=write_version
-    )
+    serializer.put_dimension_version_index.assert_called_with(index_=written_version_index, version=write_version)
+    serializer.put_dimension_name_index.assert_called_with(index_=written_name_index, version=write_version)
     serializer.put_dimensions.assert_called_with(
         dimensions=written_dimensions, model_version=write_version.model_version
     )

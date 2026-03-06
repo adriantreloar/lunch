@@ -19,9 +19,7 @@ async def test_make_dataframe():
     columns = {-1: range(5), 0: ["foo", "bar", "baz", "guf", "gof"], 2: [5, 4, 3, 2, 1]}
     dtypes = {-1: np.int64, 0: object, 2: np.int64}
 
-    result = DimensionDataFrameTransformer.make_dataframe(
-        columns=columns, dtypes=dtypes
-    )
+    result = DimensionDataFrameTransformer.make_dataframe(columns=columns, dtypes=dtypes)
 
     assert isinstance(result, DataFrame)
     assert len(result.columns) == 3
@@ -38,9 +36,7 @@ def test_basic_merge():
 
     key = ["a"]
 
-    result = DimensionDataFrameTransformer.merge(
-        source_df=source_df, compare_df=compare_df, key=key
-    )
+    result = DimensionDataFrameTransformer.merge(source_df=source_df, compare_df=compare_df, key=key)
 
     # NOTE - the result has been sorted by key
     expected = DataFrame(
@@ -63,9 +59,7 @@ def test_merge_with_int_columns():
 
     key = [1]
 
-    result = DimensionDataFrameTransformer.merge(
-        source_df=source_df, compare_df=compare_df, key=key
-    )
+    result = DimensionDataFrameTransformer.merge(source_df=source_df, compare_df=compare_df, key=key)
 
     # NOTE - the result has been sorted by key
     expected = DataFrame(
@@ -88,9 +82,7 @@ def test_merge_with_id_column():
 
     key = [1]
 
-    result = DimensionDataFrameTransformer.merge(
-        source_df=source_df, compare_df=compare_df, key=key
-    )
+    result = DimensionDataFrameTransformer.merge(source_df=source_df, compare_df=compare_df, key=key)
 
     # NOTE - the result has been sorted by key
     expected = DataFrame(

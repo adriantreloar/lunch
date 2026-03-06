@@ -1,12 +1,12 @@
 from typing import Any
 
 from src.lunch.base_classes.conductor import Conductor
-from src.lunch.plans.plan import Plan
-from src.lunch.plans.basic_plan import BasicPlan
-from src.lunch.mvcc.version import Version
 from src.lunch.import_engine.transformers.dimension_dataframe_transformer import (
     DimensionDataFrameTransformer,
 )
+from src.lunch.mvcc.version import Version
+from src.lunch.plans.basic_plan import BasicPlan
+from src.lunch.plans.plan import Plan
 from src.lunch.storage.dimension_data_store import DimensionDataStore
 
 
@@ -42,14 +42,16 @@ async def _enact_plan(
         # TODO: if import_plan.inputs["read_filter"] is a guid, lookup the output form a previous step
         # TODO: if import_plan.inputs["merge_key"] is a guid, lookup the output form a previous step
 
-        await _import_locally_from_dataframe(data=data,
-                                            read_version=read_version,
-                                            write_version=write_version,
-                                            read_dimension=import_plan.inputs["read_dimension"],
-                                            write_dimension=import_plan.inputs["write_dimension"],
-                                            dimension_data_store=dimension_data_store,
-                                            read_filter=import_plan.inputs["read_filter"],
-                                            merge_key=import_plan.inputs["merge_key"])
+        await _import_locally_from_dataframe(
+            data=data,
+            read_version=read_version,
+            write_version=write_version,
+            read_dimension=import_plan.inputs["read_dimension"],
+            write_dimension=import_plan.inputs["write_dimension"],
+            dimension_data_store=dimension_data_store,
+            read_filter=import_plan.inputs["read_filter"],
+            merge_key=import_plan.inputs["merge_key"],
+        )
     else:
         raise ValueError(import_plan)
 
@@ -62,7 +64,7 @@ async def _import_locally_from_dataframe(
     write_dimension: dict,
     read_filter: dict,
     merge_key: dict,
-    dimension_data_store: DimensionDataStore
+    dimension_data_store: DimensionDataStore,
 ) -> None:
 
     # TODO assert data is of the type specified in the plan
@@ -97,13 +99,9 @@ async def _import_locally_from_dataframe(
             merged_df = data
         else:
             # We are making the
-            compare_df = DimensionDataFrameTransformer.make_dataframe(
-                columns=read_columns, dtypes=column_types
-            )
+            compare_df = DimensionDataFrameTransformer.make_dataframe(columns=read_columns, dtypes=column_types)
 
-            merged_df = DimensionDataFrameTransformer.merge(
-                source_df=data, compare_df=compare_df, key=merge_key
-            )
+            merged_df = DimensionDataFrameTransformer.merge(source_df=data, compare_df=compare_df, key=merge_key)
 
     # dictionary of columns? attribute_id : column/iterator
     # how to represent index?

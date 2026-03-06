@@ -5,12 +5,13 @@ import pandas as pd
 
 _EXAMPLE_OUTPUT = Path(__file__).resolve().parents[4] / "example_output"
 
-from src.lunch.mvcc.version import Version
+from src.lunch.examples.save_dimension import save_dimension
 from src.lunch.examples.setup_managers import model_manager, version_manager
 from src.lunch.import_engine.dimension_import_enactor import DimensionImportEnactor
 from src.lunch.import_engine.dimension_import_optimiser import DimensionImportOptimiser
 from src.lunch.import_engine.dimension_import_planner import DimensionImportPlanner
 from src.lunch.managers.reference_data_manager import ReferenceDataManager
+from src.lunch.mvcc.version import Version
 from src.lunch.storage.cache.null_dimension_data_cache import NullDimensionDataCache
 from src.lunch.storage.cache.null_hierarchy_data_cache import NullHierarchyDataCache
 from src.lunch.storage.cache.null_reference_data_cache import NullReferenceDataCache
@@ -19,24 +20,23 @@ from src.lunch.storage.hierarchy_data_store import HierarchyDataStore
 from src.lunch.storage.persistence.stringio_columnar_dimension_data_persistor import (
     StringIOColumnarDimensionDataPersistor,
 )
-from src.lunch.storage.persistence.stringio_reference_data_persistor import (
+from src.lunch.storage.persistence.stringio_reference_data_persistor import (  # index etc.
     StringIOReferenceDataPersistor,
-)  # index etc.
+)
 from src.lunch.storage.reference_data_store import ReferenceDataStore
 from src.lunch.storage.serialization.columnar_dimension_data_serializer import (
     ColumnarDimensionDataSerializer,
 )
 from src.lunch.storage.serialization.null_hierarchy_data_serializer import NullHierarchyDataSerializer
-from src.lunch.storage.serialization.yaml_reference_data_serializer import (
+from src.lunch.storage.serialization.yaml_reference_data_serializer import (  # For indexes
     YamlReferenceDataSerializer,
-)  # For indexes
+)
 
-from src.lunch.examples.save_dimension import save_dimension
 
 async def test_dimension_data_round_trip():
 
     ## Create d_test
-    #await save_dimension()
+    # await save_dimension()
 
     data = [
         {
@@ -62,21 +62,13 @@ async def test_dimension_data_round_trip():
         directory=_EXAMPLE_OUTPUT / "reference" / "dimension"
     )
     dimension_data_cache = NullDimensionDataCache()
-    dimension_serializer = ColumnarDimensionDataSerializer(
-        persistor=dimension_data_persistor
-    )
+    dimension_serializer = ColumnarDimensionDataSerializer(persistor=dimension_data_persistor)
 
-    dimension_data_storage = DimensionDataStore(
-        serializer=dimension_serializer, cache=dimension_data_cache
-    )
+    dimension_data_storage = DimensionDataStore(serializer=dimension_serializer, cache=dimension_data_cache)
 
-    reference_data_persistor = StringIOReferenceDataPersistor(
-        directory=_EXAMPLE_OUTPUT / "reference" / "dimension"
-    )
+    reference_data_persistor = StringIOReferenceDataPersistor(directory=_EXAMPLE_OUTPUT / "reference" / "dimension")
     reference_data_cache = NullReferenceDataCache()
-    reference_data_serializer = YamlReferenceDataSerializer(
-        persistor=reference_data_persistor
-    )
+    reference_data_serializer = YamlReferenceDataSerializer(persistor=reference_data_persistor)
 
     dimension_import_planner = DimensionImportPlanner()
     dimension_import_optimiser = DimensionImportOptimiser(
@@ -103,8 +95,22 @@ async def test_dimension_data_round_trip():
         dimension_import_enactor=dimension_import_enactor,
     )
 
-    read_version = Version(version=0, model_version=0,reference_data_version=0,cube_data_version=0,operations_version=0, website_version=0)
-    write_version = Version(version=1, model_version=1,reference_data_version=1,cube_data_version=0,operations_version=0, website_version=0)
+    read_version = Version(
+        version=0,
+        model_version=0,
+        reference_data_version=0,
+        cube_data_version=0,
+        operations_version=0,
+        website_version=0,
+    )
+    write_version = Version(
+        version=1,
+        model_version=1,
+        reference_data_version=1,
+        cube_data_version=0,
+        operations_version=0,
+        website_version=0,
+    )
 
     d_test = {
         "name": "Test",
@@ -134,9 +140,7 @@ async def test_dimension_data_round_trip():
 
     # NOTE - column 0 is id column
     columns = await reference_storage.dimension_data_store.get_columns(
-                                                 read_version=write_version,
-                                                 dimension_id=1,
-                                                 column_types={"foo": str,"bar": str,"baz": str},
-                                                 filter=None)
+        read_version=write_version, dimension_id=1, column_types={"foo": str, "bar": str, "baz": str}, filter=None
+    )
 
-    assert list(columns["foo"]) == ["a","b","c"]
+    assert list(columns["foo"]) == ["a", "b", "c"]

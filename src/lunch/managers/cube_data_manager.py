@@ -51,6 +51,4 @@ async def _append_fact_from_dataframe(
     fact_import_enactor: FactImportEnactor,
     fact_data_store: FactDataStore,
 ) -> None:
-    return await fact_import_enactor.enact_plan(
-        plan, source_data, read_version, write_version, fact_data_store
-    )
+    return await fact_import_enactor.enact_plan(plan, source_data, read_version, write_version, fact_data_store)

@@ -8,9 +8,12 @@ NUM_BATCHES = 1024
 ROWS_PER_BATCH = 4096
 upload_descriptor = pa.flight.FlightDescriptor.for_path("streamed.parquet")
 
-batch = pa.record_batch([
-    pa.array(range(ROWS_PER_BATCH)),
-], names=["ints"])
+batch = pa.record_batch(
+    [
+        pa.array(range(ROWS_PER_BATCH)),
+    ],
+    names=["ints"],
+)
 writer, _ = client.do_put(upload_descriptor, batch.schema)
 with writer:
     for _ in range(NUM_BATCHES):
@@ -24,4 +27,3 @@ total_rows = 0
 for chunk in reader:
     total_rows += chunk.data.num_rows
 print("Got", total_rows, "rows total, expected", NUM_BATCHES * ROWS_PER_BATCH)
-

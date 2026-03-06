@@ -1,6 +1,8 @@
 from typing import Any
-from src.lunch.plans.plan import Plan
 from uuid import uuid1
+
+from src.lunch.plans.plan import Plan
+
 
 class RemotePlan(Plan):
     """Query plan which is an instruction to call a remote RPC service

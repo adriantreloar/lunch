@@ -21,11 +21,11 @@ class LocalFileParquetFactDataPersistor(FactDataPersistor):
         return _fact_version_index_file(directory=self._directory, cube_data_version=cube_data_version)
 
     def fact_partition_version_index_file(self, fact_id: int, cube_data_version: int) -> Path:
-        return _fact_partition_version_index_file(directory=self._directory, fact_id=fact_id, cube_data_version=cube_data_version)
+        return _fact_partition_version_index_file(
+            directory=self._directory, fact_id=fact_id, cube_data_version=cube_data_version
+        )
 
-    def fact_data_file(
-        self, fact_id: int, cube_data_version: int, partition: tuple[int,]
-    ) -> Path:
+    def fact_data_file(self, fact_id: int, cube_data_version: int, partition: tuple[int,]) -> Path:
         return _fact_data_file(
             fact_id=fact_id,
             partition=partition,
@@ -60,24 +60,27 @@ class LocalFileParquetFactDataPersistor(FactDataPersistor):
             yield f
 
     @contextmanager
-    def open_data_file_read(self, cube_data_version: int, fact_id: int, partition: tuple[int, ]):
+    def open_data_file_read(self, cube_data_version: int, fact_id: int, partition: tuple[int,]):
         file_path = self.fact_data_file(cube_data_version=cube_data_version, fact_id=fact_id, partition=partition)
         with open(file_path, "rb") as f:
             yield f
 
     @contextmanager
-    def open_data_file_write(self, cube_data_version: int, fact_id: int, partition: tuple[int, ]):
+    def open_data_file_write(self, cube_data_version: int, fact_id: int, partition: tuple[int,]):
         file_path = self.fact_data_file(cube_data_version=cube_data_version, fact_id=fact_id, partition=partition)
         Path(os.path.dirname(file_path)).mkdir(parents=True, exist_ok=True)
         with open(file_path, "wb") as f:
             yield f
 
+
 def _fact_version_index_file(directory: Path, version: int) -> Path:
     return directory.joinpath(f"{version}/fact_data.version.index.parquet")
+
 
 def _fact_partition_version_index_file(directory: Path, fact_id: int, cube_data_version: int) -> Path:
     return directory.joinpath(f"{cube_data_version}/fact_data/{fact_id}/partition.version.index.parquet")
 
+
 def _fact_data_file(directory: Path, fact_id: int, cube_data_version: int, partition: tuple[int,]) -> Path:
-    partition_directories = '/'.join(partition)
+    partition_directories = "/".join(partition)
     return directory.joinpath(f"{cube_data_version}/fact_data/{fact_id}/partitions/{partition_directories}/data.parquet")

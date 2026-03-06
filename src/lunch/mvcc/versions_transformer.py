@@ -57,15 +57,9 @@ class VersionsTransformer(Transformer):
         max_version = VersionsTransformer.get_max_version(versions_dict)
         write_version_int = max_version.version + 1
         model_version = write_version_int if model else read_version.model_version
-        reference_data_version = (
-            write_version_int if reference else read_version.reference_data_version
-        )
-        cube_data_version = (
-            write_version_int if cube else read_version.cube_data_version
-        )
-        operations_version = (
-            write_version_int if operations else read_version.operations_version
-        )
+        reference_data_version = write_version_int if reference else read_version.reference_data_version
+        cube_data_version = write_version_int if cube else read_version.cube_data_version
+        operations_version = write_version_int if operations else read_version.operations_version
         website_version = write_version_int if website else read_version.website_version
 
         write_version_full = Version(

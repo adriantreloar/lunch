@@ -14,9 +14,7 @@ class DimensionStructureValidator(Transformer):
             raise DimensionValidationError("No name key")
 
         if not isinstance(name, str):
-            raise DimensionValidationError(
-                f"Name {name} is type {type(name)} whereas it should be str"
-            )
+            raise DimensionValidationError(f"Name {name} is type {type(name)} whereas it should be str")
 
         id_ = data.get("id_")
         if id_ is None or isinstance(id_, int):

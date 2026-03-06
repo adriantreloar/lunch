@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from src.lunch.examples.save_dimension import save_dimension
 from src.lunch.examples.setup_managers import model_manager, version_manager
 from src.lunch.import_engine.dimension_import_enactor import DimensionImportEnactor
 from src.lunch.import_engine.dimension_import_optimiser import DimensionImportOptimiser
@@ -17,19 +18,17 @@ from src.lunch.storage.hierarchy_data_store import HierarchyDataStore
 from src.lunch.storage.persistence.local_file_columnar_dimension_data_persistor import (
     LocalFileColumnarDimensionDataPersistor,
 )
-from src.lunch.storage.persistence.local_file_reference_data_persistor import (
+from src.lunch.storage.persistence.local_file_reference_data_persistor import (  # index etc.
     LocalFileReferenceDataPersistor,
-)  # index etc.
+)
 from src.lunch.storage.reference_data_store import ReferenceDataStore
 from src.lunch.storage.serialization.columnar_dimension_data_serializer import (
     ColumnarDimensionDataSerializer,
 )
 from src.lunch.storage.serialization.null_hierarchy_data_serializer import NullHierarchyDataSerializer
-from src.lunch.storage.serialization.yaml_reference_data_serializer import (
+from src.lunch.storage.serialization.yaml_reference_data_serializer import (  # For indexes
     YamlReferenceDataSerializer,
-)  # For indexes
-
-from src.lunch.examples.save_dimension import save_dimension
+)
 
 _EXAMPLE_OUTPUT = Path(__file__).resolve().parents[3] / "example_output"
 
@@ -59,9 +58,7 @@ async def insert_dimension_data():
 
     df_data_d_test = pd.DataFrame(data=data)
 
-    department_data = [
-        {"thing1": f"A Thing {i}"} for i in range(1000)
-    ]
+    department_data = [{"thing1": f"A Thing {i}"} for i in range(1000)]
 
     df_data_d_department = pd.DataFrame(data=department_data)
 
@@ -73,26 +70,17 @@ async def insert_dimension_data():
 
     df_data_d_time = pd.DataFrame(data=time_data)
 
-
     dimension_data_persistor = LocalFileColumnarDimensionDataPersistor(
         directory=_EXAMPLE_OUTPUT / "reference" / "dimension"
     )
     dimension_data_cache = NullDimensionDataCache()
-    dimension_serializer = ColumnarDimensionDataSerializer(
-        persistor=dimension_data_persistor
-    )
+    dimension_serializer = ColumnarDimensionDataSerializer(persistor=dimension_data_persistor)
 
-    dimension_data_storage = DimensionDataStore(
-        serializer=dimension_serializer, cache=dimension_data_cache
-    )
+    dimension_data_storage = DimensionDataStore(serializer=dimension_serializer, cache=dimension_data_cache)
 
-    reference_data_persistor = LocalFileReferenceDataPersistor(
-        directory=_EXAMPLE_OUTPUT / "reference" / "dimension"
-    )
+    reference_data_persistor = LocalFileReferenceDataPersistor(directory=_EXAMPLE_OUTPUT / "reference" / "dimension")
     reference_data_cache = NullReferenceDataCache()
-    reference_data_serializer = YamlReferenceDataSerializer(
-        persistor=reference_data_persistor
-    )
+    reference_data_serializer = YamlReferenceDataSerializer(persistor=reference_data_persistor)
 
     dimension_import_planner = DimensionImportPlanner()
     dimension_import_optimiser = DimensionImportOptimiser(
@@ -119,11 +107,8 @@ async def insert_dimension_data():
         dimension_import_enactor=dimension_import_enactor,
     )
 
-
     async with version_manager.read_version() as read_version:
-        async with version_manager.write_reference_data_version(
-            read_version=read_version
-        ) as write_version:
+        async with version_manager.write_reference_data_version(read_version=read_version) as write_version:
 
             await reference_data_manager.update_dimension_from_dataframe(
                 name="Test",
@@ -145,6 +130,7 @@ async def insert_dimension_data():
                 read_version=read_version,
                 write_version=write_version,
             )
+
 
 # And run it
 if __name__ == "__main__":

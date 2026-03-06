@@ -1,9 +1,9 @@
 import asyncio
 import logging
+
 import grpc
 
 from src.lunch.profile_service.svc_profiles_pb2_grpc import ProfilesServicer as g_ProfilesServicer
-
 from src.lunch.profile_service.svc_profiles_pb2_grpc import add_ProfilesServicer_to_server
 
 
@@ -38,5 +38,3 @@ async def serve() -> None:
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     asyncio.run(serve())
-
-

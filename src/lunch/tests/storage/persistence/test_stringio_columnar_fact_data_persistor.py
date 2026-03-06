@@ -1,5 +1,6 @@
-import pytest
 from pathlib import Path
+
+import pytest
 
 from src.lunch.storage.persistence.stringio_columnar_fact_data_persistor import StringIOColumnarFactDataPersistor
 
@@ -14,6 +15,7 @@ def persistor():
 # ------------------------------------------------------------------ #
 # Version index
 # ------------------------------------------------------------------ #
+
 
 def test_version_index_roundtrip(persistor):
     with persistor.open_version_index_file_write(version=1) as f:
@@ -42,6 +44,7 @@ def test_version_index_versions_are_independent(persistor):
 # ------------------------------------------------------------------ #
 # Attribute (column) files
 # ------------------------------------------------------------------ #
+
 
 def test_attribute_file_roundtrip(persistor):
     with persistor.open_attribute_file_write(dimension_id=10, attribute_id=0, version=1) as f:

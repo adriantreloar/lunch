@@ -1,8 +1,10 @@
+import io
 import os.path
 from contextlib import contextmanager
 from pathlib import Path
-import io
+
 from src.lunch.storage.persistence.local_file_reference_data_persistor import LocalFileReferenceDataPersistor
+
 
 class StringIOReferenceDataPersistor(LocalFileReferenceDataPersistor):
     """Hands out open string io files for file serializers to write to.
@@ -23,7 +25,7 @@ class StringIOReferenceDataPersistor(LocalFileReferenceDataPersistor):
     @contextmanager
     def open_dimension_data_version_index_file_read(self, version: int):
         file_path = self.dimension_data_version_index_file(version)
-        #with open(file_path, "r") as f:
+        # with open(file_path, "r") as f:
         try:
             f = self._files_by_path[file_path]
         except KeyError:
@@ -35,9 +37,8 @@ class StringIOReferenceDataPersistor(LocalFileReferenceDataPersistor):
     @contextmanager
     def open_dimension_data_version_index_file_write(self, version: int):
         file_path = self.dimension_data_version_index_file(version)
-        #with open(file_path, "w") as f:
+        # with open(file_path, "w") as f:
         f = io.StringIO()
         self._files_by_path[file_path] = f
         yield f
         f.seek(0)
-

@@ -13,17 +13,13 @@ from src.lunch.storage.serialization.version_serializer import VersionSerializer
 class YamlVersionSerializer(VersionSerializer):
     """ """
 
-    def __init__(
-        self, persistor: LocalFileVersionPersistor, transformer: VersionsTransformer
-    ):
+    def __init__(self, persistor: LocalFileVersionPersistor, transformer: VersionsTransformer):
         self._persistor = persistor
         self._transformer = transformer
         self._lock = Lock()  # The version file lock
 
     async def begin_read(self) -> Version:
-        return await _begin_read(
-            lock=self._lock, persistor=self._persistor, transformer=self._transformer
-        )
+        return await _begin_read(lock=self._lock, persistor=self._persistor, transformer=self._transformer)
 
     async def end_read(self, version: Version) -> Version:
         return await _end_read(
@@ -71,9 +67,7 @@ class YamlVersionSerializer(VersionSerializer):
         )
 
 
-async def _begin_read(
-    lock: Lock, persistor: LocalFileVersionPersistor, transformer: VersionsTransformer
-) -> Version:
+async def _begin_read(lock: Lock, persistor: LocalFileVersionPersistor, transformer: VersionsTransformer) -> Version:
     # Read, transform, and write version file, in a single atomic operation
     # Obviously this is not going to work in a multiprocessing or multiserver environment
     # For that we'll need a more robust VersionSerializer
@@ -106,9 +100,7 @@ async def _begin_read(
             }
 
         read_version = transformer.get_max_readable_version(version_dict)
-        version_dict = transformer.increment_readers_in_versions(
-            version_dict, read_version
-        )
+        version_dict = transformer.increment_readers_in_versions(version_dict, read_version)
 
         with persistor.open_version_file_write() as stream:
             yaml.safe_dump(version_dict, stream)

@@ -1,9 +1,5 @@
-from src.lunch.model.dimension.dimension_structure_validator import (
-    DimensionStructureValidator as validator,
-)
-from src.lunch.model.dimension.dimension_transformer import (
-    DimensionTransformer as transformer,
-)
+from src.lunch.model.dimension.dimension_structure_validator import DimensionStructureValidator as validator
+from src.lunch.model.dimension.dimension_transformer import DimensionTransformer as transformer
 
 
 def test_add_attribute_ids_single_attribute():
@@ -61,9 +57,7 @@ def test_add_default_storage_to_dimension_with_no_storage():
     }
 
     validator.validate(input_dim)
-    output_dim = transformer.add_default_storage(
-        dimension=input_dim, default_storage=default_storage
-    )
+    output_dim = transformer.add_default_storage(dimension=input_dim, default_storage=default_storage)
     validator.validate(output_dim)
 
     assert output_dim == {
@@ -89,9 +83,7 @@ def test_add_default_storage_to_dimension_with_storage():
     }
 
     validator.validate(input_dim)
-    output_dim = transformer.add_default_storage(
-        dimension=input_dim, default_storage=default_storage
-    )
+    output_dim = transformer.add_default_storage(dimension=input_dim, default_storage=default_storage)
     validator.validate(output_dim)
 
     assert output_dim == {

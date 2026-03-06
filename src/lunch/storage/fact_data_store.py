@@ -61,16 +61,14 @@ class FactDataStore(Store):
 
         version_index = await _get_version_index(serializer=self._serializer, cache=self._cache, version=read_version)
 
-        reference_data_version = version_index[fact_id]
+        cube_data_version = version_index[fact_id]
 
         try:
-            column_data = await self._cache.get_columns(
-                fact_id=fact_id, reference_data_version=reference_data_version
-            )
+            column_data = await self._cache.get_columns(fact_id=fact_id, cube_data_version=cube_data_version)
         except KeyError:
             column_data = await self._serializer.get_columns(
                 dimension_id=fact_id,
-                reference_data_version=reference_data_version,
+                cube_data_version=cube_data_version,
                 column_types=column_types,
             )
             await self._cache.put_columns(
@@ -84,7 +82,7 @@ class FactDataStore(Store):
 
 async def _put(
     fact_id: int,
-    columnar_data: dict[int, Iterable], # -1 -> value, 0-n -> fact dimension indices
+    columnar_data: dict[int, Iterable],  # -1 -> value, 0-n -> fact dimension indices
     read_version: Version,
     write_version: Version,
     fact_data_version_index_transformer: FactDataIndexTransformer,
@@ -96,22 +94,16 @@ async def _put(
     # We want to update the version index for the write (should be in cache)
     # If it doesn't exist, start with the read version index
     try:
-        facts_version_index_write = await _get_version_index(
-            version=write_version, serializer=serializer, cache=cache
-        )
+        facts_version_index_write = await _get_version_index(version=write_version, serializer=serializer, cache=cache)
     except KeyError:
-        facts_version_index_write = await _get_version_index(
-            version=read_version, serializer=serializer, cache=cache
-        )
+        facts_version_index_write = await _get_version_index(version=read_version, serializer=serializer, cache=cache)
 
     # All the changed facts will be in facts_with_ids now
     # All of these have a version of the write-version
-    facts_version_index_write = (
-        fact_data_version_index_transformer.update_fact_data_version_index(
-            index_=facts_version_index_write,
-            write_version=write_version,
-            changed_ids=[fact_id],
-        )
+    facts_version_index_write = fact_data_version_index_transformer.update_fact_data_version_index(
+        index_=facts_version_index_write,
+        write_version=write_version,
+        changed_ids=[fact_id],
     )
 
     await _put_version_index(
@@ -120,7 +112,6 @@ async def _put(
         serializer=serializer,
         cache=cache,
     )
-
 
     # Note - we cache as we put, so that later puts in a transaction can validate against cached data
     # Note, as we serialize we collect the changed partition ids
@@ -146,12 +137,10 @@ async def _put(
             version=read_version, serializer=serializer, cache=cache
         )
 
-    facts_partition_index_write = (
-        fact_data_partition_index_transformer.update_fact_partition_version_index(
-            index_=facts_partition_index_write,
-            write_version=write_version,
-            changed_ids=[changed_partition_ids],
-        )
+    facts_partition_index_write = fact_data_partition_index_transformer.update_fact_partition_version_index(
+        index_=facts_partition_index_write,
+        write_version=write_version,
+        changed_ids=[changed_partition_ids],
     )
 
     await _put_partition_index(
@@ -160,8 +149,6 @@ async def _put(
         serializer=serializer,
         cache=cache,
     )
-
-
 
 
 async def _get_version_index(
@@ -176,6 +163,7 @@ async def _get_version_index(
         return await cache.get_version_index(version=version)
     except KeyError:
         return await serializer.get_version_index(version=version)
+
 
 async def _put_version_index(
     index_: dict,
@@ -199,6 +187,7 @@ async def _get_partition_index(
         return await cache.get_partition_index(version=version)
     except KeyError:
         return await serializer.get_partition_index(version=version)
+
 
 async def _put_partition_index(
     index_: dict,

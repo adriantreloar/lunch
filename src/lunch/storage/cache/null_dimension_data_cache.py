@@ -34,7 +34,5 @@ class NullDimensionDataCache(DimensionDataCache):
     async def get_version_index(self, version: Version) -> dict[int, int]:
         raise KeyError(version)
 
-    async def put_version_index(
-        self, index_: dict[int, int], version: Version
-    ):
+    async def put_version_index(self, index_: dict[int, int], version: Version):
         pass

@@ -7,8 +7,7 @@ import pyarrow.parquet
 
 class FlightServer(pa.flight.FlightServerBase):
 
-    def __init__(self, location="grpc://0.0.0.0:8815",
-                repo=pathlib.Path("./datasets"), **kwargs):
+    def __init__(self, location="grpc://0.0.0.0:8815", repo=pathlib.Path("./datasets"), **kwargs):
         super(FlightServer, self).__init__(location, **kwargs)
         self._location = location
         self._repo = repo
@@ -17,26 +16,20 @@ class FlightServer(pa.flight.FlightServerBase):
         dataset_path = self._repo / dataset
         schema = pa.parquet.read_schema(dataset_path)
         metadata = pa.parquet.read_metadata(dataset_path)
-        descriptor = pa.flight.FlightDescriptor.for_path(
-            dataset.encode('utf-8')
-        )
+        descriptor = pa.flight.FlightDescriptor.for_path(dataset.encode("utf-8"))
         endpoints = [pa.flight.FlightEndpoint(dataset, [self._location])]
-        return pyarrow.flight.FlightInfo(schema,
-                                        descriptor,
-                                        endpoints,
-                                        metadata.num_rows,
-                                        metadata.serialized_size)
+        return pyarrow.flight.FlightInfo(schema, descriptor, endpoints, metadata.num_rows, metadata.serialized_size)
 
     def list_flights(self, context, criteria):
         for dataset in self._repo.iterdir():
             yield self._make_flight_info(dataset.name)
 
     def get_flight_info(self, context, descriptor):
-        return self._make_flight_info(descriptor.path[0].decode('utf-8'))
+        return self._make_flight_info(descriptor.path[0].decode("utf-8"))
 
     def do_put(self, context, descriptor, reader, writer):
         # Note writer is a metadata writer, allowing us to send metadata back to the client
-        dataset = descriptor.path[0].decode('utf-8')
+        dataset = descriptor.path[0].decode("utf-8")
         dataset_path = self._repo / dataset
         # Read the uploaded data and write to Parquet incrementally
         with dataset_path.open("wb") as sink:
@@ -55,12 +48,11 @@ class FlightServer(pa.flight.FlightServerBase):
             writer.write(chunk.data)
 
     def do_get(self, context, ticket):
-        dataset = ticket.ticket.decode('utf-8')
+        dataset = ticket.ticket.decode("utf-8")
         # Stream data from a file
         dataset_path = self._repo / dataset
         reader = pa.parquet.ParquetFile(dataset_path)
-        return pa.flight.GeneratorStream(
-            reader.schema_arrow, reader.iter_batches())
+        return pa.flight.GeneratorStream(reader.schema_arrow, reader.iter_batches())
 
     def list_actions(self, context):
         return [
@@ -69,7 +61,7 @@ class FlightServer(pa.flight.FlightServerBase):
 
     def do_action(self, context, action):
         if action.type == "drop_dataset":
-            self.do_drop_dataset(action.body.to_pybytes().decode('utf-8'))
+            self.do_drop_dataset(action.body.to_pybytes().decode("utf-8"))
         else:
             raise NotImplementedError
 
@@ -77,7 +69,8 @@ class FlightServer(pa.flight.FlightServerBase):
         dataset_path = self._repo / dataset
         dataset_path.unlink()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     server = FlightServer()
     server._repo.mkdir(exist_ok=True)
     server.serve()

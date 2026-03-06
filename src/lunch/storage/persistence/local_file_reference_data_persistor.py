@@ -22,9 +22,7 @@ class LocalFileReferenceDataPersistor(ReferenceDataPersistor):
         self._directory = directory
 
     def dimension_data_version_index_file(self, version: int) -> Path:
-        return _dimension_data_version_index_file(
-            directory=self._directory, version=version
-        )
+        return _dimension_data_version_index_file(directory=self._directory, version=version)
 
     @contextmanager
     def open_dimension_data_version_index_file_read(self, version: int):

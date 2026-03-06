@@ -10,15 +10,17 @@ from src.lunch.model.old_fact.fact_comparer import FactComparer
 
 def _fact(dim_ids: list[int]) -> Fact:
     """Build a minimal Fact with the given dimension_ids."""
-    dims = _FactDimensionsMetadata([
-        FactDimensionMetadatum(
-            name=f"dim_{i}",
-            view_order=idx + 1,
-            column_id=idx,
-            dimension_id=i,
-        )
-        for idx, i in enumerate(dim_ids)
-    ])
+    dims = _FactDimensionsMetadata(
+        [
+            FactDimensionMetadatum(
+                name=f"dim_{i}",
+                view_order=idx + 1,
+                column_id=idx,
+                dimension_id=i,
+            )
+            for idx, i in enumerate(dim_ids)
+        ]
+    )
     return Fact(name="Sales", dimensions=dims, measures=_FactMeasuresMetadata([]))
 
 

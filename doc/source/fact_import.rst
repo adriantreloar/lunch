@@ -264,10 +264,6 @@ at write version *W* never touches data written at any earlier version.  The
 version index makes it possible to read data at any past read version
 independently of ongoing writes.
 
-.. note::
-
-   The current implementation uses ``reference_data_version`` as the
-   sub-version key for fact data files (rather than ``cube_data_version``).
-   This matches the context manager used in the example
-   (``write_reference_data_version``).  A future refactor will align fact data
-   writes with ``cube_data_version``.
+Fact data writes use ``write_cube_data_version`` and the version index is
+keyed by ``cube_data_version``, keeping fact/measure data isolated from the
+dimension-member ``reference_data_version``.

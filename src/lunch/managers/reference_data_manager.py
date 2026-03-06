@@ -81,17 +81,16 @@ async def _update_dimension_from_dataframe(
     # We need to query storage (e.g. the indexes) for size hints, so that we can create a decent pland
     # TODO - at some point we may need statistics, to speed this sort of thing up
     import_plan = await dimension_import_optimiser.create_dataframe_import_plan(
-        dimension_name=name,
-        data=data,
-        read_version=read_version,
-        write_version=write_version
+        dimension_name=name, data=data, read_version=read_version, write_version=write_version
     )
 
     # TODO - log import plan
 
     # Enact import plan
     return await dimension_import_enactor.enact_plan(
-        import_plan=import_plan, data=data, read_version=read_version, write_version=write_version,
-        dimension_data_store=dimension_data_store
-
+        import_plan=import_plan,
+        data=data,
+        read_version=read_version,
+        write_version=write_version,
+        dimension_data_store=dimension_data_store,
     )

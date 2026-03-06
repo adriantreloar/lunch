@@ -1,16 +1,20 @@
-from pyrsistent import PClass, PRecord, CheckedPMap, CheckedPVector, field, pmap_field
-from src.lunch.base_classes.transformer import Transformer
 from typing import Any
 
+from pyrsistent import CheckedPMap, CheckedPVector, PClass, PRecord, field, pmap_field
+
+from src.lunch.base_classes.transformer import Transformer
 from src.lunch.model.fact import Fact, FactTransformer
 
+
 class StarSchema(PClass):
-    fact = field(type=Fact,
-                 mandatory=True,
-                 )
+    fact = field(
+        type=Fact,
+        mandatory=True,
+    )
 
     # dimensions by id
     dimensions = pmap_field(int, dict)
+
 
 class StarSchemaTransformer(Transformer):
     """Static methods to alter a star schema model"""
@@ -35,7 +39,4 @@ class StarSchemaTransformer(Transformer):
         if dimensions:
             dimensions = {int(k): v for k, v in star_schema_dict["dimensions"].items()}
 
-        return StarSchema(
-            fact=FactTransformer.from_dict(fact_dict),
-            dimensions=dimensions
-        )
+        return StarSchema(fact=FactTransformer.from_dict(fact_dict), dimensions=dimensions)

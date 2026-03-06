@@ -3,8 +3,9 @@ import pytest
 from src.lunch.mvcc.version import Version
 from src.lunch.storage.cache.null_fact_data_cache import NullFactDataCache
 
-v1 = Version(version=1, model_version=1, reference_data_version=1,
-             cube_data_version=0, operations_version=0, website_version=0)
+v1 = Version(
+    version=1, model_version=1, reference_data_version=1, cube_data_version=0, operations_version=0, website_version=0
+)
 
 
 @pytest.fixture
@@ -15,6 +16,7 @@ def cache():
 # ---------------------------------------------------------------------------
 # version index
 # ---------------------------------------------------------------------------
+
 
 async def test_get_version_index_raises_key_error(cache):
     with pytest.raises(KeyError):
@@ -29,6 +31,7 @@ async def test_put_version_index_is_no_op(cache):
 # partition index
 # ---------------------------------------------------------------------------
 
+
 async def test_get_partition_index_raises_key_error(cache):
     with pytest.raises(KeyError):
         await cache.get_partition_index(version=v1)
@@ -42,9 +45,10 @@ async def test_put_partition_index_is_no_op(cache):
 # columns
 # ---------------------------------------------------------------------------
 
+
 async def test_get_columns_raises_key_error(cache):
     with pytest.raises(KeyError):
-        await cache.get_columns(fact_id=1, reference_data_version=1)
+        await cache.get_columns(fact_id=1, cube_data_version=1)
 
 
 async def test_put_columns_is_no_op(cache):
@@ -54,6 +58,7 @@ async def test_put_columns_is_no_op(cache):
 # ---------------------------------------------------------------------------
 # abort_write
 # ---------------------------------------------------------------------------
+
 
 async def test_abort_write_is_no_op(cache):
     await cache.abort_write(version=v1)  # must not raise

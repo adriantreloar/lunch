@@ -1,5 +1,6 @@
-import pytest
 from pathlib import Path
+
+import pytest
 
 from src.lunch.storage.persistence.stringio_reference_data_persistor import StringIOReferenceDataPersistor
 

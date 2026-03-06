@@ -19,7 +19,7 @@ class FactDataIndexTransformer(Transformer):
         :return:
         """
         copy_index = index_.copy()
-        copy_index.update({id_: write_version.reference_data_version for id_ in changed_ids})
+        copy_index.update({id_: write_version.cube_data_version for id_ in changed_ids})
         return copy_index
 
     @staticmethod

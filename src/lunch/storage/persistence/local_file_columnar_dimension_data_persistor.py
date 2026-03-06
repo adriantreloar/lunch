@@ -20,9 +20,7 @@ class LocalFileColumnarDimensionDataPersistor(DimensionDataPersistor):
         """
         self._directory = directory
 
-    def attribute_file(
-        self, dimension_id: int, attribute_id: int, version: int
-    ) -> Path:
+    def attribute_file(self, dimension_id: int, attribute_id: int, version: int) -> Path:
         return _attribute_file(
             dimension_id=dimension_id,
             attribute_id=attribute_id,
@@ -34,22 +32,14 @@ class LocalFileColumnarDimensionDataPersistor(DimensionDataPersistor):
         return _dimension_version_index_file(directory=self._directory, version=version)
 
     @contextmanager
-    def open_attribute_file_read(
-        self, dimension_id: int, attribute_id: int, version: int
-    ):
-        file_path = self.attribute_file(
-            dimension_id=dimension_id, attribute_id=attribute_id, version=version
-        )
+    def open_attribute_file_read(self, dimension_id: int, attribute_id: int, version: int):
+        file_path = self.attribute_file(dimension_id=dimension_id, attribute_id=attribute_id, version=version)
         with open(file_path, "r") as f:
             yield f
 
     @contextmanager
-    def open_attribute_file_write(
-        self, dimension_id: int, attribute_id: int, version: int
-    ):
-        file_path = self.attribute_file(
-            dimension_id=dimension_id, attribute_id=attribute_id, version=version
-        )
+    def open_attribute_file_write(self, dimension_id: int, attribute_id: int, version: int):
+        file_path = self.attribute_file(dimension_id=dimension_id, attribute_id=attribute_id, version=version)
         Path(os.path.dirname(file_path)).mkdir(parents=True, exist_ok=True)
         logger.debug("Writing attribute file: %s", file_path)
         with open(file_path, "w") as f:
@@ -70,12 +60,8 @@ class LocalFileColumnarDimensionDataPersistor(DimensionDataPersistor):
             yield f
 
 
-def _attribute_file(
-    dimension_id: int, attribute_id: int, directory: Path, version: int
-) -> Path:
-    return directory.joinpath(
-        f"{version}/dimension_data/{dimension_id}/attribute.{attribute_id}.column"
-    )
+def _attribute_file(dimension_id: int, attribute_id: int, directory: Path, version: int) -> Path:
+    return directory.joinpath(f"{version}/dimension_data/{dimension_id}/attribute.{attribute_id}.column")
 
 
 def _dimension_version_index_file(directory: Path, version: int) -> Path:

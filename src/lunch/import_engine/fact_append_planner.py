@@ -1,10 +1,11 @@
 from src.lunch.base_classes.transformer import Transformer
-from src.lunch.plans.plan import Plan
-from src.lunch.plans.basic_plan import BasicPlan
-from src.lunch.plans.remote_plan import RemotePlan
 from src.lunch.model.star_schema import StarSchema, StarSchemaTransformer
 from src.lunch.model.table_metadata import TableMetadata, TableMetadataTransformer
 from src.lunch.mvcc.version import Version
+from src.lunch.plans.basic_plan import BasicPlan
+from src.lunch.plans.plan import Plan
+from src.lunch.plans.remote_plan import RemotePlan
+
 
 class FactAppendPlanner(Transformer):
     @staticmethod
@@ -19,8 +20,7 @@ class FactAppendPlanner(Transformer):
         write_fact = write_version_target_model.fact
 
         source_column_definition = {
-            name: str(dtype_)
-            for name, dtype_ in zip(source_metadata.column_names, source_metadata.column_types)
+            name: str(dtype_) for name, dtype_ in zip(source_metadata.column_names, source_metadata.column_types)
         }
         source_length = source_metadata.length
 

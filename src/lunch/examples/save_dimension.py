@@ -19,9 +19,7 @@ async def save_dimension():
     }
 
     async with version_manager.read_version() as read_version:
-        async with version_manager.write_model_version(
-            read_version=read_version
-        ) as write_version:
+        async with version_manager.write_model_version(read_version=read_version) as write_version:
             await model_manager.update_model(
                 dimensions=[d_test],
                 facts=[],
@@ -30,9 +28,7 @@ async def save_dimension():
             )
 
     async with version_manager.read_version() as read_version:
-        async with version_manager.write_model_version(
-            read_version=read_version
-        ) as write_version:
+        async with version_manager.write_model_version(read_version=read_version) as write_version:
             await model_manager.update_model(
                 dimensions=[d_department, d_time],
                 facts=[],

@@ -15,9 +15,7 @@ class DimensionModelIndexTransformer(Transformer):
     #        return 0
 
     @staticmethod
-    def add_dimension_name_to_index(
-        dimension_index_dict: dict[str, int], name: str
-    ) -> tuple[dict, int]:
+    def add_dimension_name_to_index(dimension_index_dict: dict[str, int], name: str) -> tuple[dict, int]:
         """
 
         :param dimension_index_dict:
@@ -27,9 +25,7 @@ class DimensionModelIndexTransformer(Transformer):
         try:
             return dimension_index_dict, dimension_index_dict[name]
         except KeyError:
-            max_id = DimensionModelIndexTransformer.get_max_id(
-                dimension_index_dict=dimension_index_dict
-            )
+            max_id = DimensionModelIndexTransformer.get_max_id(dimension_index_dict=dimension_index_dict)
 
             output_dimension_index_dict = dimension_index_dict.copy()
             output_dimension_index_dict[name] = max_id
@@ -44,9 +40,7 @@ class DimensionModelIndexTransformer(Transformer):
         return copy_index
 
     @staticmethod
-    def update_dimension_name_index(
-        index_: dict[str, int], changed_names_index: dict[str, int]
-    ) -> dict[str, int]:
+    def update_dimension_name_index(index_: dict[str, int], changed_names_index: dict[str, int]) -> dict[str, int]:
         reversed_index = {v: k for k, v in index_.items()}
         reversed_changed_names_index = {v: k for k, v in changed_names_index.items()}
         reversed_index.update(reversed_changed_names_index)

@@ -1,47 +1,24 @@
+import asyncio
+import concurrent.futures
+import json
 import logging
 import time
-import concurrent.futures
-
-import pyarrow as pa
-import pyarrow.flight
-import pyarrow.parquet
-import pyarrow.csv
+from pathlib import Path
 
 import numpy as np
-
-import asyncio
-from pathlib import Path
-import json
+import pyarrow as pa
+import pyarrow.csv
+import pyarrow.flight
+import pyarrow.parquet
 
 _EXAMPLE_OUTPUT = Path(__file__).resolve().parents[3] / "example_output"
 
-from src.lunch.mvcc.version import Version, version_from_dict, version_to_dict
+from src.lunch.globals.global_state import GlobalState
 from src.lunch.import_engine.dimension_import_enactor import DimensionImportEnactor
 from src.lunch.import_engine.dimension_import_optimiser import DimensionImportOptimiser
 from src.lunch.import_engine.dimension_import_planner import DimensionImportPlanner
-from src.lunch.managers.reference_data_manager import ReferenceDataManager
-from src.lunch.storage.cache.null_dimension_data_cache import NullDimensionDataCache
-from src.lunch.storage.cache.null_hierarchy_data_cache import NullHierarchyDataCache
-from src.lunch.storage.cache.null_reference_data_cache import NullReferenceDataCache
-from src.lunch.storage.dimension_data_store import DimensionDataStore
-from src.lunch.storage.hierarchy_data_store import HierarchyDataStore
-from src.lunch.storage.persistence.local_file_columnar_dimension_data_persistor import (
-    LocalFileColumnarDimensionDataPersistor,
-)
-from src.lunch.storage.persistence.local_file_reference_data_persistor import (
-    LocalFileReferenceDataPersistor,
-)  # index etc.
-from src.lunch.storage.reference_data_store import ReferenceDataStore
-from src.lunch.storage.serialization.columnar_dimension_data_serializer import (
-    ColumnarDimensionDataSerializer,
-)
-from src.lunch.storage.serialization.null_hierarchy_data_serializer import NullHierarchyDataSerializer
-from src.lunch.storage.serialization.yaml_reference_data_serializer import (
-    YamlReferenceDataSerializer,
-)  # For indexes
-
-from src.lunch.globals.global_state import GlobalState
 from src.lunch.managers.model_manager import ModelManager
+from src.lunch.managers.reference_data_manager import ReferenceDataManager
 from src.lunch.model.dimension.dimension_comparer import DimensionComparer
 from src.lunch.model.dimension.dimension_reference_validator import (
     DimensionReferenceValidator,
@@ -50,25 +27,43 @@ from src.lunch.model.dimension.dimension_structure_validator import (
     DimensionStructureValidator,
 )
 from src.lunch.model.dimension.dimension_transformer import DimensionTransformer
+from src.lunch.model.fact import FactDimensionMetadatum
 from src.lunch.model.star_schema import StarSchemaTransformer
-
-
+from src.lunch.mvcc.version import Version, version_from_dict, version_to_dict
 from src.lunch.mvcc.versions_transformer import VersionsTransformer
+from src.lunch.storage.cache.null_dimension_data_cache import NullDimensionDataCache
+from src.lunch.storage.cache.null_hierarchy_data_cache import NullHierarchyDataCache
 from src.lunch.storage.cache.null_model_cache import NullModelCache
+from src.lunch.storage.cache.null_reference_data_cache import NullReferenceDataCache
 from src.lunch.storage.cache.null_version_cache import NullVersionCache
+from src.lunch.storage.dimension_data_store import DimensionDataStore
+from src.lunch.storage.hierarchy_data_store import HierarchyDataStore
 from src.lunch.storage.model_store import ModelStore
+from src.lunch.storage.persistence.local_file_columnar_dimension_data_persistor import (
+    LocalFileColumnarDimensionDataPersistor,
+)
 from src.lunch.storage.persistence.local_file_model_persistor import LocalFileModelPersistor
+from src.lunch.storage.persistence.local_file_parquet_fact_data_persistor import LocalFileParquetFactDataPersistor
+from src.lunch.storage.persistence.local_file_reference_data_persistor import (  # index etc.
+    LocalFileReferenceDataPersistor,
+)
 from src.lunch.storage.persistence.local_file_version_persistor import (
     LocalFileVersionPersistor,
 )
-from src.lunch.storage.persistence.local_file_parquet_fact_data_persistor import LocalFileParquetFactDataPersistor
+from src.lunch.storage.reference_data_store import ReferenceDataStore
+from src.lunch.storage.serialization.columnar_dimension_data_serializer import (
+    ColumnarDimensionDataSerializer,
+)
+from src.lunch.storage.serialization.null_hierarchy_data_serializer import NullHierarchyDataSerializer
 from src.lunch.storage.serialization.yaml_model_serializer import YamlModelSerializer
+from src.lunch.storage.serialization.yaml_reference_data_serializer import (  # For indexes
+    YamlReferenceDataSerializer,
+)
 from src.lunch.storage.serialization.yaml_version_serializer import YamlVersionSerializer
 from src.lunch.storage.transformers.dimension_model_index_transformer import (
     DimensionModelIndexTransformer,
 )
 from src.lunch.storage.transformers.fact_model_index_transformer import FactModelIndexTransformer
-from src.lunch.model.fact import FactDimensionMetadatum
 
 # Constant Global State
 global_state = GlobalState()
@@ -84,17 +79,20 @@ fact_index_transformer = FactModelIndexTransformer()
 
 log = logging.getLogger()
 
+
 class LunchFlightServer(pa.flight.FlightServerBase):
 
-    def __init__(self, location="grpc://0.0.0.0:8819", client_locations=[],  **kwargs):
-        '''
+    def __init__(self, location="grpc://0.0.0.0:8819", client_locations=[], **kwargs):
+        """
 
         :param location:
         :param flight_client_locations: connection strings for flight clients that this server can pass work on to
         :param kwargs:
-        '''
+        """
 
-        model_manager, reference_data_manager, dimension_data_storage, fact_data_persistor = self._setup_managers(path=_EXAMPLE_OUTPUT)
+        model_manager, reference_data_manager, dimension_data_storage, fact_data_persistor = self._setup_managers(
+            path=_EXAMPLE_OUTPUT
+        )
         self._model_manager = model_manager
         self._reference_data_manager = reference_data_manager
         self._dimension_data_store = dimension_data_storage
@@ -127,16 +125,10 @@ class LunchFlightServer(pa.flight.FlightServerBase):
         fact_data_persistor = LocalFileParquetFactDataPersistor(directory=fact_data_path)
 
         # Serializers
-        version_serializer = YamlVersionSerializer(
-            persistor=version_persistor, transformer=version_transformer
-        )
+        version_serializer = YamlVersionSerializer(persistor=version_persistor, transformer=version_transformer)
         model_serializer = YamlModelSerializer(persistor=model_persistor)
-        dimension_serializer = ColumnarDimensionDataSerializer(
-            persistor=dimension_data_persistor
-        )
-        reference_data_serializer = YamlReferenceDataSerializer(
-            persistor=reference_data_persistor
-        )
+        dimension_serializer = ColumnarDimensionDataSerializer(persistor=dimension_data_persistor)
+        reference_data_serializer = YamlReferenceDataSerializer(persistor=reference_data_persistor)
 
         # Caches
         version_cache = NullVersionCache()
@@ -153,9 +145,7 @@ class LunchFlightServer(pa.flight.FlightServerBase):
             serializer=model_serializer,
             cache=model_cache,
         )
-        dimension_data_storage = DimensionDataStore(
-            serializer=dimension_serializer, cache=dimension_data_cache
-        )
+        dimension_data_storage = DimensionDataStore(serializer=dimension_serializer, cache=dimension_data_cache)
         # ReferenceDataStore is the top-level store that unifies dimension and hierarchy data.
         # HierarchyDataStore is a placeholder — no hierarchy operations are implemented yet.
         reference_storage = ReferenceDataStore(
@@ -193,32 +183,25 @@ class LunchFlightServer(pa.flight.FlightServerBase):
 
         return model_manager, reference_data_manager, dimension_data_storage, fact_data_persistor
 
-
     def _make_flight_info(self, dataset):
-        '''Hangover from the example'''
+        """Hangover from the example"""
         # TODO - create one of these that takes versions and partition keys
         #  and hands out flight info
         dataset_path = self._repo / dataset
         schema = pa.parquet.read_schema(dataset_path)
         metadata = pa.parquet.read_metadata(dataset_path)
-        descriptor = pa.flight.FlightDescriptor.for_path(
-            dataset.encode('utf-8')
-        )
+        descriptor = pa.flight.FlightDescriptor.for_path(dataset.encode("utf-8"))
         endpoints = [pa.flight.FlightEndpoint(dataset, [self._location])]
-        return pyarrow.flight.FlightInfo(schema,
-                                        descriptor,
-                                        endpoints,
-                                        metadata.num_rows,
-                                        metadata.serialized_size)
+        return pyarrow.flight.FlightInfo(schema, descriptor, endpoints, metadata.num_rows, metadata.serialized_size)
 
     def list_flights(self, context, criteria):
-        '''Hangover from the example'''
+        """Hangover from the example"""
         for dataset in self._repo.iterdir():
             yield self._make_flight_info(dataset.name)
 
     def get_flight_info(self, context, descriptor):
-        '''Hangover from the example'''
-        return self._make_flight_info(descriptor.path[0].decode('utf-8'))
+        """Hangover from the example"""
+        return self._make_flight_info(descriptor.path[0].decode("utf-8"))
 
     def do_exchange(self, context, descriptor, reader, writer):
         command = json.loads(descriptor.command.decode("utf8"))
@@ -257,7 +240,9 @@ class LunchFlightServer(pa.flight.FlightServerBase):
         write_version = command["parameters"]["write_version"]
 
         read_version_target_schema = StarSchemaTransformer.from_dict(command["parameters"]["read_version_target_schema"])
-        write_version_target_schema = StarSchemaTransformer.from_dict(command["parameters"]["write_version_target_schema"])
+        write_version_target_schema = StarSchemaTransformer.from_dict(
+            command["parameters"]["write_version_target_schema"]
+        )
 
         source_schema = command["parameters"]["source_schema"]
         column_mappings = command["parameters"]["column_mappings"]
@@ -267,9 +252,14 @@ class LunchFlightServer(pa.flight.FlightServerBase):
 
         column_names = source_schema["column_names"]
         column_type_names = source_schema["column_types"]
-        data_schema = pa.schema([pa.field(n, pa.string() if t == 'object' else pa.from_numpy_dtype(np.dtype(t))) for n, t in zip(column_names, column_type_names)])
+        data_schema = pa.schema(
+            [
+                pa.field(n, pa.string() if t == "object" else pa.from_numpy_dtype(np.dtype(t)))
+                for n, t in zip(column_names, column_type_names)
+            ]
+        )
         print(data_schema)
-        #[pa.field('sort_index', pa.int32())]
+        # [pa.field('sort_index', pa.int32())]
 
         # NEXT: We need to know - what we are translating to what
         # in the example there are 2 translations and a value
@@ -334,7 +324,9 @@ class LunchFlightServer(pa.flight.FlightServerBase):
                 measure_mappings[measure_name]["storage"] = write_version_storage[0].copy()
                 measure_mappings[measure_name]["storage"]["measure_id"] = measure_name_lookup[measure_name].measure_id
                 measure_mappings[measure_name]["storage"]["value_type"] = measure_name_lookup[measure_name].type
-                measure_mappings[measure_name]["storage"]["value_precision"] = measure_name_lookup[measure_name].precision
+                measure_mappings[measure_name]["storage"]["value_precision"] = measure_name_lookup[
+                    measure_name
+                ].precision
 
         print(f"{measure_mappings=}")
 
@@ -410,8 +402,10 @@ class LunchFlightServer(pa.flight.FlightServerBase):
                 dimension_mapping["storage"] = write_version_storage[dim_as_fact_sees_it.column_id]
             else:
                 # We need to map a default for this dimension, since we don't have a column mapping
-                dimension_mapping = {"mapping_type": "dimension_default",
-                                     "storage": write_version_storage[dim_as_fact_sees_it.column_id]}
+                dimension_mapping = {
+                    "mapping_type": "dimension_default",
+                    "storage": write_version_storage[dim_as_fact_sees_it.column_id],
+                }
 
             all_dimension_mappings[dim_as_fact_sees_it.name] = dimension_mapping
 
@@ -419,8 +413,7 @@ class LunchFlightServer(pa.flight.FlightServerBase):
         for k, v in all_dimension_mappings.items():
             print(k, v)
 
-        call_options = pa.flight.FlightCallOptions(timeout=20,
-                                                   headers=[("foo".encode("utf8"), "bar".encode("utf8"))])
+        call_options = pa.flight.FlightCallOptions(timeout=20, headers=[("foo".encode("utf8"), "bar".encode("utf8"))])
 
         for n, mapping in enumerate(all_dimension_mappings.values()):
 
@@ -432,13 +425,14 @@ class LunchFlightServer(pa.flight.FlightServerBase):
                 # Create Dimension Translate reader-writer pairs from a client(s)
                 # Store them in the mapping dictionary, unless somewhere better presents itself
 
-                command_dict = {"command": "dimension_lookup",
-                                "parameters":
-                                    {"version": version_to_dict(write_version),
-                                     "dimension_id": mapping["target_dimension_id"],
-                                     "attribute_id": mapping["target_attribute_id"]
-                                     }
-                                }
+                command_dict = {
+                    "command": "dimension_lookup",
+                    "parameters": {
+                        "version": version_to_dict(write_version),
+                        "dimension_id": mapping["target_dimension_id"],
+                        "attribute_id": mapping["target_attribute_id"],
+                    },
+                }
                 command = json.dumps(command_dict).encode("utf8")
                 print(command_dict)
                 print()
@@ -469,44 +463,45 @@ class LunchFlightServer(pa.flight.FlightServerBase):
         #  First create 'Translate' writer - reader pairs.
         #  Later we'll work out how to tag the reader outputs to send them to the index grouping stage
 
-        csv_read_options = pa.csv.ReadOptions(use_threads=None,
-                                                   block_size=None,
-                                                   skip_rows=None,
-                                                   column_names=column_names,
-                                                   autogenerate_column_names=None,
-                                                   encoding='utf8',
-                                                   skip_rows_after_names=None)
+        csv_read_options = pa.csv.ReadOptions(
+            use_threads=None,
+            block_size=None,
+            skip_rows=None,
+            column_names=column_names,
+            autogenerate_column_names=None,
+            encoding="utf8",
+            skip_rows_after_names=None,
+        )
 
-        csv_parse_options = pyarrow.csv.ParseOptions(delimiter=None,
-                                                     quote_char=None,
-                                                     double_quote=None,
-                                                     escape_char=None,
-                                                     newlines_in_values=None,
-                                                     ignore_empty_lines=None,
-                                                     invalid_row_handler=None
-                                                     )
+        csv_parse_options = pyarrow.csv.ParseOptions(
+            delimiter=None,
+            quote_char=None,
+            double_quote=None,
+            escape_char=None,
+            newlines_in_values=None,
+            ignore_empty_lines=None,
+            invalid_row_handler=None,
+        )
 
-        csv_convert_options = pa.csv.ConvertOptions(check_utf8=None,
-                                                    column_types=data_schema,
-                                                    null_values=None,
-                                                    true_values=None,
-                                                    false_values=None,
-                                                    decimal_point=None,
-                                                    strings_can_be_null=None,
-                                                    quoted_strings_can_be_null=None,
-                                                    include_columns=None,
-                                                    include_missing_columns=None,
-                                                    auto_dict_encode=None,
-                                                    auto_dict_max_cardinality=None,
-                                                    timestamp_parsers=None
-                                                    )
+        csv_convert_options = pa.csv.ConvertOptions(
+            check_utf8=None,
+            column_types=data_schema,
+            null_values=None,
+            true_values=None,
+            false_values=None,
+            decimal_point=None,
+            strings_can_be_null=None,
+            quoted_strings_can_be_null=None,
+            include_columns=None,
+            include_missing_columns=None,
+            auto_dict_encode=None,
+            auto_dict_max_cardinality=None,
+            timestamp_parsers=None,
+        )
 
-        csv_reader = pa.csv.open_csv(csv_file_path,
-                                     read_options=csv_read_options,
-                                     parse_options=None,
-                                     convert_options=None,
-                                     memory_pool=None
-                                     )
+        csv_reader = pa.csv.open_csv(
+            csv_file_path, read_options=csv_read_options, parse_options=None, convert_options=None, memory_pool=None
+        )
 
         # For starters, read everything in the reader,
         # and return a json binary dumped dictionary with number of rows in the metadatawriter
@@ -524,9 +519,6 @@ class LunchFlightServer(pa.flight.FlightServerBase):
 
             # then broadcast and save
 
-
-
-
     def _write_fact_data_file(self, command, reader, metadata_writer):
         cube_data_version = command["parameters"]["version"].cube_data_version
         fact_id = command["parameters"]["fact_id"]
@@ -539,9 +531,9 @@ class LunchFlightServer(pa.flight.FlightServerBase):
         # TODO - wrap the following functionality in the serializer
 
         # Read the uploaded data and write to Parquet incrementally
-        with self._fact_data_persistor.open_data_file_write(cube_data_version=cube_data_version,
-                                                            fact_id=fact_id,
-                                                            partition=partition) as sink:
+        with self._fact_data_persistor.open_data_file_write(
+            cube_data_version=cube_data_version, fact_id=fact_id, partition=partition
+        ) as sink:
             with pa.parquet.ParquetWriter(sink, reader.schema) as writer:
                 for chunk in reader:
                     writer.write_table(pa.Table.from_batches([chunk.data]))
@@ -551,8 +543,9 @@ class LunchFlightServer(pa.flight.FlightServerBase):
         fact_id = command["parameters"]["fact_id"]
 
         # Read the uploaded data and write to Parquet incrementally
-        with self._fact_data_persistor.open_partition_version_index_file_write(cube_data_version=cube_data_version,
-                                                            fact_id=fact_id) as sink:
+        with self._fact_data_persistor.open_partition_version_index_file_write(
+            cube_data_version=cube_data_version, fact_id=fact_id
+        ) as sink:
             with pa.parquet.ParquetWriter(sink, reader.schema) as writer:
                 for chunk in reader:
                     writer.write_table(pa.Table.from_batches([chunk.data]))
@@ -589,7 +582,7 @@ class LunchFlightServer(pa.flight.FlightServerBase):
         command_parameters = command["parameters"]
         key_ = command_parameters["key"]
 
-        output_schema = pa.schema([pa.field('sort_index', pa.int32())])
+        output_schema = pa.schema([pa.field("sort_index", pa.int32())])
         writer.begin(output_schema)
         total_read_rows = 0
         total_write_rows = 0
@@ -601,11 +594,9 @@ class LunchFlightServer(pa.flight.FlightServerBase):
             sort_key_names = [field.name for field in chunk.data.schema]
             sort_keys = [(name, "ascending") for name in sort_key_names]
             print(f"sorting input by", sort_keys)
-            sort_index = pa.compute.sort_indices(chunk.data,
-                                                 sort_keys=sort_keys,
-                                                 null_placement='at_end',
-                                                 options=None,
-                                                 memory_pool=None)
+            sort_index = pa.compute.sort_indices(
+                chunk.data, sort_keys=sort_keys, null_placement="at_end", options=None, memory_pool=None
+            )
 
             keys_sorted = chunk.data.take(sort_index)
 
@@ -622,10 +613,10 @@ class LunchFlightServer(pa.flight.FlightServerBase):
 
             # TODO - I'm not sure the data and metadata will stick together when done this way...
             print(f"writing metadata {m}")
-            #writer.write_metadata(slices_as_binary)
+            # writer.write_metadata(slices_as_binary)
             print(f"writing output {m}")
-            #writer.write(output_table)
-            #for batch in output_table.batches():
+            # writer.write(output_table)
+            # for batch in output_table.batches():
             writer.write_with_metadata(output_table, slices_as_binary)
             print(f"output written {m}")
         print(f"Total read {total_read_rows}, Total write {total_write_rows}")
@@ -639,7 +630,7 @@ class LunchFlightServer(pa.flight.FlightServerBase):
         coro = self._get_dimension_lookup_table(version=version, dimension_id=dimension_id, attribute_id=attribute_id)
         dimension_lookup_table = asyncio.run(coro)
         # print(dimension_lookup_table)
-        output_schema = pa.schema([pa.field('sk', pa.int32())])
+        output_schema = pa.schema([pa.field("sk", pa.int32())])
         total_read_rows = 0
         total_write_rows = 0
         writer.begin(output_schema)
@@ -652,15 +643,16 @@ class LunchFlightServer(pa.flight.FlightServerBase):
             total_read_rows += chunk.data.num_rows
             print(f"joining translation")
 
-            input_with_sk = input_table.join(right_table=dimension_lookup_table,
-                                             keys=["nk"],
-                                             right_keys=["nk"],
-                                             join_type='left outer',
-                                             left_suffix="l_",
-                                             right_suffix="r_",
-                                             coalesce_keys=True,
-                                             use_threads=True
-                                             )
+            input_with_sk = input_table.join(
+                right_table=dimension_lookup_table,
+                keys=["nk"],
+                right_keys=["nk"],
+                join_type="left outer",
+                left_suffix="l_",
+                right_suffix="r_",
+                coalesce_keys=True,
+                use_threads=True,
+            )
             print(f"sorting output to original sort order")
             # The join has wrecked the original sort order, so sort the data back again
             keys_sorted = input_with_sk["sk"].take(input_with_sk["orig_order"])
@@ -682,11 +674,8 @@ class LunchFlightServer(pa.flight.FlightServerBase):
 
         # NOTE - column 0 is id column
         columns = await self._dimension_data_store.get_columns(
-                                                     read_version=version,
-                                                     dimension_id=dimension_id,
-                                                     column_types={attribute_id: str},
-                                                     filter=None)
-
+            read_version=version, dimension_id=dimension_id, column_types={attribute_id: str}, filter=None
+        )
 
         lkp_attribute_array = pa.array(columns[attribute_id], type=pa.string())
 
@@ -698,13 +687,14 @@ class LunchFlightServer(pa.flight.FlightServerBase):
 
         return lookup_table
 
+
 def serve_more_lunch(flight_location):
     server = LunchFlightServer(location=flight_location)
     print(f"LunchFlightServer at {flight_location}")
     server.serve()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     main_server_location = "grpc://0.0.0.0:8816"
 

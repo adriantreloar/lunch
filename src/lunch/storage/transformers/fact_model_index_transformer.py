@@ -15,9 +15,7 @@ class FactModelIndexTransformer(Transformer):
     #        return 0
 
     @staticmethod
-    def add_fact_name_to_index(
-        fact_index_dict: dict[str, int], name: str
-    ) -> tuple[dict, int]:
+    def add_fact_name_to_index(fact_index_dict: dict[str, int], name: str) -> tuple[dict, int]:
         """
 
         :param fact_index_dict:
@@ -42,9 +40,7 @@ class FactModelIndexTransformer(Transformer):
         return copy_index
 
     @staticmethod
-    def update_fact_name_index(
-        index_: dict[str, int], changed_names_index: dict[str, int]
-    ) -> dict[str, int]:
+    def update_fact_name_index(index_: dict[str, int], changed_names_index: dict[str, int]) -> dict[str, int]:
         copy_index = index_.copy()
         copy_index.update(changed_names_index)
         return copy_index

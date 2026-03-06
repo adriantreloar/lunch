@@ -15,20 +15,26 @@ from src.lunch.model.table_metadata import TableMetadata
 from src.lunch.mvcc.version import Version
 from src.lunch.plans.basic_plan import BasicPlan
 
-v0 = Version(version=0, model_version=0, reference_data_version=0,
-             cube_data_version=0, operations_version=0, website_version=0)
-v1 = Version(version=1, model_version=1, reference_data_version=1,
-             cube_data_version=0, operations_version=0, website_version=0)
+v0 = Version(
+    version=0, model_version=0, reference_data_version=0, cube_data_version=0, operations_version=0, website_version=0
+)
+v1 = Version(
+    version=1, model_version=1, reference_data_version=1, cube_data_version=0, operations_version=0, website_version=0
+)
 
-_DIMS = _FactDimensionsMetadata([
-    FactDimensionMetadatum(name="Department", column_id=3, view_order=1,
-                           dimension_name="Department", dimension_id=1),
-    FactDimensionMetadatum(name="Time", column_id=2, view_order=2,
-                           dimension_name="Time", dimension_id=2),
-])
-_MEASURES = _FactMeasuresMetadata([
-    FactMeasureMetadatum(name="sales", measure_id=1, type="decimal", precision=2),
-])
+_DIMS = _FactDimensionsMetadata(
+    [
+        FactDimensionMetadatum(
+            name="Department", column_id=3, view_order=1, dimension_name="Department", dimension_id=1
+        ),
+        FactDimensionMetadatum(name="Time", column_id=2, view_order=2, dimension_name="Time", dimension_id=2),
+    ]
+)
+_MEASURES = _FactMeasuresMetadata(
+    [
+        FactMeasureMetadatum(name="sales", measure_id=1, type="decimal", precision=2),
+    ]
+)
 _FACT = Fact(
     name="Sales",
     fact_id=1,
@@ -67,6 +73,7 @@ def _make_plan():
 # plan name and type
 # ---------------------------------------------------------------------------
 
+
 def test_plan_is_basic_plan_with_correct_name():
     plan = _make_plan()
     assert isinstance(plan, BasicPlan)
@@ -77,15 +84,17 @@ def test_plan_is_basic_plan_with_correct_name():
 # column_id_mapping: dimension columns
 # ---------------------------------------------------------------------------
 
+
 def test_dimension_source_column_maps_to_column_id():
     plan = _make_plan()
-    assert plan.inputs["column_id_mapping"]["dept_col"] == 3   # Department.column_id
-    assert plan.inputs["column_id_mapping"]["time_col"] == 2   # Time.column_id
+    assert plan.inputs["column_id_mapping"]["dept_col"] == 3  # Department.column_id
+    assert plan.inputs["column_id_mapping"]["time_col"] == 2  # Time.column_id
 
 
 # ---------------------------------------------------------------------------
 # column_id_mapping: measure columns
 # ---------------------------------------------------------------------------
+
 
 def test_measure_source_column_maps_to_measure_id():
     plan = _make_plan()
@@ -95,6 +104,7 @@ def test_measure_source_column_maps_to_measure_id():
 # ---------------------------------------------------------------------------
 # other plan inputs / outputs
 # ---------------------------------------------------------------------------
+
 
 def test_merge_key_matches_storage_index_columns():
     plan = _make_plan()
@@ -130,6 +140,7 @@ def test_source_definition_contains_all_source_column_names():
 # ---------------------------------------------------------------------------
 # error paths: unresolvable dimension / measure name
 # ---------------------------------------------------------------------------
+
 
 def test_unknown_dimension_name_raises_stop_iteration():
     bad_mapping = [{"source": ["x"], "target": ["NoSuchDimension", "id_"]}]

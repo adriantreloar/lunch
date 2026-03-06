@@ -8,10 +8,12 @@ from src.lunch.mvcc.version import Version
 from src.lunch.plans.basic_plan import BasicPlan
 from src.lunch.storage.fact_data_store import FactDataStore
 
-v0 = Version(version=0, model_version=0, reference_data_version=0,
-             cube_data_version=0, operations_version=0, website_version=0)
-v1 = Version(version=1, model_version=1, reference_data_version=1,
-             cube_data_version=0, operations_version=0, website_version=0)
+v0 = Version(
+    version=0, model_version=0, reference_data_version=0, cube_data_version=0, operations_version=0, website_version=0
+)
+v1 = Version(
+    version=1, model_version=1, reference_data_version=1, cube_data_version=0, operations_version=0, website_version=0
+)
 
 _DF = pd.DataFrame([{"dept": 1, "sales": 10.0}])
 
@@ -44,14 +46,17 @@ def enactor_and_store():
 # unknown plan type
 # ---------------------------------------------------------------------------
 
+
 async def test_unknown_plan_name_raises_value_error(enactor_and_store):
     enactor, store = enactor_and_store
     bad_plan = BasicPlan(name="some_unknown_function", inputs={}, outputs={})
 
     with pytest.raises(ValueError):
         await enactor.enact_plan(
-            append_plan=bad_plan, data=_DF,
-            read_version=v0, write_version=v1,
+            append_plan=bad_plan,
+            data=_DF,
+            read_version=v0,
+            write_version=v1,
             fact_data_store=store,
         )
 
@@ -62,6 +67,7 @@ async def test_unknown_plan_name_raises_value_error(enactor_and_store):
 # storage write failure
 # ---------------------------------------------------------------------------
 
+
 async def test_put_failure_propagates(enactor_and_store):
     enactor, store = enactor_and_store
     store.get_columns.side_effect = KeyError("no data yet")
@@ -69,8 +75,10 @@ async def test_put_failure_propagates(enactor_and_store):
 
     with pytest.raises(IOError):
         await enactor.enact_plan(
-            append_plan=_PLAN, data=_DF,
-            read_version=v0, write_version=v1,
+            append_plan=_PLAN,
+            data=_DF,
+            read_version=v0,
+            write_version=v1,
             fact_data_store=store,
         )
 
@@ -79,6 +87,7 @@ async def test_put_failure_propagates(enactor_and_store):
 # get_columns: KeyError is the first-import path
 # ---------------------------------------------------------------------------
 
+
 async def test_get_columns_key_error_treated_as_first_import(enactor_and_store):
     enactor, store = enactor_and_store
     store.get_columns.side_effect = KeyError("no data yet")
@@ -86,8 +95,10 @@ async def test_get_columns_key_error_treated_as_first_import(enactor_and_store):
 
     # Must not raise — KeyError on get_columns means first import
     await enactor.enact_plan(
-        append_plan=_PLAN, data=_DF,
-        read_version=v0, write_version=v1,
+        append_plan=_PLAN,
+        data=_DF,
+        read_version=v0,
+        write_version=v1,
         fact_data_store=store,
     )
 
@@ -98,14 +109,17 @@ async def test_get_columns_key_error_treated_as_first_import(enactor_and_store):
 # get_columns: non-KeyError must propagate, not be swallowed
 # ---------------------------------------------------------------------------
 
+
 async def test_get_columns_io_error_propagates_and_is_not_swallowed(enactor_and_store):
     enactor, store = enactor_and_store
     store.get_columns.side_effect = IOError("network error")
 
     with pytest.raises(IOError):
         await enactor.enact_plan(
-            append_plan=_PLAN, data=_DF,
-            read_version=v0, write_version=v1,
+            append_plan=_PLAN,
+            data=_DF,
+            read_version=v0,
+            write_version=v1,
             fact_data_store=store,
         )
 
@@ -116,6 +130,7 @@ async def test_get_columns_io_error_propagates_and_is_not_swallowed(enactor_and_
 # update path: existing data is merged before put
 # ---------------------------------------------------------------------------
 
+
 async def test_existing_data_triggers_merge_and_put(enactor_and_store):
     enactor, store = enactor_and_store
     # Existing data keyed by storage column ids (matching column_id_mapping values)
@@ -123,8 +138,10 @@ async def test_existing_data_triggers_merge_and_put(enactor_and_store):
     store.put.return_value = None
 
     await enactor.enact_plan(
-        append_plan=_PLAN, data=_DF,
-        read_version=v0, write_version=v1,
+        append_plan=_PLAN,
+        data=_DF,
+        read_version=v0,
+        write_version=v1,
         fact_data_store=store,
     )
 

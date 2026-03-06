@@ -56,9 +56,7 @@ class ModelManager(Conductor):
             storage=self._storage,
         )
 
-    async def get_dimension_by_name(
-        self, name: str, version: Version, add_default_storage: bool
-    ) -> dict:
+    async def get_dimension_by_name(self, name: str, version: Version, add_default_storage: bool) -> dict:
         return await _get_dimension_by_name(
             name=name,
             version=version,
@@ -75,22 +73,16 @@ class ModelManager(Conductor):
     ) -> dict:
         return await _get_dimension(id_=id_, version=version, storage=self._storage)
 
-
-    async def get_fact_by_name(
-        self, name: str, version: Version
-    ) -> Fact:
+    async def get_fact_by_name(self, name: str, version: Version) -> Fact:
         return await _get_fact_by_name(
             name=name,
             version=version,
             storage=self._storage,
         )
 
-    async def get_star_schema_model_by_fact_name(
-        self, name: str, version: Version
-    ) -> StarSchema:
-        return await _get_star_schema_model_by_fact_name(
-            name=name, version=version, storage=self._storage
-        )
+    async def get_star_schema_model_by_fact_name(self, name: str, version: Version) -> StarSchema:
+        return await _get_star_schema_model_by_fact_name(name=name, version=version, storage=self._storage)
+
 
 async def _get_star_schema_model_by_fact_name(
     name: str,
@@ -100,9 +92,7 @@ async def _get_star_schema_model_by_fact_name(
     fact = await _get_fact_by_name(name=name, version=version, storage=storage)
     dimensions_by_id = {}
     for dimension_id in FactTransformer.get_unique_dimension_ids(fact):
-        dimensions_by_id[dimension_id] = await _get_dimension(
-            id_=dimension_id, version=version, storage=storage
-        )
+        dimensions_by_id[dimension_id] = await _get_dimension(id_=dimension_id, version=version, storage=storage)
     return StarSchema(fact=fact, dimensions=dimensions_by_id)
 
 
@@ -134,9 +124,7 @@ async def _get_dimension_by_name(
     dim = await _get_dimension(id_=id_, version=version, storage=storage)
 
     if add_default_storage:
-        dim = dimension_transformer.add_default_storage(
-            dimension=dim, default_storage=default_storage
-        )
+        dim = dimension_transformer.add_default_storage(dimension=dim, default_storage=default_storage)
 
     return dim
 
@@ -148,6 +136,7 @@ async def _get_fact_by_name(
 ) -> Fact:
     id_ = await _get_fact_id(name=name, version=version, storage=storage)
     return await _get_fact(id_=id_, version=version, storage=storage)
+
 
 async def _get_fact_id(
     name: str,
@@ -205,21 +194,16 @@ async def _update_model(
     out_dimensions = []
     for dimension in dimensions:
         dimension_structure_validator.validate(data=dimension)
-        dimension = dimension_transformer.add_attribute_ids_to_dimension(
-            dimension=dimension
-        )
+        dimension = dimension_transformer.add_attribute_ids_to_dimension(dimension=dimension)
         dimension_structure_validator.validate(data=dimension)
         out_dimensions.append(dimension)
 
-    await storage.put_dimensions(
-        read_version=read_version, write_version=write_version, dimensions=out_dimensions
-    )
+    await storage.put_dimensions(read_version=read_version, write_version=write_version, dimensions=out_dimensions)
 
     # TODO - it would make sense to do basic validations and change detection BEFORE creating the new write version,
     #  Thus we would only have model_version flagged in the write version if we definitely needed one
     #  However, currently checks aren't done before write_version creation, so we will need to create indexes
     #  for dimensions and facts everytime
-
 
     out_facts = []
     for fact in facts:
@@ -234,9 +218,7 @@ async def _update_model(
         fact = FactTransformer.fill_dimension_info(fact=fact, dimensions=dimensions)
         out_facts.append(fact)
 
-    await storage.put_facts(
-        read_version=read_version, write_version=write_version, facts=out_facts
-    )
+    await storage.put_facts(read_version=read_version, write_version=write_version, facts=out_facts)
 
 
 async def _check_and_put_fact(
@@ -251,6 +233,4 @@ async def _check_and_put_fact(
     comparison = fact_comparer.compare(previous_fact, fact)
     fact_reference_validator.validate(comparison)
 
-    return await storage.put_facts(
-        [fact], read_version=read_version, write_version=write_version
-    )
+    return await storage.put_facts([fact], read_version=read_version, write_version=write_version)

@@ -4,9 +4,7 @@ import pytest
 import yaml
 
 from src.lunch.errors.validation_errors import DimensionValidationError
-from src.lunch.model.dimension.dimension_structure_validator import (
-    DimensionStructureValidator as dim_valid,
-)
+from src.lunch.model.dimension.dimension_structure_validator import DimensionStructureValidator as dim_valid
 
 
 def test_can_contain_name_key():

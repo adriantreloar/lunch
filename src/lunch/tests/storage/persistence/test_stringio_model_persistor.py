@@ -1,5 +1,6 @@
-import pytest
 from pathlib import Path
+
+import pytest
 
 from src.lunch.storage.persistence.stringio_model_persistor import StringIOModelPersistor
 
@@ -14,6 +15,7 @@ def persistor():
 # ------------------------------------------------------------------ #
 # Dimension version index
 # ------------------------------------------------------------------ #
+
 
 def test_dimension_version_index_roundtrip(persistor):
     with persistor.open_dimension_version_index_file_write(version=1) as f:
@@ -32,6 +34,7 @@ def test_dimension_version_index_read_missing_raises(persistor):
 # Dimension name index
 # ------------------------------------------------------------------ #
 
+
 def test_dimension_name_index_roundtrip(persistor):
     with persistor.open_dimension_name_index_file_write(version=2) as f:
         f.write("name_index: {Foo: 1}")
@@ -48,6 +51,7 @@ def test_dimension_name_index_read_missing_raises(persistor):
 # ------------------------------------------------------------------ #
 # Dimension file
 # ------------------------------------------------------------------ #
+
 
 def test_dimension_file_roundtrip(persistor):
     with persistor.open_dimension_file_write(id_=3, version=1) as f:
@@ -83,6 +87,7 @@ def test_dimension_files_are_keyed_by_id_and_version(persistor):
 # Fact version index
 # ------------------------------------------------------------------ #
 
+
 def test_fact_version_index_roundtrip(persistor):
     with persistor.open_fact_version_index_file_write(version=5) as f:
         f.write("fact_version_index: 5")
@@ -100,6 +105,7 @@ def test_fact_version_index_read_missing_raises(persistor):
 # Fact name index
 # ------------------------------------------------------------------ #
 
+
 def test_fact_name_index_roundtrip(persistor):
     with persistor.open_fact_name_index_file_write(version=3) as f:
         f.write("fact_name_index: {Sales: 1}")
@@ -116,6 +122,7 @@ def test_fact_name_index_read_missing_raises(persistor):
 # ------------------------------------------------------------------ #
 # Fact file
 # ------------------------------------------------------------------ #
+
 
 def test_fact_file_roundtrip(persistor):
     with persistor.open_fact_file_write(id_=7, version=2) as f:

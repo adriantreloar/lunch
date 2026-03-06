@@ -1,5 +1,5 @@
-import pytest
 import pandas as pd
+import pytest
 from mock import AsyncMock, Mock
 
 from src.lunch.import_engine.dimension_import_optimiser import DimensionImportOptimiser
@@ -9,10 +9,12 @@ from src.lunch.mvcc.version import Version
 from src.lunch.plans.basic_plan import BasicPlan
 from src.lunch.storage.dimension_data_store import DimensionDataStore
 
-v0 = Version(version=0, model_version=0, reference_data_version=0,
-             cube_data_version=0, operations_version=0, website_version=0)
-v1 = Version(version=1, model_version=1, reference_data_version=1,
-             cube_data_version=0, operations_version=0, website_version=0)
+v0 = Version(
+    version=0, model_version=0, reference_data_version=0, cube_data_version=0, operations_version=0, website_version=0
+)
+v1 = Version(
+    version=1, model_version=1, reference_data_version=1, cube_data_version=0, operations_version=0, website_version=0
+)
 
 _DF = pd.DataFrame([{"foo": "a"}, {"foo": "b"}])
 _DIM = {"name": "Test", "id_": 1, "attributes": [{"name": "foo", "id_": 1}], "storage": "columnar"}
@@ -39,6 +41,7 @@ def optimiser_and_mocks():
 # read dimension KeyError is intentionally swallowed (first import)
 # ---------------------------------------------------------------------------
 
+
 async def test_read_dimension_key_error_treated_as_first_import(optimiser_and_mocks):
     optimiser, planner, store, manager = optimiser_and_mocks
     # read version: no previous data; write version: dimension exists
@@ -54,6 +57,7 @@ async def test_read_dimension_key_error_treated_as_first_import(optimiser_and_mo
 # ---------------------------------------------------------------------------
 # write dimension KeyError must propagate — dimension missing from model
 # ---------------------------------------------------------------------------
+
 
 async def test_write_dimension_key_error_propagates(optimiser_and_mocks):
     optimiser, planner, store, manager = optimiser_and_mocks
@@ -81,6 +85,7 @@ async def test_write_dimension_key_error_propagates_even_when_read_succeeds(opti
 # non-KeyError from model_manager always propagates
 # ---------------------------------------------------------------------------
 
+
 async def test_model_manager_io_error_on_read_propagates(optimiser_and_mocks):
     optimiser, planner, store, manager = optimiser_and_mocks
     manager.get_dimension_by_name.side_effect = IOError("storage unavailable")
@@ -94,6 +99,7 @@ async def test_model_manager_io_error_on_read_propagates(optimiser_and_mocks):
 # ---------------------------------------------------------------------------
 # planner failure propagates
 # ---------------------------------------------------------------------------
+
 
 async def test_planner_error_propagates(optimiser_and_mocks):
     optimiser, planner, store, manager = optimiser_and_mocks

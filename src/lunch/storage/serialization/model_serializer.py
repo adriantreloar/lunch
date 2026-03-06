@@ -1,6 +1,7 @@
+from src.lunch.model.fact import Fact
 from src.lunch.mvcc.version import Version
 from src.lunch.storage.serialization.serializer import Serializer
-from src.lunch.model.fact import Fact
+
 
 class ModelSerializer(Serializer):
     async def get_dimension(self, id_: int, model_version: int) -> dict:
@@ -15,9 +16,7 @@ class ModelSerializer(Serializer):
     async def get_dimension_version_index(self, version: Version) -> dict[int, int]:
         raise NotImplementedError("Abstract")
 
-    async def put_dimension_version_index(
-        self, index_: dict[int, int], version: Version
-    ):
+    async def put_dimension_version_index(self, index_: dict[int, int], version: Version):
         raise NotImplementedError("Abstract")
 
     async def put_dimension_name_index(self, index_: dict[str, int], version: Version):

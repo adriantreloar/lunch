@@ -1,6 +1,7 @@
+from src.lunch.model.fact import Fact
 from src.lunch.mvcc.version import Version
 from src.lunch.storage.cache.cache import Cache
-from src.lunch.model.fact import Fact
+
 
 class ModelCache(Cache):
     """ """
@@ -43,9 +44,7 @@ class ModelCache(Cache):
     async def put_dimension_name_index(self, index_: dict[str, int], version: Version):
         raise NotImplementedError("Abstract")
 
-    async def put_dimension_version_index(
-        self, index_: dict[int, int], version: Version
-    ):
+    async def put_dimension_version_index(self, index_: dict[int, int], version: Version):
         raise NotImplementedError("Abstract")
 
     async def put_fact_id(self, fact_id: int, name: str, version: Version):

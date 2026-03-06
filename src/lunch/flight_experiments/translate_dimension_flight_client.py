@@ -1,22 +1,22 @@
+import asyncio
+import concurrent.futures as futures
 import datetime
+import json
+import time
+from threading import Thread
 
 import pyarrow as pa
 import pyarrow.flight
-import json
-import asyncio
-import concurrent.futures as futures
-from threading import Thread
-import time
 
+from src.lunch.examples.insert_dimension_data import insert_dimension_data
+from src.lunch.examples.setup_managers import model_manager, version_manager
 from src.lunch.mvcc.version import version_to_dict
 
-from src.lunch.examples.setup_managers import model_manager, version_manager
-from src.lunch.examples.insert_dimension_data import insert_dimension_data
-
-#def start_worker(loop):
+# def start_worker(loop):
 #    """Switch to new event loop and run forever"""
 #    asyncio.set_event_loop(loop)
 #    loop.run_forever()
+
 
 async def translate_dimension_example():
 
@@ -27,23 +27,19 @@ async def translate_dimension_example():
 
     call_options = pa.flight.FlightCallOptions(timeout=None, headers=[("foo".encode("utf8"), "bar".encode("utf8"))])
 
-
     async with version_manager.read_version() as read_version:
-        command_dict = {"command": "dimension_lookup",
-                        "parameters":
-                            {"version": version_to_dict(read_version),
-                             "dimension_id": 1,
-                             "attribute_id": 'foo'
-                             }
-                        }
+        command_dict = {
+            "command": "dimension_lookup",
+            "parameters": {"version": version_to_dict(read_version), "dimension_id": 1, "attribute_id": "foo"},
+        }
         command = json.dumps(command_dict).encode("utf8")
         print(command_dict)
         print()
 
         upload_descriptor = pa.flight.FlightDescriptor.for_command(command)
 
-        #FlightDescriptor_descriptor
-        #FlightCallOptions_options
+        # FlightDescriptor_descriptor
+        # FlightCallOptions_options
         writer, reader = client.do_exchange(descriptor=upload_descriptor, options=call_options)
 
         print(writer)
@@ -51,8 +47,7 @@ async def translate_dimension_example():
 
         # Writer thread
         with futures.ThreadPoolExecutor(max_workers=2) as executor:
-            write_future = executor.submit(_write_batches, writer, pa.schema([pa.field('baz', pa.string())]))
-
+            write_future = executor.submit(_write_batches, writer, pa.schema([pa.field("baz", pa.string())]))
 
             def read_it_all(reader):
                 total_rows = 0
@@ -68,7 +63,6 @@ async def translate_dimension_example():
                 print(f"READ ROWS {total_rows}")
                 print(f"READ BYTES {total_bytes}")
                 return total_rows, total_bytes
-
 
             read_future = executor.submit(read_it_all, reader)
 
@@ -91,9 +85,12 @@ def _write_batches(writer, schema):
     total_rows = 0
     total_bytes = 0
     for n in range(5):
-        batch = pa.record_batch([
-            pa.array(['a', 'b', 'c', 'c'] * int(32768*8)),
-        ], schema=schema)
+        batch = pa.record_batch(
+            [
+                pa.array(["a", "b", "c", "c"] * int(32768 * 8)),
+            ],
+            schema=schema,
+        )
         total_rows += batch.num_rows
         total_bytes += batch.nbytes
         writer.write_batch(batch)
@@ -104,6 +101,7 @@ def _write_batches(writer, schema):
     print(f"WRITE  TIME {datetime.datetime.utcnow() - start_time}")
 
     return total_rows
+
 
 # And run it
 if __name__ == "__main__":

@@ -24,28 +24,19 @@ class ColumnarFactDataSerializer(FactDataSerializer):
         return await _get_version_index(version=version, persistor=self._persistor)
 
     async def put_version_index(self, index_: dict[int, int], version: Version):
-        return await _put_version_index(
-            index_=index_, version=version, persistor=self._persistor
-        )
+        return await _put_version_index(index_=index_, version=version, persistor=self._persistor)
 
-    def get_attribute_data(
-        self, dimension_id: int, attribute_id: int, reference_data_version: int
-    ) -> Iterable[str]:
-        for i in _get_attribute_data(
-            dimension_id, attribute_id, reference_data_version, self._persistor
-        ):
+    def get_attribute_data(self, dimension_id: int, attribute_id: int, cube_data_version: int) -> Iterable[str]:
+        for i in _get_attribute_data(dimension_id, attribute_id, cube_data_version, self._persistor):
             yield i
 
-    async def put_index_data(
-        self, dimension_id: int, version: Version, index_iterator
-    ) -> None:
+    async def put_index_data(self, dimension_id: int, version: Version, index_iterator) -> None:
         await _put_index_data(
             dimension_id=dimension_id,
             version=version,
             index_iterator=index_iterator,
             persistor=self._persistor,
         )
-
 
     async def put_attribute_data(
         self,
@@ -64,12 +55,12 @@ class ColumnarFactDataSerializer(FactDataSerializer):
 
     async def get_columns(
         self,
-        reference_data_version: int,
+        cube_data_version: int,
         dimension_id: int,
         column_types: Mapping[int, DTypeLike],
     ) -> Mapping[int, Iterable]:
         return await _get_columns(
-            reference_data_version=reference_data_version,
+            cube_data_version=cube_data_version,
             dimension_id=dimension_id,
             column_types=column_types,
             persistor=self._persistor,
@@ -95,15 +86,13 @@ class ColumnarFactDataSerializer(FactDataSerializer):
         )
 
 
-async def _get_version_index(
-    version: Version, persistor: LocalFileColumnarFactDataPersistor
-) -> dict[int, int]:
-    if not version.reference_data_version:
+async def _get_version_index(version: Version, persistor: LocalFileColumnarFactDataPersistor) -> dict[int, int]:
+    if not version.cube_data_version:
         return {}
 
     try:
         with persistor.open_version_index_file_read(
-            version=version.reference_data_version,
+            version=version.cube_data_version,
         ) as stream:
             version_index = yaml.safe_load(stream)
     except FileNotFoundError:
@@ -112,12 +101,8 @@ async def _get_version_index(
     return version_index or {}
 
 
-async def _put_version_index(
-    index_: dict, version: Version, persistor: LocalFileColumnarFactDataPersistor
-):
-    with persistor.open_version_index_file_write(
-        version=version.reference_data_version
-    ) as stream:
+async def _put_version_index(index_: dict, version: Version, persistor: LocalFileColumnarFactDataPersistor):
+    with persistor.open_version_index_file_write(version=version.cube_data_version) as stream:
         yaml.safe_dump(index_, stream)
 
 
@@ -141,20 +126,20 @@ async def _put_index_data(
 def _get_attribute_data(
     dimension_id: int,
     attribute_id: int,
-    reference_data_version: int,
+    cube_data_version: int,
     persistor: LocalFileColumnarFactDataPersistor,
 ) -> Iterable[str]:
     with persistor.open_attribute_file_read(
         dimension_id=dimension_id,
         attribute_id=attribute_id,
-        version=reference_data_version,
+        version=cube_data_version,
     ) as f:
         for line in f:
             yield line
 
 
 async def _get_columns(
-    reference_data_version: int,
+    cube_data_version: int,
     dimension_id: int,
     column_types: Mapping[int, DTypeLike],
     persistor: LocalFileColumnarFactDataPersistor,
@@ -163,7 +148,7 @@ async def _get_columns(
         attribute_id: _get_attribute_data(
             dimension_id=dimension_id,
             attribute_id=attribute_id,
-            reference_data_version=reference_data_version,
+            cube_data_version=cube_data_version,
             persistor=persistor,
         )
         for attribute_id, attribute_type in column_types.items()
@@ -203,7 +188,7 @@ async def _put_attribute_data(
     with persistor.open_attribute_file_write(
         dimension_id=dimension_id,
         attribute_id=attribute_id,
-        version=version.reference_data_version,
+        version=version.cube_data_version,
     ) as f:
         for attribute in attribute_data:
             f.write(str(attribute))

@@ -1,12 +1,12 @@
 from typing import Any
 
 from src.lunch.base_classes.conductor import Conductor
-from src.lunch.plans.plan import Plan
-from src.lunch.plans.basic_plan import BasicPlan
-from src.lunch.mvcc.version import Version
 from src.lunch.import_engine.transformers.fact_dataframe_transformer import (
     FactDataFrameTransformer,
 )
+from src.lunch.mvcc.version import Version
+from src.lunch.plans.basic_plan import BasicPlan
+from src.lunch.plans.plan import Plan
 from src.lunch.storage.fact_data_store import FactDataStore
 
 
@@ -42,19 +42,20 @@ async def _enact_plan(
         # TODO: if import_plan.inputs["read_filter"] is a guid, lookup the output form a previous step
         # TODO: if import_plan.inputs["merge_key"] is a guid, lookup the output form a previous step
 
-        await _import_fact_append_locally_from_dataframe(data=data,
-                                             read_version=read_version,
-                                             write_version=write_version,
-                                             append_plan= append_plan,
-                                             fact_data_store=fact_data_store)
+        await _import_fact_append_locally_from_dataframe(
+            data=data,
+            read_version=read_version,
+            write_version=write_version,
+            append_plan=append_plan,
+            fact_data_store=fact_data_store,
+        )
     else:
         raise ValueError(append_plan)
 
-async def _import_fact_append_locally_from_dataframe(data: Any,
-                                             read_version: Version,
-                                             write_version: Version,
-                                             append_plan: Plan,
-                                             fact_data_store: FactDataStore) -> None:
+
+async def _import_fact_append_locally_from_dataframe(
+    data: Any, read_version: Version, write_version: Version, append_plan: Plan, fact_data_store: FactDataStore
+) -> None:
     read_fact = append_plan.inputs["read_fact"]
     column_id_mapping = append_plan.inputs["column_id_mapping"]
     merge_key = append_plan.inputs["merge_key"]
@@ -75,12 +76,8 @@ async def _import_fact_append_locally_from_dataframe(data: Any,
         # First import — no existing data for this fact
         merged_df = renamed_df
     else:
-        compare_df = FactDataFrameTransformer.make_dataframe(
-            columns=read_columns, dtypes=column_types
-        )
-        merged_df = FactDataFrameTransformer.merge(
-            source_df=renamed_df, compare_df=compare_df, key=merge_key
-        )
+        compare_df = FactDataFrameTransformer.make_dataframe(columns=read_columns, dtypes=column_types)
+        merged_df = FactDataFrameTransformer.merge(source_df=renamed_df, compare_df=compare_df, key=merge_key)
 
     columnar_data = FactDataFrameTransformer.columnize(data=merged_df)
 

@@ -17,6 +17,7 @@ Queries and imports are parallelised via Apache Arrow Flight and Dask.
    persistors
    dimension_import
    fact_import
+   plans
    examples
 
 

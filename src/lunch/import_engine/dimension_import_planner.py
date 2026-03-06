@@ -4,9 +4,6 @@ from src.lunch.plans.basic_plan import BasicPlan
 
 
 class DimensionImportPlanner(Transformer):
-    def __init__(self):
-        pass
-
     @staticmethod
     def create_local_dataframe_import_plan(
         read_dimension: dict,

@@ -7,9 +7,6 @@ from src.lunch.model.table_metadata import TableMetadata, TableMetadataTransform
 from src.lunch.mvcc.version import Version
 
 class FactAppendPlanner(Transformer):
-    def __init__(self):
-        pass
-
     @staticmethod
     def create_local_dataframe_append_plan(
         read_version_target_model: StarSchema,

@@ -239,66 +239,6 @@ async def _update_model(
     )
 
 
-async def _update_fact(
-    fact: Fact,
-    read_version: Version,
-    write_version: Version,
-    storage: ModelStore,
-    fact_comparer: FactComparer,
-    fact_reference_validator: FactReferenceValidator,
-):
-
-    # This could throw a validation error
-    fact_structure_validator.validate(data=fact)
-
-    previous_fact: Fact | None = None
-    try:
-        # The fact may already have the id - if it is being edited
-        fact_transformer.get_id_from_fact(fact)
-    except KeyError:
-        fact_name = fact_transformer.get_name_from_fact(fact)
-
-        try:
-            fact_id = await _get_fact_id(
-                name=fact_name, version=read_version, storage=storage
-            )
-
-            previous_fact = await _get_fact(
-                id_=fact_id, version=read_version, storage=storage
-            )
-        except KeyError:
-            # There was no previous fact
-            previous_fact = None
-
-    await _check_and_put_fact(
-        fact=fact,
-        previous_fact=previous_fact,
-        read_version=read_version,
-        write_version=write_version,
-        storage=storage,
-        fact_comparer=fact_comparer,
-        fact_reference_validator=fact_reference_validator,
-    )
-
-    # TODO - notify changes - here? Or elsewhere?
-
-
-async def _check_and_put_dimension(
-    dimension: dict, read_version: Version, write_version: Version, storage: ModelStore
-):
-    # TODO - check references - if we have made deletions we'll need to know
-    #  e.g. a deletion to an attribute
-    #  we could check later (e.g. when using a DataOperation or Query)
-    #  but do we really want to know we've broken
-    #  something at that point?
-    # Pass the comparison into the reference check, and check references at the write version
-    # Referred objects will be in
-
-    return await storage.put_dimensions(
-        [dimension], read_version=read_version, write_version=write_version
-    )
-
-
 async def _check_and_put_fact(
     fact: Fact,
     previous_fact: Fact | None,

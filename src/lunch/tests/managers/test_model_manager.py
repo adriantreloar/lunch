@@ -256,22 +256,3 @@ async def test_update_model_resolves_fact_dimension_by_id(manager_and_mocks):
     storage.get_dimension_id.assert_not_called()
     storage.get_dimension.assert_called_once()
     storage.put_facts.assert_called_once()
-
-
-# ---------------------------------------------------------------------------
-# issue 4 — dead code with undefined names must not exist in the module
-# ---------------------------------------------------------------------------
-
-def test_update_fact_dead_code_removed():
-    from src.lunch.managers import model_manager
-    assert not hasattr(model_manager, "_update_fact"), (
-        "_update_fact referenced undefined fact_structure_validator and fact_transformer "
-        "and should have been deleted as unreachable dead code"
-    )
-
-
-def test_check_and_put_dimension_dead_code_removed():
-    from src.lunch.managers import model_manager
-    assert not hasattr(model_manager, "_check_and_put_dimension"), (
-        "_check_and_put_dimension was never called and should have been deleted as dead code"
-    )

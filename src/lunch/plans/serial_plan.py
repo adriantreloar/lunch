@@ -6,3 +6,6 @@ class SerialPlan(Plan):
 
     def __init__(self, steps: list[Plan]):
         self.steps = steps
+
+    def __repr__(self) -> str:
+        return f"SerialPlan({self.steps!r})"

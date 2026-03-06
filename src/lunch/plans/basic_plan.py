@@ -14,3 +14,8 @@ class BasicPlan(Plan):
         self.name: str = name
         self.inputs: dict[str, Any] = inputs
         self.outputs: dict[str, uuid1] = outputs
+
+    def __repr__(self) -> str:
+        inputs = list(self.inputs.keys())
+        outputs = list(self.outputs.keys())
+        return f"BasicPlan({self.name!r}, inputs={inputs}, outputs={outputs})"

@@ -16,3 +16,8 @@ class RemotePlan(Plan):
         self.name: str = name
         self.inputs: dict[str, Any] = inputs
         self.outputs: dict[str, uuid1] = outputs
+
+    def __repr__(self) -> str:
+        inputs = list(self.inputs.keys())
+        outputs = list(self.outputs.keys())
+        return f"RemotePlan({self.location!r}, {self.name!r}, inputs={inputs}, outputs={outputs})"

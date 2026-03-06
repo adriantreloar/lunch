@@ -14,6 +14,7 @@ Queries and imports are parallelised via Apache Arrow Flight and Dask.
 
    data_model
    base_classes
+   persistors
    fact_import
    examples
 

@@ -8,3 +8,7 @@
 /.pytest_cache/
 /doc/build/
 /src/lunch/tests/.pytest_cache/
+
+# Dolt database files (added by bd init)
+.dolt/
+*.db

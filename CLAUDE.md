@@ -11,6 +11,37 @@ bash ci/make_env.sh   # installs uv if absent, then runs: uv sync --all-extras
 
 All commands below are prefixed with `uv run` so they use the managed `.venv` automatically.
 
+## Beads Issue Tracking
+
+This project uses [beads](https://github.com/steveyegge/beads) (`bd`) for issue tracking.
+The beads database lives in `.beads/` (committed to git) — `bd init` has already been run and does **not** need to be repeated.
+
+See `AGENTS.md` for the agent workflow (ready work, claiming, closing, session hand-off).
+
+### Required external tools
+
+Two binaries must be on `PATH` — they are **not** Python packages and are not managed by uv:
+
+| Tool | Purpose | Windows install path (default) |
+|------|---------|-------------------------------|
+| `bd` | Beads CLI | `%LOCALAPPDATA%\Programs\bd` |
+| `dolt` | Beads backend database | `C:\Program Files\Dolt\bin` |
+
+`bash ci/make_env.sh` installs both automatically if they are absent.
+On Windows the installers do **not** update `PATH` in the current shell session; add the paths above to your system `PATH` and restart your shell.
+
+`beads-mcp` (the MCP server that exposes bd tools to Claude Code) is installed as a global uv tool by `ci/make_env.sh`.
+
+### One-time Claude Code hook setup
+
+Run once per machine (already done on the development machine):
+
+```bash
+bd setup claude   # registers SessionStart + PreCompact hooks in ~/.claude/settings.json
+```
+
+Restart Claude Code after running this for hooks to take effect.
+
 ## Commands
 
 **Lint (format + check):**

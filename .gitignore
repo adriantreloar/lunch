@@ -6,7 +6,8 @@
 /example_output/
 /.mypy_cache/
 /.pytest_cache/
-/doc/build/
+/doc/design/build/
+/doc/reference/build/
 /src/lunch/tests/.pytest_cache/
 
 # Dolt database files (added by bd init)

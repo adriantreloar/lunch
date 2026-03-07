@@ -36,6 +36,32 @@ cp -rf source dest          # NOT: cp -r source dest
 - `apt-get` - use `-y` flag
 - `brew` - use `HOMEBREW_NO_AUTO_UPDATE=1` env var
 
+## Documentation for Agents
+
+This project has two separate documentation builds:
+
+- **`doc/design/`** — aspirational design documentation.  Describes intended
+  behaviour that **may not yet exist in the codebase**.  Do NOT assume any
+  class, function, or module described here is implemented.  Read this to
+  understand what is planned.
+
+- **`doc/reference/`** — reference documentation.  Describes code that
+  **exists today**.  If it disagrees with the code, the doc is wrong.  Read
+  this to understand what is currently implemented.
+
+### Design approval before creating issues
+
+Before creating beads issues from a design document, you **must confirm with
+the human that the design has been approved**.  Design documents are works in
+progress and may still be changing.  Creating issues from an unapproved design
+wastes effort and may need to be reversed.
+
+When the human confirms a design is approved, break it into issues using:
+
+```bash
+bd create "Issue title" --description="Detailed context from the design doc" -t feature -p 2 --json
+```
+
 <!-- BEGIN BEADS INTEGRATION -->
 ## Issue Tracking with bd (beads)
 

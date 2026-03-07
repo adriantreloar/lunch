@@ -224,8 +224,10 @@ Reads and writes:
 - **Column files** — one text file per storage column, written via
   ``LocalFileColumnarFactDataPersistor.open_attribute_file_write``.
 
-``get_partition_index`` and ``put_partition_index`` are currently stubs
-(return ``{}`` / no-op) — partition-level indexing is not yet implemented.
+.. warning:: Not yet implemented
+
+   ``get_partition_index`` and ``put_partition_index`` are currently stubs
+   (return ``{}`` / no-op).  Partition-level indexing is not yet implemented.
 
 LocalFileColumnarFactDataPersistor
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

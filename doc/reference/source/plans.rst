@@ -183,10 +183,11 @@ The ``repr`` includes the location:
     >>> repr(plan)
     "RemotePlan('http://worker-1:5000', '_import_locally_from_dataframe', inputs=[...], outputs=[...])"
 
-.. note::
+.. warning:: Not yet implemented
 
    ``RemotePlan`` is defined and tested but remote dispatch is not yet
-   implemented in any enactor.
+   implemented in any enactor.  Any enactor receiving a ``RemotePlan`` will
+   raise ``ValueError``.
 
 
 Output references
@@ -209,10 +210,11 @@ earlier steps.
         BasicPlan(name="consume_y", inputs={"y": y_id}, outputs={}),
     ])
 
-.. note::
+.. warning:: Not yet implemented
 
-   UUID resolution between steps is not yet implemented in the current
-   enactors.  It is reserved for future distributed-execution support.
+   UUID resolution between ``SerialPlan`` steps is not yet implemented in any
+   enactor.  It is reserved for future distributed-execution support.  Current
+   enactors do not pass outputs from one step as inputs to the next.
 
 
 How enactors dispatch on plans

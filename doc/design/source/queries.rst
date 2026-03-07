@@ -1,6 +1,13 @@
 Queries
 =======
 
+.. warning::
+
+   **Design document — not yet implemented.**
+
+   The query classes and interfaces described on this page do not yet exist
+   in the codebase.  This document describes intended design only.
+
 A **query** is a request for information.  Queries start out intentionally
 vague — a caller asks for a high-level result without specifying how that
 result should be retrieved or computed.  Query engines are responsible for
@@ -135,5 +142,6 @@ Relationship to Plans
 
 Plans (``BasicPlan``, ``SerialPlan``, ``ParallelPlan``, ``RemotePlan``) are
 the output of the query-refinement process.  A plan carries no behaviour of
-its own — it is a pure-data description of work to be done.  See :doc:`plans`
-for details on plan types and how enactors dispatch on them.
+its own — it is a pure-data description of work to be done.  See the
+Reference documentation (``doc/reference/``) for details on plan types and
+how enactors dispatch on them.

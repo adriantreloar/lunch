@@ -11,6 +11,58 @@ bash ci/make_env.sh   # installs uv if absent, then runs: uv sync --all-extras
 
 All commands below are prefixed with `uv run` so they use the managed `.venv` automatically.
 
+## Documentation
+
+### Two separate Sphinx builds
+
+| Directory | Purpose | Command |
+|-----------|---------|---------|
+| `doc/design/` | **Aspirational** — describes intended behaviour that **may not yet exist in the codebase** | `uv run python -m sphinx doc/design/source doc/design/build/html` |
+| `doc/reference/` | **Reference** — describes code that **exists today** in `src/lunch/` | `uv run python -m sphinx doc/reference/source doc/reference/build/html` |
+
+The builds are independent and do not need to run together.
+
+### Critical rules for agents
+
+- **Design docs (`doc/design/`) do NOT reflect the current state of the code.**
+  Do not assume that any class, function, module, or interface described in
+  `doc/design/` exists in `src/lunch/`. Always verify against the actual code.
+
+- **Reference docs (`doc/reference/`) MUST reflect the current state of the code.**
+  If a reference doc page disagrees with the code, the doc is wrong — correct it.
+  When you add or change code, update the relevant reference doc page to match.
+
+- **Duplication is intentional.** The same concept may appear in both builds at
+  different levels of completeness. That is expected and acceptable.
+
+### Workflow
+
+1. **Design phase** — the designer writes or refines a page in `doc/design/source/`.
+2. **Approval** — the human reviews and approves the design. An agent must not
+   create beads issues from a design document without human approval.
+3. **Issue creation** — an agent reads the approved design document and breaks it
+   into beads issues (`bd create ...`), one issue per coherent unit of work.
+4. **Implementation** — issues are worked in the beads workflow: code is written,
+   tests are written, and the relevant page in `doc/reference/source/` is updated
+   to match the new code.
+5. **Design adjustment** — if implementation reveals that the design needs to
+   change, update `doc/design/source/` first, confirm with the human, raise a new
+   beads issue for the adjustment, then implement.
+
+### Which docs to read for which purpose
+
+| Goal | Read |
+|------|------|
+| Understand what is currently implemented | `doc/reference/` |
+| Understand what is planned / intended | `doc/design/` |
+| Create beads issues for a new feature | `doc/design/` (approved pages only) |
+| Refactor or debug existing code | `doc/reference/` |
+
+### RST files only live in `doc/`
+
+There must be no `.rst` files inside `src/`. All documentation source files
+belong under `doc/design/source/` or `doc/reference/source/`.
+
 ## Beads Issue Tracking
 
 This project uses [beads](https://github.com/steveyegge/beads) (`bd`) for issue tracking.

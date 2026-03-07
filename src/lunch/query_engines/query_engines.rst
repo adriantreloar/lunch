@@ -3,10 +3,13 @@ A Query Engine does the following:
 Takes a query. A query is a request for data.
 
 Turns the query into a plan or into a compound-query which contains a number of serial or parallel sub-queries.
+The root Query Engine always returns a plan. Compound queries are intermediate — returned by sub-engines when further refinement is needed. Plans are returned at the leaf steps, where a query is simple enough to be transformed directly into storage instructions.
 
 A plan is instructions that describe how to get that data from the storage layer.
 
-The Query Engine then passes any compound-query to a set of specialised query engines.
+The Query Engine then passes each sub-query in the compound-query to a group of specialised query engines.
+For a serial compound-query the group is list-like — an ordered sequence of sub-queries where later steps may depend on the outputs of earlier ones.
+For a parallel compound-query the group is dict-like — a mapping from UUID keys to sub-queries, where each UUID identifies an independent sub-query whose result can be referenced by name.
 
 Any returned plans from the specialised query engines are then combined to form a complex-plan.
 
@@ -14,8 +17,8 @@ The Query Engine returns this complex plan.
 
 At the simplest level, when a passed query is simple enough, the query engine will simply transform that query into a plan and return it.
 
-Because a Query Engine is a Conductor, all the Transformations (such as splitting the query up, ro transforming the query into a plan) are performed by separate objects.
-The Query Engine merely decides which Transformations are applied, which sub Query Engines meed to be run on any queries, and which Transformations should be used to combine returned plans.
+Because a Query Engine is a Conductor, all the Transformations (such as splitting the query up, or transforming the query into a plan) are performed by separate objects.
+The Query Engine merely decides which Transformations are applied, which sub Query Engines need to be run on any queries, and which Transformations should be used to combine returned plans.
 
 CubeQueryEngine — a skeleton example
 --------------------------------------
@@ -80,22 +83,17 @@ an enriched, explicit query:
     #   )
 
 ``CubeQueryContextResolver`` is stateless and holds no references — it is a
-pure transformation of its inputs. The resolved_query it returns is pure data.
+pure transformation of its inputs. The ``ResolvedCubeQuery`` it returns is a
+``Data`` subclass: a pure data container with no behaviour, just like a
+``BasicPlan`` or ``SerialPlan``.
 
-Step 3 — hand the enriched query to sub-engines
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Step 3 — decompose the enriched query with a Transformer
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The ``CubeQueryEngine`` constructs a ``SerialQuery`` that chains two
-``BasicQuery`` steps.  Every step except the last is sent to a
-``QueryEngine`` that returns a **Query** — that returned query is then
-passed as input to the next step.  The final step is sent to a
-``QueryEngine`` that returns a **Plan**.
-
-The first step asks ``ProjectionQueryEngine`` to refine the query into a
-``projection_query`` — a new query whose fields carry the projected columns
-and their types.  The second step asks ``AggregationQueryEngine`` to consume
-that ``projection_query`` and produce the final aggregation plan, guaranteeing
-that the aggregation column types match the projection.
+Because the ``CubeQueryEngine`` is a ``Conductor``, it does not construct the
+``SerialQuery`` directly.  Instead it delegates to ``CubeQueryDecomposer``, a
+``Transformer`` whose job is to split the enriched query into the appropriate
+sequence of sub-queries:
 
 .. code-block:: python
 
@@ -104,27 +102,36 @@ that the aggregation column types match the projection.
     projection_query_id = uuid1()
     aggregation_plan_id = uuid1()
 
-    serial_query = SerialQuery(steps=[
-        BasicQuery(
-            name="_run_projection_query_engine",   # → returns a Query
-            inputs={
-                "query": resolved_query,
-            },
-            outputs={
-                "projection_query": projection_query_id,  # resolved by query runner
-            },
-        ),
-        BasicQuery(
-            name="_run_aggregation_query_engine",  # → returns a Plan (final step)
-            inputs={
-                "query": resolved_query,
-                "projection_query": projection_query_id,  # uuid ref → output of step 1
-            },
-            outputs={
-                "aggregation_plan": aggregation_plan_id,
-            },
-        ),
-    ])
+    serial_query = CubeQueryDecomposer.decompose(
+        query=resolved_query,
+        projection_query_id=projection_query_id,
+        aggregation_plan_id=aggregation_plan_id,
+    )
+    # Returns a SerialQuery whose steps chain two sub-engines:
+    #   SerialQuery(steps=[
+    #       BasicQuery(
+    #           name="_run_projection_query_engine",   # → returns a Query
+    #           inputs={"query": resolved_query},
+    #           outputs={"projection_query": projection_query_id},
+    #       ),
+    #       BasicQuery(
+    #           name="_run_aggregation_query_engine",  # → returns a Plan (final step)
+    #           inputs={"query": resolved_query,
+    #                   "projection_query": projection_query_id},
+    #           outputs={"aggregation_plan": aggregation_plan_id},
+    #       ),
+    #   ])
+
+Every step except the last is sent to a ``QueryEngine`` that returns a
+**Query** — that returned query is then passed as input to the next step via
+its UUID.  The final step is sent to a ``QueryEngine`` that returns a
+**Plan**.
+
+The first step asks ``ProjectionQueryEngine`` to refine the query into a
+``projection_query`` — a new query whose fields carry the projected columns
+and their types.  The second step asks ``AggregationQueryEngine`` to consume
+that ``projection_query`` and produce the final aggregation plan, guaranteeing
+that the aggregation column types match the projection.
 
 The ``AggregationQueryEngine`` receives both the ``resolved_query`` and the
 ``projection_query`` from step 1, so it can inspect the projected columns and
@@ -143,12 +150,15 @@ overall plan:
     overall_plan = CubePlanAggregator.aggregate(
         plans=[aggregation_plan],
     )
-    # Returns, for example:
+    # Returns a storage-layer Plan whose steps describe concrete operations
+    # that an Enactor can execute.  For example:
     #   SerialPlan(steps=[
-    #       BasicPlan('_run_projection_query_engine',
-    #                 inputs=['query'], outputs=['projection_query']),
-    #       BasicPlan('_run_aggregation_query_engine',
-    #                 inputs=['query', 'projection_query'], outputs=['aggregation_plan']),
+    #       BasicPlan('_read_fact_partitions',
+    #                 inputs=['fact_id', 'version', 'partition_filter'],
+    #                 outputs={'fact_data': <uuid>}),
+    #       BasicPlan('_apply_aggregation',
+    #                 inputs=['fact_data': <uuid>, 'aggregation_spec'],
+    #                 outputs={'result': <uuid>}),
     #   ])
 
 Step 5 — return the overall plan

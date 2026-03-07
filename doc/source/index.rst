@@ -18,6 +18,8 @@ Queries and imports are parallelised via Apache Arrow Flight and Dask.
    dimension_import
    fact_import
    plans
+   queries
+   query_engines
    examples
 
 

@@ -1,24 +1,45 @@
-A Query Engine does the following:
+A ``QueryEngine`` receives a query — a request for data — and returns a
+``Plan`` — a pure-data description of how to retrieve that data from the
+storage layer.  See :doc:`queries` for query types and :doc:`plans` for plan
+types.
 
-Takes a query. A query is a request for data.
+Because a ``QueryEngine`` is a ``Conductor``, it performs no transformations
+itself.  All splitting, enriching, and plan-combining is delegated to
+``Transformer`` objects.  The engine merely decides which transformers to
+apply, which sub-engines to invoke, and which transformer to use when
+aggregating the returned plans.
 
-Turns the query into a plan or into a compound-query which contains a number of serial or parallel sub-queries.
-The root Query Engine always returns a plan. Compound queries are intermediate — returned by sub-engines when further refinement is needed. Plans are returned at the leaf steps, where a query is simple enough to be transformed directly into storage instructions.
+The simple case
+~~~~~~~~~~~~~~~~
 
-A plan is instructions that describe how to get that data from the storage layer.
+When a query is simple enough to be resolved directly, a ``Transformer``
+converts it into a ``Plan`` and the engine returns that plan immediately.
+This is the leaf step — no sub-engines are involved.
 
-The Query Engine then passes each sub-query in the compound-query to a group of specialised query engines.
-For a serial compound-query the group is list-like — an ordered sequence of sub-queries where later steps may depend on the outputs of earlier ones.
-For a parallel compound-query the group is dict-like — a mapping from UUID keys to sub-queries, where each UUID identifies an independent sub-query whose result can be referenced by name.
+The complex case
+~~~~~~~~~~~~~~~~~
 
-Any returned plans from the specialised query engines are then combined to form a complex-plan.
+When a query requires further refinement, the engine:
 
-The Query Engine returns this complex plan.
+1. Delegates to a ``Transformer`` to decompose the query into a
+   **compound-query** — either a serial or parallel grouping of sub-queries.
 
-At the simplest level, when a passed query is simple enough, the query engine will simply transform that query into a plan and return it.
+   - A **serial compound-query** is list-like: an ordered sequence of
+     sub-queries where later steps may consume the outputs of earlier ones
+     via UUID references.
+   - A **parallel compound-query** is dict-like: a mapping from UUID keys to
+     independent sub-queries whose results can be referenced by name.
 
-Because a Query Engine is a Conductor, all the Transformations (such as splitting the query up, or transforming the query into a plan) are performed by separate objects.
-The Query Engine merely decides which Transformations are applied, which sub Query Engines need to be run on any queries, and which Transformations should be used to combine returned plans.
+2. Dispatches each sub-query to a specialised ``QueryEngine``.  Sub-engines
+   may themselves return compound-queries for further recursion, or plans at
+   their own leaf steps.
+
+3. Collects the plans returned by all sub-engines and delegates to a
+   ``Transformer`` to aggregate them into a single overall plan.
+
+4. Returns that overall plan.  The root ``QueryEngine`` always returns a
+   plan — compound queries exist only as intermediate steps inside the
+   recursion.
 
 CubeQueryEngine — a skeleton example
 --------------------------------------

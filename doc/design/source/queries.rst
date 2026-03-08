@@ -3,12 +3,13 @@ Queries
 
 .. note::
 
-   **Partially implemented.**
+   **Implemented.**
 
-   ``Query``, ``CubeQuery``, and ``FullySpecifiedFactQuery`` are implemented
-   in ``src/lunch/queries/``.  See the reference documentation for details.
-   The QuerySpecifier, QueryPlanner, QueryEnactor, and QueryEngine components
-   described below are not yet implemented.
+   All query data classes (``Query``, ``CubeQuery``, ``FullySpecifiedFactQuery``,
+   ``ResolvedCubeQuery``, ``BasicQuery``, ``SerialQuery``) are implemented in
+   ``src/lunch/queries/``.  The full query pipeline (``QuerySpecifier``,
+   ``Planner``, ``QueryEnactor``, ``QueryEngine``) is also implemented — see
+   ``doc/reference/source/query_engines.rst`` for details.
 
 A **query** is a request for information.  Queries start out intentionally
 vague — a caller asks for a high-level result without specifying how that

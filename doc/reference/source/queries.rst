@@ -86,6 +86,59 @@ predicate / function descriptors whose exact types are determined by the
 query engine implementation.
 
 
+ResolvedCubeQuery
+~~~~~~~~~~~~~~~~~
+
+*Module:* ``src.lunch.queries.resolved_cube_query``
+
+Enriched form of a ``CubeQuery`` produced by ``CubeQueryContextResolver``.
+All vague fields (e.g. ``"latest"``, ``"default"``) have been replaced with
+explicit concrete values.
+
+.. code-block:: python
+
+    ResolvedCubeQuery(
+        star_schema: StarSchema,
+        version: Version,
+        projection: Any,    # explicit dict or list — no shorthands
+        aggregation: Any,   # explicit list — no shorthands
+    )
+
+
+BasicQuery
+~~~~~~~~~~
+
+*Module:* ``src.lunch.queries.basic_query``
+
+A single named query step with typed inputs and outputs.  Mirrors ``BasicPlan``
+in structure.
+
+.. code-block:: python
+
+    BasicQuery(
+        name: str,
+        inputs: dict[str, Any],
+        outputs: dict[str, Any],
+    )
+
+
+SerialQuery
+~~~~~~~~~~~
+
+*Module:* ``src.lunch.queries.serial_query``
+
+An ordered sequence of ``BasicQuery`` steps with UUID output references.
+Mirrors ``SerialPlan`` in structure.  Later steps may reference outputs of
+earlier steps by UUID.
+
+.. code-block:: python
+
+    SerialQuery(
+        steps: list[BasicQuery],
+        outputs: set[UUID],
+    )
+
+
 Source locations
 ----------------
 
@@ -101,3 +154,9 @@ Source locations
      - ``src/lunch/queries/cube_query.py``
    * - ``FullySpecifiedFactQuery``
      - ``src/lunch/queries/fully_specified_fact_query.py``
+   * - ``ResolvedCubeQuery``
+     - ``src/lunch/queries/resolved_cube_query.py``
+   * - ``BasicQuery``
+     - ``src/lunch/queries/basic_query.py``
+   * - ``SerialQuery``
+     - ``src/lunch/queries/serial_query.py``

@@ -101,6 +101,36 @@ Subclasses inject the appropriate ``VersionManager``, ``ModelManager``, and
 ``Transformer`` helpers via their constructors.
 
 
+CubeQueryContextResolver
+------------------------
+
+*Module:* ``src.lunch.query_engines.cube_query_context_resolver``
+
+Stateless ``Transformer`` (only static methods) that resolves vague context
+fields in a ``CubeQuery``, returning a ``ResolvedCubeQuery``.
+
+.. code-block:: python
+
+    CubeQueryContextResolver.resolve(
+        query: CubeQuery,
+        version: Version,
+        star_schema: StarSchema,
+    ) -> ResolvedCubeQuery
+
+**Shorthand mapping:**
+
+- ``projection='default'`` → ``{"dimensions": [...], "measures": [...]}``
+  where dimensions are ``{"dimension_id": id, ...}`` dicts from the
+  ``StarSchema`` and measures are a list of integer measure ids.
+  Any other value is passed through unchanged.
+- ``aggregation='default'`` → ``["sum"]``; any other value is passed through
+  as a list.
+
+The caller is responsible for resolving ``"latest"`` to a concrete ``Version``
+before calling this method.  The ``filter`` field of ``CubeQuery`` is not
+carried into ``ResolvedCubeQuery`` — filter resolution is handled downstream.
+
+
 CubeQueryResolver
 -----------------
 
@@ -361,6 +391,8 @@ Source locations
      - ``src/lunch/query_engines/query_result.py``
    * - ``QuerySpecifier``
      - ``src/lunch/query_engines/query_specifier.py``
+   * - ``CubeQueryContextResolver``
+     - ``src/lunch/query_engines/cube_query_context_resolver.py``
    * - ``CubeQueryResolver``
      - ``src/lunch/query_engines/cube_query_resolver.py``
    * - ``CubeQuerySpecifier``

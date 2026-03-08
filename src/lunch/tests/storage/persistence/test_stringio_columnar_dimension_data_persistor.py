@@ -89,3 +89,26 @@ def test_version_index_versions_are_independent(persistor):
         assert f.read() == "idx_v1"
     with persistor.open_version_index_file_read(version=2) as f:
         assert f.read() == "idx_v2"
+
+
+# ------------------------------------------------------------------ #
+# Filesystem isolation (bug lunch-hho)
+# ------------------------------------------------------------------ #
+
+
+def test_version_index_write_does_not_touch_filesystem(tmp_path):
+    """open_version_index_file_write must not create any directories on disk."""
+    non_existent = tmp_path / "should_not_be_created"
+    p = StringIOColumnarDimensionDataPersistor(directory=non_existent)
+    with p.open_version_index_file_write(version=1) as f:
+        f.write("data")
+    assert not non_existent.exists()
+
+
+def test_attribute_file_write_does_not_touch_filesystem(tmp_path):
+    """open_attribute_file_write must not create any directories on disk."""
+    non_existent = tmp_path / "should_not_be_created"
+    p = StringIOColumnarDimensionDataPersistor(directory=non_existent)
+    with p.open_attribute_file_write(dimension_id=1, attribute_id=0, version=1) as f:
+        f.write("data")
+    assert not non_existent.exists()

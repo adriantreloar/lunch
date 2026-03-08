@@ -39,7 +39,6 @@ class StringIOColumnarDimensionDataPersistor(LocalFileColumnarDimensionDataPersi
     @contextmanager
     def open_attribute_file_write(self, dimension_id: int, attribute_id: int, version: int):
         file_path = self.attribute_file(dimension_id=dimension_id, attribute_id=attribute_id, version=version)
-        # with open(file_path, "w") as f:
         f = io.StringIO()
         self._files_by_path[file_path] = f
         yield f
@@ -48,7 +47,6 @@ class StringIOColumnarDimensionDataPersistor(LocalFileColumnarDimensionDataPersi
     @contextmanager
     def open_version_index_file_read(self, version: int):
         file_path = self.dimension_version_index_file(version=version)
-        # with open(file_path, "r") as f:
         try:
             f = self._files_by_path[file_path]
         except KeyError:
@@ -61,8 +59,6 @@ class StringIOColumnarDimensionDataPersistor(LocalFileColumnarDimensionDataPersi
     @contextmanager
     def open_version_index_file_write(self, version: int):
         file_path = self.dimension_version_index_file(version=version)
-        Path(os.path.dirname(file_path)).mkdir(parents=True, exist_ok=True)
-        # with open(file_path, "w") as f:
         f = io.StringIO()
         self._files_by_path[file_path] = f
         yield f

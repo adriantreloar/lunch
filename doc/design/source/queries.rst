@@ -1,12 +1,14 @@
 Queries
 =======
 
-.. warning::
+.. note::
 
-   **Design document — not yet implemented.**
+   **Partially implemented.**
 
-   The query classes and interfaces described on this page do not yet exist
-   in the codebase.  This document describes intended design only.
+   ``Query``, ``CubeQuery``, and ``FullySpecifiedFactQuery`` are implemented
+   in ``src/lunch/queries/``.  See the reference documentation for details.
+   The QuerySpecifier, QueryPlanner, QueryEnactor, and QueryEngine components
+   described below are not yet implemented.
 
 A **query** is a request for information.  Queries start out intentionally
 vague — a caller asks for a high-level result without specifying how that

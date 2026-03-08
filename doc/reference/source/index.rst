@@ -22,6 +22,7 @@ lunch — Reference Documentation
    dimension_import
    fact_import
    plans
+   queries
    examples
 
 

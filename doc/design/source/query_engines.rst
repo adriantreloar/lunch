@@ -66,6 +66,7 @@ query:
         star_schema_name="Sales",
         version="latest",
         projection="default",
+        filter=None,
         aggregation="default",
     )
 
@@ -150,8 +151,8 @@ from the outset and can be executed concurrently.
                         ▼
              ┌────────────────────┐
              │  JoinAndAggregate  │
-             │  in:  uuid-A, B   │
-             │  out: uuid-C      │
+             │  in:  uuid-A, B    │
+             │  out: uuid-C       │
              └────────────────────┘
 
 The ``SerialPlan`` and ``ParallelPlan`` types from the import pipeline are

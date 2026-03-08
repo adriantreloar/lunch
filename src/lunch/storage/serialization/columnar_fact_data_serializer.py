@@ -67,10 +67,10 @@ class ColumnarFactDataSerializer(FactDataSerializer):
         )
 
     async def get_partition_index(self, version: Version) -> dict:
-        return {}
+        return await _get_partition_index(version=version, persistor=self._persistor)
 
     async def put_partition_index(self, index_: dict, version: Version) -> None:
-        pass
+        return await _put_partition_index(index_=index_, version=version, persistor=self._persistor)
 
     async def put_columns(
         self,
@@ -84,6 +84,24 @@ class ColumnarFactDataSerializer(FactDataSerializer):
             columns=columns,
             persistor=self._persistor,
         )
+
+
+async def _get_partition_index(version: Version, persistor: LocalFileColumnarFactDataPersistor) -> dict:
+    if not version.cube_data_version:
+        return {}
+
+    try:
+        with persistor.open_partition_index_file_read(version=version.cube_data_version) as stream:
+            index_ = yaml.safe_load(stream)
+    except FileNotFoundError:
+        return {}
+
+    return index_ or {}
+
+
+async def _put_partition_index(index_: dict, version: Version, persistor: LocalFileColumnarFactDataPersistor) -> None:
+    with persistor.open_partition_index_file_write(version=version.cube_data_version) as stream:
+        yaml.safe_dump(index_, stream)
 
 
 async def _get_version_index(version: Version, persistor: LocalFileColumnarFactDataPersistor) -> dict[int, int]:

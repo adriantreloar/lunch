@@ -36,6 +36,9 @@ class LocalFileColumnarFactDataPersistor(FactDataPersistor):
             version=version,
         )
 
+    def fact_partition_index_file(self, version: int) -> Path:
+        return _fact_partition_index_file(directory=self._directory, version=version)
+
     @contextmanager
     def open_version_index_file_read(self, version: int):
         file_path = self.fact_version_index_file(version=version)
@@ -47,6 +50,20 @@ class LocalFileColumnarFactDataPersistor(FactDataPersistor):
         file_path = self.fact_version_index_file(version=version)
         Path(os.path.dirname(file_path)).mkdir(parents=True, exist_ok=True)
         logger.debug("Writing fact version index file: %s", file_path)
+        with open(file_path, "w") as f:
+            yield f
+
+    @contextmanager
+    def open_partition_index_file_read(self, version: int):
+        file_path = self.fact_partition_index_file(version=version)
+        with open(file_path, "r") as f:
+            yield f
+
+    @contextmanager
+    def open_partition_index_file_write(self, version: int):
+        file_path = self.fact_partition_index_file(version=version)
+        Path(os.path.dirname(file_path)).mkdir(parents=True, exist_ok=True)
+        logger.debug("Writing fact partition index file: %s", file_path)
         with open(file_path, "w") as f:
             yield f
 
@@ -67,6 +84,10 @@ class LocalFileColumnarFactDataPersistor(FactDataPersistor):
 
 def _fact_version_index_file(directory: Path, version: int) -> Path:
     return directory.joinpath(f"{version}/fact_data.version.index.yaml")
+
+
+def _fact_partition_index_file(directory: Path, version: int) -> Path:
+    return directory.joinpath(f"{version}/fact_data.partition.index.yaml")
 
 
 def _fact_partition_version_index_file(directory: Path, fact_id: int, cube_data_version: int) -> Path:

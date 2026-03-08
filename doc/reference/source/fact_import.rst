@@ -224,10 +224,10 @@ Reads and writes:
 - **Column files** — one text file per storage column, written via
   ``LocalFileColumnarFactDataPersistor.open_attribute_file_write``.
 
-.. warning:: Not yet implemented
-
-   ``get_partition_index`` and ``put_partition_index`` are currently stubs
-   (return ``{}`` / no-op).  Partition-level indexing is not yet implemented.
+``get_partition_index`` and ``put_partition_index`` read and write a global
+partition index file at ``<version>/fact_data.partition.index.yaml``.  The
+file is a YAML mapping of partition id (int) to ``cube_data_version`` (int).
+A missing file is treated as an empty index (``{}``).
 
 LocalFileColumnarFactDataPersistor
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -239,8 +239,9 @@ Manages file paths and open handles under a configurable root directory.
 The on-disk layout is::
 
     <root>/
-        <reference_data_version>/
-            fact_data.version.index.yaml
+        <cube_data_version>/
+            fact_data.version.index.yaml      ← fact_id → cube_data_version
+            fact_data.partition.index.yaml    ← partition_id → cube_data_version
             fact_data/
                 <fact_id>/
                     column.<column_id>.column   ← one value per line

@@ -42,6 +42,28 @@ class StringIOColumnarFactDataPersistor(LocalFileColumnarFactDataPersistor):
         f.seek(0)
 
     # ------------------------------------------------------------------ #
+    # Partition index
+    # ------------------------------------------------------------------ #
+
+    @contextmanager
+    def open_partition_index_file_read(self, version: int):
+        file_path = self.fact_partition_index_file(version)
+        try:
+            f = self._files_by_path[file_path]
+        except KeyError:
+            raise FileNotFoundError(file_path)
+        yield f
+        f.seek(0)
+
+    @contextmanager
+    def open_partition_index_file_write(self, version: int):
+        file_path = self.fact_partition_index_file(version)
+        f = io.StringIO()
+        self._files_by_path[file_path] = f
+        yield f
+        f.seek(0)
+
+    # ------------------------------------------------------------------ #
     # Attribute (column) files
     # ------------------------------------------------------------------ #
 

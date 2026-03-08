@@ -4,6 +4,7 @@ Mirrors the flow in examples/insert_fact_data.py but uses StringIO persistors
 so no files are written to disk.  After importing three rows of Sales fact data
 the test reads the stored columnar data back and asserts on the exact values.
 """
+
 from pathlib import Path
 
 import pandas as pd
@@ -47,10 +48,18 @@ _DIR = Path("/test/fake")
 # v1 → v2 : save Sales fact                    (model_version 1 → 2)
 # v2 → v3 : import fact data                   (cube_data_version 0 → 1)
 
-_v0 = Version(version=0, model_version=0, reference_data_version=0, cube_data_version=0, operations_version=0, website_version=0)
-_v1 = Version(version=1, model_version=1, reference_data_version=0, cube_data_version=0, operations_version=0, website_version=0)
-_v2 = Version(version=2, model_version=2, reference_data_version=0, cube_data_version=0, operations_version=0, website_version=0)
-_v3 = Version(version=3, model_version=2, reference_data_version=0, cube_data_version=1, operations_version=0, website_version=0)
+_v0 = Version(
+    version=0, model_version=0, reference_data_version=0, cube_data_version=0, operations_version=0, website_version=0
+)
+_v1 = Version(
+    version=1, model_version=1, reference_data_version=0, cube_data_version=0, operations_version=0, website_version=0
+)
+_v2 = Version(
+    version=2, model_version=2, reference_data_version=0, cube_data_version=0, operations_version=0, website_version=0
+)
+_v3 = Version(
+    version=3, model_version=2, reference_data_version=0, cube_data_version=1, operations_version=0, website_version=0
+)
 
 # ── source data (mirrors insert_fact_data.py) ─────────────────────────────────
 _DATA = [
@@ -74,6 +83,7 @@ _SOURCE_METADATA = TableMetadata(
 
 
 # ── fixture ───────────────────────────────────────────────────────────────────
+
 
 @pytest.fixture
 def stack():
@@ -121,6 +131,7 @@ def stack():
 
 # ── helpers ───────────────────────────────────────────────────────────────────
 
+
 async def _set_up_model(model_mgr: ModelManager) -> None:
     """Save Department + Time dimensions, then the Sales fact."""
     d_department = {"name": "Department", "attributes": [{"name": "thing1"}]}
@@ -154,6 +165,7 @@ async def _set_up_model(model_mgr: ModelManager) -> None:
 
 
 # ── test ──────────────────────────────────────────────────────────────────────
+
 
 async def test_fact_data_stored_correctly_after_import(stack):
     """
@@ -201,6 +213,6 @@ async def test_fact_data_stored_correctly_after_import(stack):
     )
 
     # Values written as str(val)+"\n" by the columnar fact serializer
-    assert list(columns[3]) == ["1\n", "1\n", "1\n"]        # department_id
-    assert list(columns[2]) == ["10\n", "10\n", "10\n"]     # thing 2
+    assert list(columns[3]) == ["1\n", "1\n", "1\n"]  # department_id
+    assert list(columns[2]) == ["10\n", "10\n", "10\n"]  # thing 2
     assert list(columns[1]) == ["10.1\n", "10.1\n", "10.1\n"]  # sales value

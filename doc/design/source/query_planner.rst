@@ -1,12 +1,12 @@
 Query Planner
 =============
 
-.. warning::
+.. note::
 
-   **Design document — not yet implemented.**
-
-   The classes and interfaces described on this page do not yet exist in the
-   codebase.  This document describes intended design only.
+   **Implemented.**  ``Planner``, ``CubeQueryPlanner``, and
+   ``CubeQueryDagBuilder`` are implemented.  See the reference documentation
+   at ``doc/reference/source/query_engines.rst`` for source locations and
+   detailed API notes.
 
 A **Planner** is a ``Conductor`` that converts a ``FullySpecifiedFactQuery``
 (produced by the :doc:`query_specifier`) into a DAG Plan that describes every

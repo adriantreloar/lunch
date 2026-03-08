@@ -76,7 +76,11 @@ async def test_removing_attribute_error_prevents_storage_write(storage):
     with pytest.raises(DimensionValidationError):
         await _check_and_put_dimension(
             dimension={"name": "Department", "id_": 1, "attributes": []},
-            previous_dimension={"name": "Department", "id_": 1, "attributes": [{"name": "name", "id_": 1}, {"name": "code", "id_": 2}]},
+            previous_dimension={
+                "name": "Department",
+                "id_": 1,
+                "attributes": [{"name": "name", "id_": 1}, {"name": "code", "id_": 2}],
+            },
             read_version=v0,
             write_version=v1,
             storage=storage,

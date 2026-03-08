@@ -83,8 +83,12 @@ async def test_specify_returns_fully_specified_fact_query():
 @pytest.mark.asyncio
 async def test_specify_does_not_call_read_version_when_explicit_version_given():
     explicit_version = Version(
-        version=3, model_version=3, reference_data_version=3,
-        cube_data_version=3, operations_version=3, website_version=3,
+        version=3,
+        model_version=3,
+        reference_data_version=3,
+        cube_data_version=3,
+        operations_version=3,
+        website_version=3,
     )
     specifier, vm, mm = _make_specifier()
     query = _latest_query(version=explicit_version)
@@ -95,8 +99,12 @@ async def test_specify_does_not_call_read_version_when_explicit_version_given():
 @pytest.mark.asyncio
 async def test_specify_uses_explicit_version_for_schema_lookup():
     explicit_version = Version(
-        version=3, model_version=3, reference_data_version=3,
-        cube_data_version=3, operations_version=3, website_version=3,
+        version=3,
+        model_version=3,
+        reference_data_version=3,
+        cube_data_version=3,
+        operations_version=3,
+        website_version=3,
     )
     specifier, vm, mm = _make_specifier()
     query = _latest_query(version=explicit_version)

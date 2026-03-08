@@ -45,10 +45,7 @@ class CubeQueryResolver(Transformer):
 
 def _resolve_dimensions(projection, star_schema: StarSchema) -> List[dict]:
     if projection == "default":
-        return [
-            {"dimension_id": dim_id, **dim}
-            for dim_id, dim in star_schema.dimensions.items()
-        ]
+        return [{"dimension_id": dim_id, **dim} for dim_id, dim in star_schema.dimensions.items()]
     return list(projection["dimensions"])
 
 

@@ -42,6 +42,14 @@ class FactDataStore(Store):
             cache=self._cache,
         )
 
+    async def get_partition_manifest(self, version: Version) -> dict[int, int]:
+        """Return the partition index at the given version.
+
+        Returns a mapping of partition_id -> cube_data_version describing which
+        partitions exist.  Returns an empty dict if no partitions have been written yet.
+        """
+        return await _get_partition_index(version=version, serializer=self._serializer, cache=self._cache)
+
     async def get_columns(
         self,
         read_version: Version,

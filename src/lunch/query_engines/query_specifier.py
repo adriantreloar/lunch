@@ -9,5 +9,4 @@ class QuerySpecifier(Conductor):
     """Abstract Conductor that converts a vague Query into a FullySpecifiedFactQuery."""
 
     @abstractmethod
-    async def specify(self, query: Query) -> FullySpecifiedFactQuery:
-        ...
+    async def specify(self, query: Query) -> FullySpecifiedFactQuery: ...

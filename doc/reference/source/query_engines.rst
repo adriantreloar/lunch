@@ -145,6 +145,88 @@ Concrete ``Conductor`` for cube queries.  Holds references to a
 Errors from either manager propagate to the caller unchanged.
 
 
+Planner
+-------
+
+*Module:* ``src.lunch.query_engines.planner``
+
+Abstract ``Conductor`` base for all planners.  Defines the interface:
+
+.. code-block:: python
+
+    async def plan(self, query: FullySpecifiedFactQuery) -> DagPlan:
+        ...
+
+Subclasses inject the appropriate ``FactDataStore`` and ``Transformer`` helpers
+via their constructors.
+
+
+CubeQueryDagBuilder
+-------------------
+
+*Module:* ``src.lunch.query_engines.cube_query_dag_builder``
+
+``Transformer`` that builds a ``DagPlan`` from a ``FullySpecifiedFactQuery``
+and a ``PartitionManifest`` (``dict[int, int]``, partition_id → cube_data_version).
+Exposes a single static method:
+
+.. code-block:: python
+
+    CubeQueryDagBuilder.build(
+        query: FullySpecifiedFactQuery,
+        partitions: PartitionManifest,
+    ) -> DagPlan
+
+**Node types generated:**
+
+- ``FetchDimensionData`` — one per entry in ``query.dimensions``.
+- ``FetchFactData`` — one per entry in ``partitions``.
+- ``JoinDimensionsToFact`` — present only when ``query.dimensions`` is non-empty;
+  its inputs are all fetch-node output UUIDs.
+- ``Aggregate`` — one per entry in ``query.aggregations``; its input is the join
+  output UUID (or the fact-fetch output UUID when there are no dimensions).
+
+All UUIDs are generated with ``uuid4()``.  Edges are wired so that each fetch
+node precedes the join, and the join (or fact fetch) precedes each aggregate.
+
+**Zero-dimension shortcut:**  When ``query.dimensions`` is empty, no
+``FetchDimensionData`` or ``JoinDimensionsToFact`` nodes are created; each
+``Aggregate`` node reads directly from the ``FetchFactData`` output.
+
+
+CubeQueryPlanner
+----------------
+
+*Module:* ``src.lunch.query_engines.cube_query_planner``
+
+Concrete ``Planner`` for cube queries.  Holds references to a
+``FactDataStore`` and a ``CubeQueryDagBuilder``.
+
+``plan()`` steps:
+
+1. Calls ``fact_data_store.get_partition_manifest(version=query.version)``
+   (async) to obtain the ``PartitionManifest``.
+2. Delegates to ``CubeQueryDagBuilder.build()`` (pure, no I/O).
+3. Returns the resulting ``DagPlan``.
+
+Errors from ``get_partition_manifest`` propagate to the caller unchanged.
+
+``FactDataStore.get_partition_manifest``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+*Added to:* ``src.lunch.storage.fact_data_store``
+
+New public async method on ``FactDataStore``:
+
+.. code-block:: python
+
+    async def get_partition_manifest(self, version: Version) -> dict[int, int]:
+        ...
+
+Returns the partition index (partition_id → cube_data_version) at the
+specified version.  Returns an empty dict if no partitions have been written.
+
+
 Source locations
 ----------------
 
@@ -164,3 +246,9 @@ Source locations
      - ``src/lunch/query_engines/cube_query_resolver.py``
    * - ``CubeQuerySpecifier``
      - ``src/lunch/query_engines/cube_query_specifier.py``
+   * - ``Planner``
+     - ``src/lunch/query_engines/planner.py``
+   * - ``CubeQueryDagBuilder``
+     - ``src/lunch/query_engines/cube_query_dag_builder.py``
+   * - ``CubeQueryPlanner``
+     - ``src/lunch/query_engines/cube_query_planner.py``

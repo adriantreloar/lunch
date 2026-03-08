@@ -11,7 +11,6 @@ from src.lunch.queries.cube_query import CubeQuery
 from src.lunch.queries.fully_specified_fact_query import FullySpecifiedFactQuery
 from src.lunch.queries.query import Query
 
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------

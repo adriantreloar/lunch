@@ -61,8 +61,7 @@ async def _enact(
         ready = [
             node_id
             for node_id, node in plan.nodes.items()
-            if node_id not in executed
-            and all(k in result_registry for k in node.inputs if isinstance(k, UUID))
+            if node_id not in executed and all(k in result_registry for k in node.inputs if isinstance(k, UUID))
         ]
         if not ready:
             break

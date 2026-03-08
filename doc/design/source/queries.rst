@@ -10,7 +10,7 @@ Queries
 
 A **query** is a request for information.  Queries start out intentionally
 vague — a caller asks for a high-level result without specifying how that
-result should be retrieved or computed.  Query engines are responsible for
+result should be retrieved or computed.  Query engines call a QuerySpecifier to
 progressively refining vague queries into concrete plans.
 
 .. contents:: On this page
@@ -30,13 +30,14 @@ like this:
         star_schema_name="Sales",
         version="latest",
         projection="default",
+        filter=None,
         aggregation="default",
     )
 
 This says: *"Give me the latest version of the Sales cube, using the default
-projection and the default aggregation."*  It says nothing about which
+projection and the default aggregation. Do not filter the data"*  It says nothing about which
 dimensions to scan, which partitions to read, or how to parallelise the work
-— those details are for query engines to determine.
+— those details are for QueryEngine to determine (by asking the Planner, which it owns).
 
 
 How query engines refine queries
@@ -86,18 +87,17 @@ The flow from vague query to returned data looks like this:
         └─► Enactor        ──► data ──► returned to caller
 
 
-Query transformer responsibilities
+QuerySpecifier responsibilities
 ------------------------------------
 
-For a **complex query**, the query engine:
+For all queries, the QuerySpecifier:
 
-1. Selects the set of transformers relevant to that query type.
-2. Passes the query to each transformer.
-3. Each transformer returns the part of the query it owns — either as a
-   refined sub-query or directly as a ``Plan``.
-
-For the **simplest (leaf-level) queries**, every transformer converts its
-slice of the query directly into a ``Plan`` with no further recursion.
+1. Selects the set of QueryTransformer relevant to that query type.
+2. Passes the query to each QueryTransformer.
+3. Each QueryTransformer returns the part of the query it owns — as a
+   refined sub-query.
+4. The QuerySpecifier then puts all of the usb-query parts together to form a completely specified query
+5. The completely specified query is returned to the QueryEngine
 
 This design keeps each transformer focused on a single concern, and keeps
 query engines as thin aggregators rather than monolithic planners.
@@ -131,14 +131,10 @@ is to mark an object as a query.
        ``"default"``.
    * - ``FullySpecifiedFactQuery``
      - ``Query``
-     - The output of the :doc:`query_specifier`.  All fields are resolved to
+     - The output of the :doc:`query_specifier` when given a CubeQuery.  All fields are resolved to
        concrete values: a ``StarSchema`` object, a concrete ``Version``, an
        explicit list of ``Dimension`` objects, measure ids, filters, and
        aggregation functions.  This is the input to the :doc:`query_planner`.
-   * - ``BasicQuery``
-     - ``Query``
-     - A single named query step with typed inputs and outputs (mirrors
-       ``BasicPlan``).
 
 
 Relationship to Plans
@@ -178,5 +174,3 @@ package inside ``src/lunch/``:
      - ``src/lunch/queries/cube_query.py``
    * - ``FullySpecifiedFactQuery``
      - ``src/lunch/queries/fully_specified_fact_query.py``
-   * - ``BasicQuery``
-     - ``src/lunch/queries/basic_query.py``

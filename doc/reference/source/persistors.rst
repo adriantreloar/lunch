@@ -1,7 +1,7 @@
 Persistors
 ==========
 
-Persistors are the lowest layer of the storage stack.  They are ``Stateful``
+Persistors are the lowest layer of the storage stack.  They are ``Conductor``
 classes whose single responsibility is to **hand out open file handles** (or
 in-memory equivalents) so that serializers can read and write data without
 knowing where the data lives.

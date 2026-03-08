@@ -31,13 +31,20 @@ and outputs.
     BasicPlan(
         name: str,
         inputs: dict[str, Any],
-        outputs: dict[str, uuid1],
+        outputs: dict[str, Any],
     )
 
 ``name`` identifies the private function the enactor will invoke.  ``inputs``
-carries the parameter values.  ``outputs`` maps logical output names to UUIDs;
-those UUIDs can be referenced as input values in later plan steps (see
-`Output references`_ below).
+carries the parameter values.  ``outputs`` maps logical output names to their
+actual values (e.g. a ``Fact`` object); the UUID-as-handle reference mechanism
+described below is the intended future design but is not yet implemented.
+
+.. warning:: Not yet implemented
+
+   The UUID-reference pattern for ``outputs`` is not yet implemented.
+   Currently, ``outputs`` holds actual values directly (see the fact-append
+   example below).  UUID resolution between steps is reserved for future
+   distributed-execution support.
 
 **Example — dimension import:**
 
@@ -158,7 +165,7 @@ additional ``location`` field that specifies the RPC endpoint.
         location: str,
         name: str,
         inputs: dict[str, Any],
-        outputs: dict[str, uuid1],
+        outputs: dict[str, Any],
     )
 
 **Example:**
@@ -193,14 +200,20 @@ The ``repr`` includes the location:
 Output references
 -----------------
 
-``BasicPlan`` and ``RemotePlan`` outputs are keyed by ``uuid1`` values.  The
-same UUID can appear as an ``inputs`` value in a later step of a
-``SerialPlan``, creating an explicit data-flow dependency.  The enactor is
-responsible for resolving UUID references to the actual values produced by
-earlier steps.
+The intended design is for ``BasicPlan`` and ``RemotePlan`` outputs to be
+keyed by ``uuid1`` handles.  The same UUID would appear as an ``inputs``
+value in a later step of a ``SerialPlan``, creating an explicit data-flow
+dependency, with the enactor responsible for resolving UUID references to the
+actual values produced by earlier steps.
+
+**This mechanism is not yet implemented.**  Currently, ``outputs`` holds
+actual values directly (e.g. a ``Fact`` object), and enactors do not pass
+outputs from one step as inputs to the next.  The UUID-reference pattern is
+reserved for future distributed-execution support.
 
 .. code-block:: python
 
+    # Future design (not yet implemented):
     from uuid import uuid1
 
     y_id = uuid1()
@@ -209,12 +222,6 @@ earlier steps.
         BasicPlan(name="produce_y", inputs={"x": 42}, outputs={"y": y_id}),
         BasicPlan(name="consume_y", inputs={"y": y_id}, outputs={}),
     ])
-
-.. warning:: Not yet implemented
-
-   UUID resolution between ``SerialPlan`` steps is not yet implemented in any
-   enactor.  It is reserved for future distributed-execution support.  Current
-   enactors do not pass outputs from one step as inputs to the next.
 
 
 How enactors dispatch on plans

@@ -230,10 +230,10 @@ The on-disk layout is::
 
     <root>/
         <reference_data_version>/
-            reference_data.version.index.yaml
+            dimension_data.version.index.yaml
             dimension_data/
                 <dimension_id>/
-                    column.<attribute_id>.column   ← one value per line
+                    attribute.<attribute_id>.column   ← one value per line
 
 
 Transformer: DimensionDataFrameTransformer

@@ -185,7 +185,7 @@ The script:
 5. Wires the fact import pipeline:
    ``FactAppendPlanner`` → ``FactImportOptimiser`` → ``FactImportEnactor``,
    assembled into a ``CubeDataManager``.
-6. Opens a ``write_reference_data_version`` transaction, calls
+6. Opens a ``write_cube_data_version`` transaction, calls
    ``fact_import_optimiser.create_dataframe_append_plan`` to produce a plan,
    then passes the plan and the source DataFrame to
    ``cube_data_manager.append_fact_from_dataframe``.

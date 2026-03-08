@@ -1,12 +1,11 @@
 Query Specifier
 ===============
 
-.. warning::
+.. note::
 
-   **Design document — not yet implemented.**
-
-   The classes and interfaces described on this page do not yet exist in the
-   codebase.  This document describes intended design only.
+   **Implemented.**  See ``src/lunch/query_engines/query_specifier.py``,
+   ``src/lunch/query_engines/cube_query_resolver.py``, and
+   ``src/lunch/query_engines/cube_query_specifier.py``.
 
 A **QuerySpecifier** is a ``Conductor`` that transforms a vague, high-level
 query into a ``FullySpecifiedFactQuery`` — a query in which every field is

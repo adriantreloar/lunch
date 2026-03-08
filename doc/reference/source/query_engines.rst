@@ -1,8 +1,9 @@
 Query Engines
 =============
 
-This page documents the data classes used by the query engine pipeline.
-These are pure ``Data`` subclasses — they carry no behaviour.
+This page documents the classes used by the query engine pipeline: pure
+``Data`` subclasses that carry no behaviour, and the ``Conductor`` and
+``Transformer`` classes that implement the query specification stage.
 
 .. contents:: On this page
    :local:
@@ -83,6 +84,67 @@ The return value of the enactor after executing a ``DagPlan``.
 - ``plan`` — the ``DagPlan`` that was enacted (for debugging and profiling).
 
 
+QuerySpecifier
+--------------
+
+*Module:* ``src.lunch.query_engines.query_specifier``
+
+Abstract ``Conductor`` base for all query specifiers.  Defines the interface:
+
+.. code-block:: python
+
+    async def specify(self, query: Query) -> FullySpecifiedFactQuery:
+        ...
+
+Subclasses inject the appropriate ``VersionManager``, ``ModelManager``, and
+``Transformer`` helpers via their constructors.
+
+
+CubeQueryResolver
+-----------------
+
+*Module:* ``src.lunch.query_engines.cube_query_resolver``
+
+``Transformer`` that converts a vague ``CubeQuery`` plus a resolved
+``Version`` and ``StarSchema`` into a ``FullySpecifiedFactQuery``.  Exposes
+a single static method:
+
+.. code-block:: python
+
+    CubeQueryResolver.resolve(
+        query: CubeQuery,
+        version: Version,
+        star_schema: StarSchema,
+    ) -> FullySpecifiedFactQuery
+
+**Shorthand mapping:**
+
+- ``projection='default'`` → all dimensions and all measure ids from the ``StarSchema``.
+  Any other value is treated as a dict ``{"dimensions": [...], "measures": [...]}``
+  and passed through unchanged.
+- ``aggregation='default'`` → ``['sum']``; any other value is passed through as a list.
+- ``filter=None`` → ``[]``; any other value is passed through as a list.
+
+
+CubeQuerySpecifier
+------------------
+
+*Module:* ``src.lunch.query_engines.cube_query_specifier``
+
+Concrete ``Conductor`` for cube queries.  Holds references to a
+``VersionManager``, a ``ModelManager``, and a ``CubeQueryResolver``.
+
+``specify()`` steps:
+
+1. If ``query.version == 'latest'``, calls ``version_manager.read_version()``
+   to obtain a concrete ``Version``; otherwise uses ``query.version`` directly.
+2. Calls ``model_manager.get_star_schema_model_by_fact_name(name=..., version=...)``
+   to fetch the ``StarSchema``.
+3. Delegates to ``CubeQueryResolver.resolve()`` (pure, no I/O).
+
+Errors from either manager propagate to the caller unchanged.
+
+
 Source locations
 ----------------
 
@@ -96,3 +158,9 @@ Source locations
      - ``src/lunch/query_engines/dag_plan.py``
    * - ``QueryResult``
      - ``src/lunch/query_engines/query_result.py``
+   * - ``QuerySpecifier``
+     - ``src/lunch/query_engines/query_specifier.py``
+   * - ``CubeQueryResolver``
+     - ``src/lunch/query_engines/cube_query_resolver.py``
+   * - ``CubeQuerySpecifier``
+     - ``src/lunch/query_engines/cube_query_specifier.py``

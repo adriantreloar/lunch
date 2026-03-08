@@ -125,7 +125,7 @@ The ``repr`` includes each nested step's repr:
 .. code-block:: python
 
     >>> repr(plan)
-    "SerialPlan([BasicPlan('step_one', inputs=['x'], outputs=['y']), ...])"
+    "SerialPlan([BasicPlan('step_one', inputs=['x'], outputs=['y'])])"
 
 ParallelPlan
 ~~~~~~~~~~~~

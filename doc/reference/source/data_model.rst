@@ -80,7 +80,7 @@ versioned interface to two sub-stores:
   data is stored as columnar arrays, one array per attribute, accessed by
   ``(dimension_id, attribute_id)``.
 - ``HierarchyDataStore`` — holds parent–child relationship data for dimension
-  hierarchies (planned; not yet implemented).
+  hierarchies, keyed by ``(dimension_id, reference_data_version)``.
 
 Both types of data are grouped under a **single** ``reference_data_version``
 sub-version.  This is intentional: dimensions and hierarchies change at a much
@@ -90,14 +90,66 @@ the MVCC version record compact and avoids unnecessary version churn.
 Hierarchies
 ~~~~~~~~~~~
 
-Hierarchies are a planned extension to the dimension model.  A hierarchy
-defines a parent–child ordering of members within a dimension — for example a
-*Time* dimension might expose a ``Year → Quarter → Month`` hierarchy.
+A hierarchy defines a parent–child ordering of members within a dimension —
+for example a *Time* dimension might expose a ``Year → Quarter → Month``
+hierarchy.
 
-No ``Hierarchy`` class exists yet; the ``HierarchyDataStore`` (held by
-``ReferenceDataStore``) is a stub whose methods all raise
-``NotImplementedError``.  When implemented, hierarchy data will share the same
-``reference_data_version`` as dimension member data.
+``Hierarchy`` (*Module:* ``src.lunch.model.hierarchy``) is the schema-level
+descriptor for a hierarchy:
+
+.. code-block:: python
+
+    Hierarchy(
+        dimension_id: int,   # which dimension this hierarchy belongs to
+        name: str,           # e.g. "YQM" for Year-Quarter-Month
+    )
+
+``HierarchyDataStore`` (*Module:* ``src.lunch.storage.hierarchy_data_store``)
+stores the actual parent-child pair data for each dimension.  Pairs are
+``[parent_member_id, child_member_id]`` integer lists.
+
+.. code-block:: python
+
+    await store.put(
+        dimension_id: int,
+        pairs: list,            # list of [parent_id, child_id] pairs
+        read_version: Version,
+        write_version: Version,
+    ) -> None
+
+    await store.get_pairs(
+        dimension_id: int,
+        read_version: Version,
+    ) -> list
+
+Both hierarchy data and dimension member data share the same
+``reference_data_version`` sub-version.  The version index maps
+``dimension_id → reference_data_version`` and is updated on every ``put``.
+
+The storage stack follows the same three-layer pattern as ``DimensionDataStore``:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 30 70
+
+   * - Layer
+     - Class
+   * - Store
+     - ``src/lunch/storage/hierarchy_data_store.py``
+   * - Serializer (abstract)
+     - ``src/lunch/storage/serialization/hierarchy_data_serializer.py``
+   * - Serializer (YAML)
+     - ``src/lunch/storage/serialization/yaml_hierarchy_data_serializer.py``
+   * - Serializer (null)
+     - ``src/lunch/storage/serialization/null_hierarchy_data_serializer.py``
+   * - Persistor (abstract)
+     - ``src/lunch/storage/persistence/hierarchy_data_persistor.py``
+   * - Persistor (StringIO)
+     - ``src/lunch/storage/persistence/stringio_hierarchy_data_persistor.py``
+   * - Cache (abstract)
+     - ``src/lunch/storage/cache/hierarchy_data_cache.py``
+   * - Cache (null)
+     - ``src/lunch/storage/cache/null_hierarchy_data_cache.py``
 
 
 Facts

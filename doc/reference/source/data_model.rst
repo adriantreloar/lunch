@@ -208,9 +208,16 @@ the corresponding foreign-key column.  This is enforced by
 This check runs inside ``_check_and_put_fact`` before any write reaches
 storage.
 
-The symmetric check for **dimension** schema changes (e.g. removing an
-attribute that a fact column maps to) is defined in
-``_check_and_put_dimension`` and is planned but not yet implemented.
+The symmetric check for **dimension** schema changes (removing an attribute
+from a dimension) is enforced by ``DimensionReferenceValidator``:
+
+- ``DimensionComparer.compare(previous_dimension, new_dimension)`` computes
+  the set of attribute ``id_`` values that have been removed.
+- ``DimensionReferenceValidator.validate(comparison)`` raises
+  ``DimensionValidationError`` if that set is non-empty.
+
+This check runs inside ``_check_and_put_dimension`` before any write reaches
+storage.
 
 Version Isolation
 ~~~~~~~~~~~~~~~~~

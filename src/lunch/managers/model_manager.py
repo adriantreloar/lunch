@@ -221,6 +221,21 @@ async def _update_model(
     await storage.put_facts(read_version=read_version, write_version=write_version, facts=out_facts)
 
 
+async def _check_and_put_dimension(
+    dimension: dict,
+    previous_dimension: dict | None,
+    read_version: Version,
+    write_version: Version,
+    storage: ModelStore,
+    dimension_comparer: DimensionComparer,
+    dimension_reference_validator: DimensionReferenceValidator,
+):
+    comparison = dimension_comparer.compare(previous_dimension, dimension)
+    dimension_reference_validator.validate(comparison)
+
+    return await storage.put_dimensions([dimension], read_version=read_version, write_version=write_version)
+
+
 async def _check_and_put_fact(
     fact: Fact,
     previous_fact: Fact | None,

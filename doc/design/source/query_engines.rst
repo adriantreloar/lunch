@@ -1,23 +1,11 @@
 Query Engines
 =============
 
-.. warning::
-
-   **Design document — partially implemented.**
-
-   Most classes described on this page do not yet exist in the codebase.
-   See the **Implemented** note below for what is available today.
-
 .. note::
 
-   **Implemented:** ``DagPlan`` and ``QueryResult`` are implemented as ``Data``
-   subclasses.
-
-   - ``src/lunch/query_engines/dag_plan.py`` — ``DagPlan``
-   - ``src/lunch/query_engines/query_result.py`` — ``QueryResult``
-
-   See the reference documentation at ``doc/reference/source/query_engines.rst``
-   for details.
+   **Implemented.**  All classes described on this page are implemented.
+   See ``doc/reference/source/query_engines.rst`` for the authoritative
+   reference and source locations.
 
 A **query engine** processes a vague query and returns data to the caller.  It
 does this in three stages, each handled by a dedicated ``Conductor``:

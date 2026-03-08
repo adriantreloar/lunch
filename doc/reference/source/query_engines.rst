@@ -3,7 +3,8 @@ Query Engines
 
 This page documents the classes used by the query engine pipeline: pure
 ``Data`` subclasses that carry no behaviour, and the ``Conductor`` and
-``Transformer`` classes that implement the query specification stage.
+``Transformer`` classes that implement the full pipeline from vague query to
+result data.
 
 .. contents:: On this page
    :local:
@@ -227,6 +228,58 @@ Returns the partition index (partition_id → cube_data_version) at the
 specified version.  Returns an empty dict if no partitions have been written.
 
 
+QueryEngine
+-----------
+
+*Module:* ``src.lunch.query_engines.query_engine``
+
+Abstract ``Conductor`` that orchestrates the full query pipeline.  Holds
+references to a ``QuerySpecifier``, a ``Planner``, and a ``QueryEnactor``.
+Defines the ``query`` interface:
+
+.. code-block:: python
+
+    async def query(self, query: Query) -> QueryResult:
+        ...
+
+The pipeline:
+
+.. code-block:: text
+
+    Caller
+      │  vague Query
+      ▼
+    QueryEngine
+      ├─► specifier.specify(query)  → FullySpecifiedFactQuery
+      ├─► planner.plan(fq)          → DagPlan
+      ├─► enactor.enact(plan)       → QueryResult
+      └─► return QueryResult to caller
+
+
+CubeQueryEngine
+---------------
+
+*Module:* ``src.lunch.query_engines.cube_query_engine``
+
+Concrete ``QueryEngine`` for cube queries.  Wires together a
+``CubeQuerySpecifier``, a ``CubeQueryPlanner``, and a ``CubeQueryEnactor``.
+
+.. code-block:: python
+
+    CubeQueryEngine(
+        specifier: CubeQuerySpecifier,
+        planner: CubeQueryPlanner,
+        enactor: CubeQueryEnactor,
+    )
+
+    async def query(self, query: CubeQuery) -> QueryResult:
+        ...
+
+``query()`` calls each collaborator in sequence — ``specifier.specify``,
+``planner.plan``, ``enactor.enact`` — and returns the ``QueryResult``.
+Errors from any stage propagate to the caller unchanged.
+
+
 QueryEnactor
 ------------
 
@@ -322,3 +375,7 @@ Source locations
      - ``src/lunch/query_engines/query_enactor.py``
    * - ``CubeQueryEnactor``
      - ``src/lunch/query_engines/cube_query_enactor.py``
+   * - ``QueryEngine``
+     - ``src/lunch/query_engines/query_engine.py``
+   * - ``CubeQueryEngine``
+     - ``src/lunch/query_engines/cube_query_engine.py``

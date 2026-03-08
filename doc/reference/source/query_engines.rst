@@ -227,6 +227,72 @@ Returns the partition index (partition_id → cube_data_version) at the
 specified version.  Returns an empty dict if no partitions have been written.
 
 
+QueryEnactor
+------------
+
+*Module:* ``src.lunch.query_engines.query_enactor``
+
+Abstract ``Conductor`` base for all query enactors.  Defines the ``enact`` interface:
+
+.. code-block:: python
+
+    async def enact(self, plan: DagPlan) -> QueryResult:
+        ...
+
+Subclasses inject the appropriate data stores and ``Transformer`` helpers via
+their constructors.
+
+
+CubeQueryEnactor
+----------------
+
+*Module:* ``src.lunch.query_engines.cube_query_enactor``
+
+Concrete ``QueryEnactor`` for cube queries.  Holds references to a
+``FactDataStore`` and a ``DimensionDataStore``.  Builds a dispatch table in
+``__init__`` and implements the DAG execution loop in ``enact``.
+
+.. code-block:: python
+
+    CubeQueryEnactor(
+        fact_data_store: FactDataStore,
+        dimension_data_store: DimensionDataStore,
+    )
+
+**DAG execution loop:**
+
+1. Initialise an empty ``result_registry`` (``dict[UUID, Any]``).
+2. Find all nodes whose UUID inputs are all present in ``result_registry``
+   (initially: nodes with no UUID inputs).
+3. Execute those nodes concurrently via ``asyncio.gather``.
+4. Add each node's outputs to ``result_registry``.
+5. Repeat until all nodes are done.
+6. Collect data under ``plan.outputs`` UUIDs and wrap in a ``QueryResult``.
+
+**Dispatch table (step name → module-level async handler):**
+
+.. list-table::
+   :header-rows: 1
+   :widths: 30 70
+
+   * - Step name
+     - Handler responsibility
+   * - ``FetchDimensionData``
+     - Read dimension columns from ``DimensionDataStore`` using the
+       ``dimension_id`` from the node's ``dimension`` input.
+   * - ``FetchFactData``
+     - Read fact partition columns from ``FactDataStore`` using
+       ``partition_id`` and ``version`` from the node's inputs.
+   * - ``JoinDimensionsToFact``
+     - Perform an in-memory join of dimension data onto the fact table,
+       keyed by dimension member ids.
+   * - ``Aggregate``
+     - Apply the specified aggregation function to the joined dataset.
+
+New step types can be added by registering additional entries in the dispatch
+table without changing the control-flow loop.
+
+
 Source locations
 ----------------
 
@@ -252,3 +318,7 @@ Source locations
      - ``src/lunch/query_engines/cube_query_dag_builder.py``
    * - ``CubeQueryPlanner``
      - ``src/lunch/query_engines/cube_query_planner.py``
+   * - ``QueryEnactor``
+     - ``src/lunch/query_engines/query_enactor.py``
+   * - ``CubeQueryEnactor``
+     - ``src/lunch/query_engines/cube_query_enactor.py``

@@ -1,12 +1,10 @@
 Query Enactor
 =============
 
-.. warning::
+.. note::
 
-   **Design document — not yet implemented.**
-
-   The classes and interfaces described on this page do not yet exist in the
-   codebase.  This document describes intended design only.
+   **Implemented.**  See ``src/lunch/query_engines/query_enactor.py`` and
+   ``src/lunch/query_engines/cube_query_enactor.py``.
 
 A **QueryEnactor** is a ``Conductor`` that receives a DAG Plan (produced by the
 :doc:`query_planner`) and executes it — fetching, filtering, joining, and

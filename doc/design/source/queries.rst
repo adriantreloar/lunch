@@ -42,55 +42,48 @@ dimensions to scan, which partitions to read, or how to parallelise the work
 How query engines refine queries
 ----------------------------------
 
-A query engine receives a query and ultimately returns a **plan**.  The root
-query engine always returns a plan — compound queries may be returned as
-intermediate steps by sub-engines, but plans are returned at the leaf steps,
-where a query is simple enough to be transformed directly into storage
-instructions.  For anything other than the simplest queries, the root engine
-does this in two stages:
+A query engine receives a vague query and ultimately returns data to the
+caller.  It does this in three stages, each handled by a dedicated
+``Conductor``:
 
-Decompose
-~~~~~~~~~
+Specify
+~~~~~~~
 
-The engine decides which *query transformers* should handle different aspects
-of the query.  Each transformer is handed the full query and extracts the
-slice it is responsible for.
+The **QuerySpecifier** resolves every vague field in the query against the
+Fact Schema (via the ``VersionManager`` and ``ModelManager``) and returns a
+``FullySpecifiedFactQuery`` — a query in which every field is concrete and
+unambiguous.
 
-Recurse and aggregate
-~~~~~~~~~~~~~~~~~~~~~
+Plan
+~~~~
 
-Each transformer either:
+The **Planner** inspects the ``FullySpecifiedFactQuery``, determines which
+storage partitions and columns must be read, and constructs a **DAG Plan** —
+a directed acyclic graph of ``BasicPlan`` nodes connected by data-dependency
+edges.  Steps that are independent of each other are left unconnected and can
+be executed concurrently.  Steps that depend on the output of earlier steps
+are connected by edges.
 
-* Returns a **finer-grained sub-query**, which is handed to the appropriate
-  engine for the next refinement round, or
-* Transforms the query slice directly into a **Plan** (for leaf-level,
-  maximally-refined queries).
+Enact
+~~~~~
 
-As plans come back up the call stack, each engine **aggregates** the returned
-plans into a single, larger plan and returns that combined plan to its caller.
+The **Enactor** walks the DAG Plan, executing nodes as their inputs become
+available, and returns the resulting data to the ``QueryEngine``.
 
-Once the original top-level query engine has gathered all of the plans
-returned by its transformers, it returns one overall plan.  That plan is then
-enacted by an ``Enactor`` — just as import plans are enacted by
-``DimensionImportEnactor`` or ``FactImportEnactor``.
-
-The flow from vague query to enacted plan looks like this:
+The flow from vague query to returned data looks like this:
 
 .. code-block:: text
 
     CubeQuery (vague)
         │
         ▼
-    QueryEngine (top level)
-        ├── Transformer A  ──► sub-query ──► QueryEngine (next level)
-        │                                       ├── Transformer C ──► Plan
-        │                                       └── Transformer D ──► Plan
-        │                                       └── aggregated Plan ◄──
-        ├── Transformer B  ──► Plan
-        └── aggregated overall Plan ◄──────────────────────────────────
-                │
-                ▼
-            Enactor  (executes the plan)
+    QueryEngine (Conductor)
+        │
+        ├─► QuerySpecifier ──► FullySpecifiedFactQuery
+        │
+        ├─► Planner        ──► DAG Plan
+        │
+        └─► Enactor        ──► data ──► returned to caller
 
 
 Query transformer responsibilities
@@ -113,35 +106,77 @@ query engines as thin aggregators rather than monolithic planners.
 Queries as Data
 ---------------
 
-Like plans, all query objects are ``Data`` subclasses — pure data containers
-with no behaviour.  This means a query can be inspected, logged, or passed
-between components without side effects.
+All query objects are ``Data`` subclasses — pure data containers with no
+behaviour.  This means a query can be inspected, logged, or passed between
+components without side effects.
+
+``Query`` is the intermediate base class that sits between ``Data`` and all
+concrete query types.  It carries no behaviour of its own; its sole purpose
+is to mark an object as a query.
 
 .. list-table::
    :header-rows: 1
-   :widths: 30 70
+   :widths: 25 20 55
 
    * - Query type
+     - Base class
      - Role
+   * - ``Query``
+     - ``Data``
+     - Abstract base for all query types.
    * - ``CubeQuery``
-     - The initial vague request from the caller.
-   * - ``ResolvedCubeQuery``
-     - An enriched query produced by a Transformer; carries an explicit
-       ``Version``, ``StarSchema``, projection, and aggregation.
+     - ``Query``
+     - The initial vague request from the caller.  Fields such as ``version``
+       and ``projection`` may use shorthand values like ``"latest"`` or
+       ``"default"``.
+   * - ``FullySpecifiedFactQuery``
+     - ``Query``
+     - The output of the :doc:`query_specifier`.  All fields are resolved to
+       concrete values: a ``StarSchema`` object, a concrete ``Version``, an
+       explicit list of ``Dimension`` objects, measure ids, filters, and
+       aggregation functions.  This is the input to the :doc:`query_planner`.
    * - ``BasicQuery``
+     - ``Query``
      - A single named query step with typed inputs and outputs (mirrors
        ``BasicPlan``).
-   * - ``SerialQuery``
-     - An ordered sequence of ``BasicQuery`` steps where later steps may
-       consume the outputs of earlier ones via UUID references (mirrors
-       ``SerialPlan``).
 
 
 Relationship to Plans
 ----------------------
 
-Plans (``BasicPlan``, ``SerialPlan``, ``ParallelPlan``, ``RemotePlan``) are
-the output of the query-refinement process.  A plan carries no behaviour of
-its own — it is a pure-data description of work to be done.  See the
-Reference documentation (``doc/reference/``) for details on plan types and
-how enactors dispatch on them.
+The output of the planning stage is a **DAG Plan** (``DagPlan``) — a directed
+acyclic graph of ``BasicPlan`` nodes.  A ``DagPlan`` is a ``Data`` object: it
+carries no behaviour and can be inspected, logged, or passed between
+components without side effects.
+
+The ``DagPlan`` replaces ``SerialPlan`` and ``ParallelPlan`` for query
+execution.  Both of those structures are special cases of a DAG:
+
+* A ``SerialPlan`` is a DAG that is a simple chain.
+* A ``ParallelPlan`` is a DAG with no edges (all nodes independent).
+
+See :doc:`query_planner` for details on ``DagPlan`` fields and how the
+:doc:`query_planner` constructs them.  See :doc:`query_enactor` for how the
+:doc:`query_enactor` executes them.
+
+
+Suggested source locations
+--------------------------
+
+When these classes are implemented they should live under a ``queries``
+package inside ``src/lunch/``:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 40 60
+
+   * - Class
+     - Suggested path
+   * - ``Query``
+     - ``src/lunch/queries/query.py``
+   * - ``CubeQuery``
+     - ``src/lunch/queries/cube_query.py``
+   * - ``FullySpecifiedFactQuery``
+     - ``src/lunch/queries/fully_specified_fact_query.py``
+   * - ``BasicQuery``
+     - ``src/lunch/queries/basic_query.py``

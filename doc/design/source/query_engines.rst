@@ -8,19 +8,50 @@ Query Engines
    The query engine classes and interfaces described on this page do not yet
    exist in the codebase.  This document describes intended design only.
 
-A query engine does the following:
+A **query engine** processes a vague query and returns data to the caller.  It
+does this in three stages, each handled by a dedicated ``Conductor``:
 
-Takes a query.
+1. **QuerySpecifier** — resolves a vague query against the Fact Schema and
+   produces a ``FullySpecifiedFactQuery``.
+2. **Planner** — converts the ``FullySpecifiedFactQuery`` into a DAG Plan that
+   describes every retrieval, filter, and combination step needed.
+3. **Enactor** — follows the DAG Plan, executing each step to retrieve the
+   required data.
 
-Turns the query into a plan.
+The ``QueryEngine`` itself is also a ``Conductor``.  It holds references to all
+three components and orchestrates the full pipeline: it passes the vague query
+to the ``QuerySpecifier``, hands the result to the ``Planner``, gives the plan
+to the ``Enactor``, and returns the retrieved data to the caller.
 
-A plan is a number of (sub)queries and a combination step.
-Each (sub)query will have a planned engine.
+.. contents:: On this page
+   :local:
+   :depth: 2
 
-The subqueries are performed.
-The combination step combines the subqueries to return a result.
-Returns the subqueries with statistics.
-Returns the combined results.
+
+Pipeline overview
+-----------------
+
+.. code-block:: text
+
+    Caller
+      │  vague CubeQuery
+      ▼
+    QueryEngine (Conductor)
+      │
+      ├─► QuerySpecifier (Conductor)
+      │     uses: VersionManager, ModelManager
+      │     in:   CubeQuery (vague)
+      │     out:  FullySpecifiedFactQuery
+      │
+      ├─► Planner (Conductor)
+      │     in:   FullySpecifiedFactQuery
+      │     out:  DAG Plan
+      │
+      ├─► Enactor (Conductor)
+      │     in:   DAG Plan
+      │     out:  retrieved data
+      │
+      └─► Caller receives data
 
 
 CubeQueryEngine — a skeleton example
@@ -38,92 +69,123 @@ query:
         aggregation="default",
     )
 
-Step 1 — gather context from managers
+Step 1 — QuerySpecifier resolves the query
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ``CubeQueryEngine`` delegates to its ``QuerySpecifier``, which contacts the
+``VersionManager`` and ``ModelManager`` to resolve every vague field:
+
+.. code-block:: python
+
+    fully_specified_query = await query_specifier.specify(
+        query=vague_query,
+    )
+    # Returns a FullySpecifiedFactQuery with:
+    #   star_schema=<StarSchema: Sales>
+    #   version=Version(version=7, ...)
+    #   dimensions=[<Dimension: Region>, <Dimension: Product>, ...]
+    #   measures=[<Measure: Revenue>, <Measure: Units>]
+    #   filters=[]
+    #   aggregations=["sum"]
+
+Step 2 — Planner creates a DAG Plan
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ``CubeQueryEngine`` passes the ``FullySpecifiedFactQuery`` to its
+``Planner``:
+
+.. code-block:: python
+
+    plan = await planner.plan(fully_specified_query)
+    # Returns a DAG Plan whose nodes are BasicPlan steps and whose edges
+    # express which steps must complete before others may start.
+
+Step 3 — Enactor follows the plan
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ``CubeQueryEngine`` passes the DAG Plan to its ``Enactor``:
+
+.. code-block:: python
+
+    data = await enactor.enact(plan)
+
+Step 4 — QueryEngine returns the data
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The engine is a ``Conductor``.  It holds references to a ``VersionManager``
-and a ``ModelManager`` and uses them to resolve the vague fields in the query
-into explicit, concrete values:
-
 .. code-block:: python
 
-    # Resolve "latest" to a concrete Version object
-    current_version = await version_manager.get_current_version()
+    return data
 
-    # Retrieve the StarSchema at that version
-    star_schema = await model_manager.get_star_schema(
-        name=query.star_schema_name,
-        version=current_version,
-    )
 
-Step 2 — enrich the query with a Transformer
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The DAG Plan
+------------
 
-The engine passes the original query together with the retrieved context to
-``CubeQueryContextResolver``, a ``Transformer`` whose sole job is to produce
-an enriched, explicit query:
+Plans are now expressed as a **directed acyclic graph (DAG)** rather than as
+``SerialPlan`` or ``ParallelPlan`` sequences.  The DAG is strictly more
+expressive: a linear chain of nodes is a serial plan; a set of nodes with no
+edges between them is a parallel plan; and a mixed structure captures any
+combination.
 
-.. code-block:: python
+Each **node** in the DAG is a ``BasicPlan`` — a named step with typed inputs
+and outputs.  **Edges** express dependency: an edge from node A to node B means
+B may not start until A has completed and its outputs are available.
 
-    resolved_query = CubeQueryContextResolver.resolve(
-        query=query,
-        version=current_version,
-        star_schema=star_schema,
-    )
-    # resolved_query is now a ResolvedCubeQuery:
-    #   ResolvedCubeQuery(
-    #       star_schema=<StarSchema: Sales>,
-    #       version=<Version: 2024-03-07T10:00:00>,
-    #       projection=<DefaultProjection>,
-    #       aggregation=<DefaultAggregation>,
-    #   )
+Inputs and outputs are identified by **UUIDs**, exactly as in the existing
+``BasicPlan`` / ``RemotePlan`` design.  A UUID that appears in the outputs of
+one node and the inputs of another node is the mechanism by which data flows
+along an edge.
 
-``CubeQueryContextResolver`` is stateless and holds no references — it is a
-pure transformation of its inputs.
+Steps whose input UUIDs are all satisfied (i.e. all predecessor nodes have
+completed) may be started immediately.  Steps with no predecessors may run
+from the outset and can be executed concurrently.
 
-Step 3 — hand the enriched query to sub-engines
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. code-block:: text
 
-The ``CubeQueryEngine`` selects the sub-engines appropriate for the enriched
-query and dispatches to each:
+    ┌────────────────────┐     ┌────────────────────┐
+    │  FetchRegionData   │     │  FetchProductData  │
+    │  out: uuid-A       │     │  out: uuid-B       │
+    └────────┬───────────┘     └──────────┬─────────┘
+             │                            │
+             └──────────┬─────────────────┘
+                        ▼
+             ┌────────────────────┐
+             │  JoinAndAggregate  │
+             │  in:  uuid-A, B   │
+             │  out: uuid-C      │
+             └────────────────────┘
 
-.. code-block:: python
+The ``SerialPlan`` and ``ParallelPlan`` types from the import pipeline are
+**not used** by the query engine.  The DAG Plan is the single plan type for
+queries.
 
-    projection_plan = await ProjectionQueryEngine.process(
-        resolved_query.as_projection_query()
-    )
 
-    aggregation_plan = await AggregationQueryEngine.process(
-        resolved_query.as_aggregation_query()
-    )
+Classes
+-------
 
-Each sub-engine may itself decompose, enrich, and recurse further before
-returning its own plan.
+QueryEngine
+~~~~~~~~~~~
 
-Step 4 — aggregate the returned plans
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**Role:** ``Conductor``
 
-Once all sub-engine plans have been collected, the engine passes them to
-``CubePlanAggregator``, a ``Transformer`` that combines them into a single
-plan:
+``QueryEngine`` is the top-level entry point for queries.  It holds references
+to a ``QuerySpecifier``, a ``Planner``, and an ``Enactor``, and orchestrates
+the full pipeline: specification, planning, enactment, and returning data to the
+caller.  It performs no data transformations itself.
 
-.. code-block:: python
+**Suggested source location:** ``src/lunch/query_engines/query_engine.py``
 
-    overall_plan = CubePlanAggregator.aggregate(
-        plans=[projection_plan, aggregation_plan],
-    )
-    # Returns, for example:
-    #   SerialPlan(steps=[
-    #       <projection_plan>,
-    #       <aggregation_plan>,
-    #   ])
+See :doc:`query_specifier`, :doc:`query_planner`, and :doc:`query_enactor` for
+details on each component.
 
-Step 5 — return the overall plan
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The ``CubeQueryEngine`` returns ``overall_plan`` to its caller.  At some
-point an ``Enactor`` will receive this plan and execute it against storage.
+CubeQueryEngine
+~~~~~~~~~~~~~~~
 
-.. code-block:: python
+**Role:** ``Conductor`` (subclass of ``QueryEngine``)
 
-    return overall_plan
+``CubeQueryEngine`` is the concrete ``QueryEngine`` for cube queries.  It wires
+together a ``CubeQuerySpecifier``, a ``CubeQueryPlanner``, and a
+``CubeQueryEnactor`` and exposes a ``query`` method that accepts a ``CubeQuery``
+and returns data.
+
+**Suggested source location:** ``src/lunch/query_engines/cube_query_engine.py``

@@ -13,3 +13,8 @@
 # Dolt database files (added by bd init)
 .dolt/
 *.db
+
+# Generated / IDE / local tooling
+/src/lunch.egg-info/
+/.idea/
+/.claude/

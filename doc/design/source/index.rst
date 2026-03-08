@@ -34,3 +34,6 @@ intended**; the reference document is authoritative for **what exists**.
 
    queries
    query_engines
+   query_specifier
+   query_planner
+   query_enactor

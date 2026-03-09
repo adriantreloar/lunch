@@ -1,3 +1,5 @@
+from uuid import uuid1
+
 import pandas as pd
 import pytest
 from mock import AsyncMock, Mock
@@ -6,6 +8,7 @@ from src.lunch.import_engine.fact_import_enactor import FactImportEnactor
 from src.lunch.model.fact import Fact
 from src.lunch.mvcc.version import Version
 from src.lunch.plans.basic_plan import BasicPlan
+from src.lunch.plans.serial_plan import SerialPlan
 from src.lunch.storage.fact_data_store import FactDataStore
 
 v0 = Version(
@@ -147,3 +150,98 @@ async def test_existing_data_triggers_merge_and_put(enactor_and_store):
 
     store.get_columns.assert_called_once()
     store.put.assert_called_once()
+
+
+# ---------------------------------------------------------------------------
+# SerialPlan: sequential execution
+# ---------------------------------------------------------------------------
+
+
+async def test_serial_plan_executes_all_steps(enactor_and_store):
+    enactor, store = enactor_and_store
+    store.get_columns.side_effect = KeyError("no data")
+    store.put.return_value = None
+
+    write_fact2 = Mock(Fact)
+    write_fact2.fact_id = 2
+
+    plan2 = BasicPlan(
+        name="_import_fact_append_locally_from_dataframe",
+        inputs={
+            "read_fact": _read_fact,
+            "column_id_mapping": {"dept": 3, "sales": 1},
+            "merge_key": [1],
+            "read_filter": None,
+        },
+        outputs={"write_fact": write_fact2},
+    )
+    serial = SerialPlan(steps=[_PLAN, plan2])
+
+    await enactor.enact_plan(
+        append_plan=serial,
+        data=_DF,
+        read_version=v0,
+        write_version=v1,
+        fact_data_store=store,
+    )
+
+    assert store.put.call_count == 2
+
+
+async def test_serial_plan_uuid_output_resolved_as_input_to_later_step(enactor_and_store):
+    enactor, store = enactor_and_store
+    # Step 1 produces write_fact under a UUID handle.
+    # Step 2 uses that UUID as its read_fact input.
+    handle = uuid1()
+
+    step1 = BasicPlan(
+        name="_import_fact_append_locally_from_dataframe",
+        inputs={
+            "read_fact": _read_fact,
+            "column_id_mapping": {"dept": 3, "sales": 1},
+            "merge_key": [1],
+            "read_filter": None,
+        },
+        outputs={"write_fact": handle},
+    )
+    step2 = BasicPlan(
+        name="_import_fact_append_locally_from_dataframe",
+        inputs={
+            "read_fact": handle,
+            "column_id_mapping": {"dept": 3, "sales": 1},
+            "merge_key": [1],
+            "read_filter": None,
+        },
+        outputs={"write_fact": _write_fact},
+    )
+    serial = SerialPlan(steps=[step1, step2])
+
+    store.get_columns.side_effect = KeyError("no data")
+    store.put.return_value = None
+
+    await enactor.enact_plan(
+        append_plan=serial,
+        data=_DF,
+        read_version=v0,
+        write_version=v1,
+        fact_data_store=store,
+    )
+
+    # Step 2's read_fact is resolved to _write_fact (from step 1's output).
+    # Both steps call put.
+    assert store.put.call_count == 2
+
+
+async def test_serial_plan_unknown_step_raises_value_error(enactor_and_store):
+    enactor, store = enactor_and_store
+    bad_step = BasicPlan(name="unknown_function", inputs={}, outputs={})
+    serial = SerialPlan(steps=[bad_step])
+
+    with pytest.raises(ValueError):
+        await enactor.enact_plan(
+            append_plan=serial,
+            data=_DF,
+            read_version=v0,
+            write_version=v1,
+            fact_data_store=store,
+        )

@@ -1,4 +1,5 @@
 from typing import Any
+from uuid import UUID
 
 from src.lunch.base_classes.conductor import Conductor
 from src.lunch.import_engine.transformers.dimension_dataframe_transformer import (
@@ -7,6 +8,7 @@ from src.lunch.import_engine.transformers.dimension_dataframe_transformer import
 from src.lunch.mvcc.version import Version
 from src.lunch.plans.basic_plan import BasicPlan
 from src.lunch.plans.plan import Plan
+from src.lunch.plans.serial_plan import SerialPlan
 from src.lunch.storage.dimension_data_store import DimensionDataStore
 
 
@@ -31,18 +33,39 @@ class DimensionImportEnactor(Conductor):
         )
 
 
+def _resolve_inputs(inputs: dict, output_store: dict) -> dict:
+    return {k: output_store[v] if isinstance(v, UUID) else v for k, v in inputs.items()}
+
+
+def _collect_outputs(outputs: dict, result: dict, output_store: dict) -> None:
+    for key, handle in outputs.items():
+        if isinstance(handle, UUID) and key in result:
+            output_store[handle] = result[key]
+
+
 async def _enact_plan(
     import_plan: Plan,
     data: Any,
     read_version: Version,
     write_version: Version,
     dimension_data_store: DimensionDataStore,
-):
-    if isinstance(import_plan, BasicPlan) and import_plan.name == "_import_locally_from_dataframe":
-        # TODO: if import_plan.inputs["read_filter"] is a guid, lookup the output form a previous step
-        # TODO: if import_plan.inputs["merge_key"] is a guid, lookup the output form a previous step
-
-        await _import_locally_from_dataframe(
+) -> dict:
+    if isinstance(import_plan, SerialPlan):
+        output_store: dict = {}
+        for step in import_plan.steps:
+            if isinstance(step, BasicPlan):
+                resolved = BasicPlan(
+                    name=step.name,
+                    inputs=_resolve_inputs(step.inputs, output_store),
+                    outputs=step.outputs,
+                )
+            else:
+                resolved = step
+            result = await _enact_plan(resolved, data, read_version, write_version, dimension_data_store)
+            _collect_outputs(step.outputs, result, output_store)
+        return {}
+    elif isinstance(import_plan, BasicPlan) and import_plan.name == "_import_locally_from_dataframe":
+        return await _import_locally_from_dataframe(
             data=data,
             read_version=read_version,
             write_version=write_version,
@@ -65,7 +88,7 @@ async def _import_locally_from_dataframe(
     read_filter: dict,
     merge_key: dict,
     dimension_data_store: DimensionDataStore,
-) -> None:
+) -> dict:
 
     # TODO assert data is of the type specified in the plan
     #  could be a dataframe, dask dataframe, list of open files, list of file names, file mask, and so on
@@ -114,3 +137,4 @@ async def _import_locally_from_dataframe(
         write_version=write_version,
         read_version=read_version,
     )
+    return {"write_dimension": write_dimension}

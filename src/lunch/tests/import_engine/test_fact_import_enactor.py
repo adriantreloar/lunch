@@ -15,7 +15,7 @@ v0 = Version(
     version=0, model_version=0, reference_data_version=0, cube_data_version=0, operations_version=0, website_version=0
 )
 v1 = Version(
-    version=1, model_version=1, reference_data_version=1, cube_data_version=0, operations_version=0, website_version=0
+    version=1, model_version=1, reference_data_version=1, cube_data_version=1, operations_version=0, website_version=0
 )
 
 _DF = pd.DataFrame([{"dept": 1, "sales": 10.0}])

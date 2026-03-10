@@ -96,11 +96,13 @@ async def _fetch_dimension_data(
     """Read dimension columns from DimensionDataStore."""
     dimension = node.inputs["dimension"]
     dimension_id = dimension["dimension_id"]
+    read_version = dimension["version"]
+    column_types = {a["id_"]: None for a in (dimension.get("attributes") or [])}
     columns = await dimension_data_store.get_columns(
         dimension_id=dimension_id,
-        column_types={},
+        column_types=column_types,
         filter=None,
-        read_version=dimension.get("version"),
+        read_version=read_version,
     )
     (out_uuid,) = node.outputs.keys()
     return {out_uuid: columns}
@@ -119,7 +121,7 @@ async def _fetch_fact_data(
         fact_id=partition_id,
         column_types={},
         filter=None,
-        read_version=version,
+        read_cube_data_version=version,
     )
     (out_uuid,) = node.outputs.keys()
     return {out_uuid: columns}

@@ -25,3 +25,6 @@ class DagPlan(Data):
         self.edges: Set[Tuple[UUID, UUID]] = edges
         self.inputs: Set[UUID] = inputs
         self.outputs: Set[UUID] = outputs
+
+    def __repr__(self) -> str:
+        return f"DagPlan(nodes={self.nodes!r}, edges={self.edges!r})"

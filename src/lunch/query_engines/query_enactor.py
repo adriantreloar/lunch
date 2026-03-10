@@ -1,7 +1,7 @@
 from abc import abstractmethod
 
 from src.lunch.base_classes.conductor import Conductor
-from src.lunch.query_engines.dag_plan import DagPlan
+from src.lunch.plans.dag_plan import DagPlan
 from src.lunch.query_engines.query_result import QueryResult
 
 

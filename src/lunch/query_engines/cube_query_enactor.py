@@ -3,7 +3,7 @@ from typing import Any, Dict
 from uuid import UUID
 
 from src.lunch.plans.basic_plan import BasicPlan
-from src.lunch.query_engines.dag_plan import DagPlan
+from src.lunch.plans.dag_plan import DagPlan
 from src.lunch.query_engines.query_enactor import QueryEnactor
 from src.lunch.query_engines.query_result import QueryResult
 from src.lunch.storage.dimension_data_store import DimensionDataStore

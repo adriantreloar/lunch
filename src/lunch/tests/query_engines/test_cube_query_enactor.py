@@ -8,7 +8,7 @@ import pytest
 
 from src.lunch.plans.basic_plan import BasicPlan
 from src.lunch.query_engines.cube_query_enactor import CubeQueryEnactor, _enact
-from src.lunch.query_engines.dag_plan import DagPlan
+from src.lunch.plans.dag_plan import DagPlan
 from src.lunch.query_engines.query_result import QueryResult
 
 # ---------------------------------------------------------------------------

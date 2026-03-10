@@ -4,7 +4,7 @@ from uuid import UUID, uuid4
 from src.lunch.base_classes.transformer import Transformer
 from src.lunch.plans.basic_plan import BasicPlan
 from src.lunch.queries.fully_specified_fact_query import FullySpecifiedFactQuery
-from src.lunch.query_engines.dag_plan import DagPlan
+from src.lunch.plans.dag_plan import DagPlan
 
 # partition_id -> cube_data_version
 PartitionManifest = Dict[int, int]

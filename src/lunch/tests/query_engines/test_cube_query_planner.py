@@ -11,7 +11,7 @@ from src.lunch.mvcc.version import Version
 from src.lunch.queries.fully_specified_fact_query import FullySpecifiedFactQuery
 from src.lunch.query_engines.cube_query_dag_builder import CubeQueryDagBuilder
 from src.lunch.query_engines.cube_query_planner import CubeQueryPlanner
-from src.lunch.query_engines.dag_plan import DagPlan
+from src.lunch.plans.dag_plan import DagPlan
 
 # ---------------------------------------------------------------------------
 # Fixtures

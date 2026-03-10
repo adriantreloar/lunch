@@ -7,7 +7,7 @@ from mock import AsyncMock, Mock
 from src.lunch.import_engine.dimension_import_enactor import DimensionImportEnactor
 from src.lunch.mvcc.version import Version
 from src.lunch.plans.basic_plan import BasicPlan
-from src.lunch.plans.serial_plan import SerialPlan
+from src.lunch.plans.dag_plan import DagPlan
 from src.lunch.storage.dimension_data_store import DimensionDataStore
 
 v0 = Version(
@@ -138,11 +138,11 @@ async def test_get_columns_io_error_propagates_and_is_not_swallowed(enactor_and_
 
 
 # ---------------------------------------------------------------------------
-# SerialPlan: sequential execution
+# DagPlan: DAG execution
 # ---------------------------------------------------------------------------
 
 
-async def test_serial_plan_executes_all_steps(enactor_and_store):
+async def test_dag_plan_executes_all_nodes(enactor_and_store):
     enactor, store = enactor_and_store
     store.get_columns.side_effect = KeyError("no data")
     store.put.return_value = None
@@ -150,20 +150,28 @@ async def test_serial_plan_executes_all_steps(enactor_and_store):
     dim_a = {"name": "A", "id_": 1, "attributes": [{"name": "foo", "id_": 1}]}
     dim_b = {"name": "B", "id_": 2, "attributes": [{"name": "bar", "id_": 1}]}
 
-    step1 = BasicPlan(
-        name="_import_locally_from_dataframe",
-        inputs={"read_dimension": None, "write_dimension": dim_a, "read_filter": {}, "merge_key": [0]},
-        outputs={},
+    node_a = uuid1()
+    node_b = uuid1()
+    dag = DagPlan(
+        nodes={
+            node_a: BasicPlan(
+                name="_import_locally_from_dataframe",
+                inputs={"read_dimension": None, "write_dimension": dim_a, "read_filter": {}, "merge_key": [0]},
+                outputs={},
+            ),
+            node_b: BasicPlan(
+                name="_import_locally_from_dataframe",
+                inputs={"read_dimension": None, "write_dimension": dim_b, "read_filter": {}, "merge_key": [0]},
+                outputs={},
+            ),
+        },
+        edges=set(),
+        inputs=set(),
+        outputs=set(),
     )
-    step2 = BasicPlan(
-        name="_import_locally_from_dataframe",
-        inputs={"read_dimension": None, "write_dimension": dim_b, "read_filter": {}, "merge_key": [0]},
-        outputs={},
-    )
-    serial = SerialPlan(steps=[step1, step2])
 
     await enactor.enact_plan(
-        import_plan=serial,
+        import_plan=dag,
         data=_DF,
         read_version=v0,
         write_version=v1,
@@ -173,51 +181,60 @@ async def test_serial_plan_executes_all_steps(enactor_and_store):
     assert store.put.call_count == 2
 
 
-async def test_serial_plan_uuid_output_resolved_as_input_to_later_step(enactor_and_store):
+async def test_dag_plan_uuid_output_resolved_as_input_to_later_node(enactor_and_store):
     enactor, store = enactor_and_store
-    # Step 1 writes dim_a and produces it as a UUID-keyed output.
-    # Step 2 references that UUID as its read_dimension input.
+    # Node A writes dim_a and produces it as a UUID-keyed output.
+    # Node B references that UUID as its read_dimension input.
     dim_a = {"name": "A", "id_": 1, "attributes": [{"name": "foo", "id_": 1}]}
     dim_b = {"name": "B", "id_": 2, "attributes": [{"name": "bar", "id_": 1}]}
     handle = uuid1()
 
-    step1 = BasicPlan(
-        name="_import_locally_from_dataframe",
-        inputs={"read_dimension": None, "write_dimension": dim_a, "read_filter": {}, "merge_key": [0]},
-        outputs={"write_dimension": handle},
+    node_a = uuid1()
+    node_b = uuid1()
+    dag = DagPlan(
+        nodes={
+            node_a: BasicPlan(
+                name="_import_locally_from_dataframe",
+                inputs={"read_dimension": None, "write_dimension": dim_a, "read_filter": {}, "merge_key": [0]},
+                outputs={"write_dimension": handle},
+            ),
+            node_b: BasicPlan(
+                name="_import_locally_from_dataframe",
+                inputs={"read_dimension": handle, "write_dimension": dim_b, "read_filter": {}, "merge_key": [0]},
+                outputs={},
+            ),
+        },
+        edges={(node_b, node_a)},
+        inputs=set(),
+        outputs=set(),
     )
-    step2 = BasicPlan(
-        name="_import_locally_from_dataframe",
-        inputs={"read_dimension": handle, "write_dimension": dim_b, "read_filter": {}, "merge_key": [0]},
-        outputs={},
-    )
-    serial = SerialPlan(steps=[step1, step2])
 
-    # get_columns raises KeyError (first-import path) for both steps
+    # get_columns raises KeyError (first-import path) for both nodes
     store.get_columns.side_effect = KeyError("no data")
     store.put.return_value = None
 
     await enactor.enact_plan(
-        import_plan=serial,
+        import_plan=dag,
         data=_DF,
         read_version=v0,
         write_version=v1,
         dimension_data_store=store,
     )
 
-    # Step 2 resolved read_dimension to dim_a (not None), so get_columns must have been called once.
+    # Node B resolved read_dimension to dim_a (not None), so get_columns must have been called once.
     store.get_columns.assert_called_once()
     assert store.put.call_count == 2
 
 
-async def test_serial_plan_unknown_step_raises_value_error(enactor_and_store):
+async def test_dag_plan_unknown_node_raises_value_error(enactor_and_store):
     enactor, store = enactor_and_store
     bad_step = BasicPlan(name="unknown_function", inputs={}, outputs={})
-    serial = SerialPlan(steps=[bad_step])
+    node_id = uuid1()
+    dag = DagPlan(nodes={node_id: bad_step}, edges=set(), inputs=set(), outputs=set())
 
     with pytest.raises(ValueError):
         await enactor.enact_plan(
-            import_plan=serial,
+            import_plan=dag,
             data=_DF,
             read_version=v0,
             write_version=v1,

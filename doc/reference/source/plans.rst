@@ -94,62 +94,66 @@ The ``repr`` of a ``BasicPlan`` shows the function name and the keys of
     >>> repr(plan)
     "BasicPlan('_import_locally_from_dataframe', inputs=['read_dimension', 'merge_key'], outputs=[])"
 
-SerialPlan
-~~~~~~~~~~
+DagPlan
+~~~~~~~
 
-*Module:* ``src.lunch.plans.serial_plan``
+*Module:* ``src.lunch.plans.dag_plan``
 
-An ordered sequence of plans that must execute one after another.  Use
-``SerialPlan`` when a later step depends on the result of an earlier one.
+A directed acyclic graph of ``BasicPlan`` nodes.  ``DagPlan`` generalises
+both serial and parallel execution: independent nodes are executed
+concurrently (``asyncio.gather``); nodes whose inputs reference UUID outputs
+of earlier nodes are executed after those nodes complete.
 
 .. code-block:: python
 
-    SerialPlan(
-        steps: list[Plan],
+    DagPlan(
+        nodes:   dict[UUID, BasicPlan],
+        edges:   Set[Tuple[UUID, UUID]],
+        inputs:  Set[UUID],
+        outputs: Set[UUID],
     )
 
-Each element of ``steps`` can itself be a ``BasicPlan``, ``RemotePlan``,
-``ParallelPlan``, or another ``SerialPlan``, allowing arbitrary nesting.
+``nodes`` maps a node UUID to its ``BasicPlan``.  ``edges`` records
+``(dependent, dependency)`` pairs, but enactors derive execution order from
+UUID value references in ``node.inputs`` rather than from ``edges`` directly.
+``inputs`` and ``outputs`` name the externally-supplied and final-result
+dataset UUIDs respectively.
 
-**Example — two sequential local operations:**
+**Example — two sequential dimension imports where the second reads the
+output of the first:**
 
 .. code-block:: python
 
-    SerialPlan(steps=[
-        BasicPlan(name="step_one", inputs={"x": 1}, outputs={"y": uuid1()}),
-        BasicPlan(name="step_two", inputs={"y": <uuid from step_one>}, outputs={}),
-    ])
+    from uuid import uuid1
 
-The ``repr`` includes each nested step's repr:
+    node_a, node_b, handle = uuid1(), uuid1(), uuid1()
+
+    DagPlan(
+        nodes={
+            node_a: BasicPlan(
+                name="_import_locally_from_dataframe",
+                inputs={"read_dimension": None, "write_dimension": dim_a,
+                        "read_filter": {}, "merge_key": [0]},
+                outputs={"write_dimension": handle},
+            ),
+            node_b: BasicPlan(
+                name="_import_locally_from_dataframe",
+                inputs={"read_dimension": handle, "write_dimension": dim_b,
+                        "read_filter": {}, "merge_key": [0]},
+                outputs={},
+            ),
+        },
+        edges={(node_b, node_a)},
+        inputs=set(),
+        outputs=set(),
+    )
+
+The ``repr`` shows all nodes and edges:
 
 .. code-block:: python
 
     >>> repr(plan)
-    "SerialPlan([BasicPlan('step_one', inputs=['x'], outputs=['y'])])"
-
-ParallelPlan
-~~~~~~~~~~~~
-
-*Module:* ``src.lunch.plans.parallel_plan``
-
-An unordered collection of independent plans that may execute concurrently.
-Use ``ParallelPlan`` when the steps share no data dependencies.
-
-.. code-block:: python
-
-    ParallelPlan(
-        steps: list[Plan],
-    )
-
-**Example — three independent dimension imports:**
-
-.. code-block:: python
-
-    ParallelPlan(steps=[
-        BasicPlan(name="_import_locally_from_dataframe", inputs={"write_dimension": dim_a, ...}, outputs={}),
-        BasicPlan(name="_import_locally_from_dataframe", inputs={"write_dimension": dim_b, ...}, outputs={}),
-        BasicPlan(name="_import_locally_from_dataframe", inputs={"write_dimension": dim_c, ...}, outputs={}),
-    ])
+    "DagPlan(nodes={...}, edges={...})"
 
 RemotePlan
 ~~~~~~~~~~
@@ -200,28 +204,28 @@ The ``repr`` includes the location:
 Output references
 -----------------
 
-The intended design is for ``BasicPlan`` and ``RemotePlan`` outputs to be
-keyed by ``uuid1`` handles.  The same UUID would appear as an ``inputs``
-value in a later step of a ``SerialPlan``, creating an explicit data-flow
-dependency, with the enactor responsible for resolving UUID references to the
-actual values produced by earlier steps.
-
-**This mechanism is not yet implemented.**  Currently, ``outputs`` holds
-actual values directly (e.g. a ``Fact`` object), and enactors do not pass
-outputs from one step as inputs to the next.  The UUID-reference pattern is
-reserved for future distributed-execution support.
+``DagPlan`` nodes communicate through UUID references: a node places a UUID
+in its ``outputs`` dict and a later node places the same UUID as a value in
+its ``inputs`` dict.  The enactor resolves these references automatically —
+a node is only scheduled once all UUID values in its ``inputs`` are present
+in the result registry.
 
 .. code-block:: python
 
-    # Future design (not yet implemented):
     from uuid import uuid1
 
     y_id = uuid1()
+    node_a, node_b = uuid1(), uuid1()
 
-    SerialPlan(steps=[
-        BasicPlan(name="produce_y", inputs={"x": 42}, outputs={"y": y_id}),
-        BasicPlan(name="consume_y", inputs={"y": y_id}, outputs={}),
-    ])
+    DagPlan(
+        nodes={
+            node_a: BasicPlan(name="produce_y", inputs={"x": 42}, outputs={"y": y_id}),
+            node_b: BasicPlan(name="consume_y", inputs={"y": y_id}, outputs={}),
+        },
+        edges={(node_b, node_a)},
+        inputs=set(),
+        outputs=set(),
+    )
 
 
 How enactors dispatch on plans
@@ -251,6 +255,8 @@ Any plan type or name that the enactor does not recognise raises ``ValueError``.
 
    * - Plan
      - Action
+   * - ``DagPlan(...)``
+     - Execute all nodes in dependency order, resolving UUID references between nodes.
    * - ``BasicPlan("_import_locally_from_dataframe", ...)``
      - Merge source DataFrame with existing dimension data and write to ``DimensionDataStore``.
    * - Anything else
@@ -275,14 +281,14 @@ Planner / optimiser / enactor roles
 
 .. code-block:: text
 
-    Planner   (Transformer) ──► creates BasicPlan / RemotePlan / SerialPlan / ParallelPlan
+    Planner   (Transformer) ──► creates BasicPlan / RemotePlan / DagPlan
     Optimiser (Conductor)   ──► queries storage for hints, then calls the planner
     Enactor   (Conductor)   ──► receives plan + data, dispatches on type/name, writes storage
 
 Keeping these three concerns separate means:
 
 - Plans can be inspected or logged before any I/O occurs.
-- The optimiser can substitute a ``RemotePlan`` for a ``BasicPlan`` (or wrap
-  multiple ``BasicPlan`` steps in a ``ParallelPlan``) without changing the
-  enactor or the caller.
+- The optimiser can substitute a ``RemotePlan`` for a ``BasicPlan``, or
+  compose multiple ``BasicPlan`` nodes into a ``DagPlan``, without changing
+  the enactor or the caller.
 - Enactors remain thin delegation layers with no planning logic.

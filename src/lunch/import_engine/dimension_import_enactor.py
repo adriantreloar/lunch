@@ -1,3 +1,4 @@
+import asyncio
 from typing import Any
 from uuid import UUID
 
@@ -7,8 +8,8 @@ from src.lunch.import_engine.transformers.dimension_dataframe_transformer import
 )
 from src.lunch.mvcc.version import Version
 from src.lunch.plans.basic_plan import BasicPlan
+from src.lunch.plans.dag_plan import DagPlan
 from src.lunch.plans.plan import Plan
-from src.lunch.plans.serial_plan import SerialPlan
 from src.lunch.storage.dimension_data_store import DimensionDataStore
 
 
@@ -50,19 +51,37 @@ async def _enact_plan(
     write_version: Version,
     dimension_data_store: DimensionDataStore,
 ) -> dict:
-    if isinstance(import_plan, SerialPlan):
-        output_store: dict = {}
-        for step in import_plan.steps:
-            if isinstance(step, BasicPlan):
-                resolved = BasicPlan(
-                    name=step.name,
-                    inputs=_resolve_inputs(step.inputs, output_store),
-                    outputs=step.outputs,
-                )
-            else:
-                resolved = step
-            result = await _enact_plan(resolved, data, read_version, write_version, dimension_data_store)
-            _collect_outputs(step.outputs, result, output_store)
+    if isinstance(import_plan, DagPlan):
+        result_registry: dict = {}
+        executed: set = set()
+        while len(executed) < len(import_plan.nodes):
+            ready = [
+                node_id
+                for node_id, node in import_plan.nodes.items()
+                if node_id not in executed
+                and all(v in result_registry for v in node.inputs.values() if isinstance(v, UUID))
+            ]
+            if not ready:
+                break
+            results = await asyncio.gather(
+                *[
+                    _enact_plan(
+                        BasicPlan(
+                            name=import_plan.nodes[node_id].name,
+                            inputs=_resolve_inputs(import_plan.nodes[node_id].inputs, result_registry),
+                            outputs=import_plan.nodes[node_id].outputs,
+                        ),
+                        data,
+                        read_version,
+                        write_version,
+                        dimension_data_store,
+                    )
+                    for node_id in ready
+                ]
+            )
+            for node_id, result in zip(ready, results):
+                _collect_outputs(import_plan.nodes[node_id].outputs, result, result_registry)
+                executed.add(node_id)
         return {}
     elif isinstance(import_plan, BasicPlan) and import_plan.name == "_import_locally_from_dataframe":
         return await _import_locally_from_dataframe(

@@ -2,7 +2,7 @@ from typing import Any, Optional
 
 from src.lunch.base_classes.data import Data
 from src.lunch.queries.fully_specified_fact_query import FullySpecifiedFactQuery
-from src.lunch.query_engines.dag_plan import DagPlan
+from src.lunch.plans.dag_plan import DagPlan
 
 
 class QueryResult(Data):

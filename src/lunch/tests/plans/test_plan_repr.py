@@ -1,7 +1,8 @@
+from uuid import uuid1
+
 from src.lunch.plans.basic_plan import BasicPlan
-from src.lunch.plans.parallel_plan import ParallelPlan
+from src.lunch.plans.dag_plan import DagPlan
 from src.lunch.plans.remote_plan import RemotePlan
-from src.lunch.plans.serial_plan import SerialPlan
 
 
 def test_basic_plan_repr_shows_name_and_keys():
@@ -37,26 +38,20 @@ def test_remote_plan_repr_shows_location_name_and_keys():
     assert "result" in r
 
 
-def test_serial_plan_repr_contains_step_reprs():
+def test_dag_plan_repr_contains_dag_plan_and_node_names():
     step = BasicPlan(name="step_one", inputs={}, outputs={})
-    plan = SerialPlan(steps=[step])
+    node_id = uuid1()
+    plan = DagPlan(nodes={node_id: step}, edges=set(), inputs=set(), outputs=set())
     r = repr(plan)
-    assert "SerialPlan" in r
+    assert "DagPlan" in r
     assert "step_one" in r
 
 
-def test_parallel_plan_repr_contains_step_reprs():
-    step = BasicPlan(name="step_two", inputs={}, outputs={})
-    plan = ParallelPlan(steps=[step])
-    r = repr(plan)
-    assert "ParallelPlan" in r
-    assert "step_two" in r
-
-
-def test_nested_plan_repr_is_readable():
+def test_dag_plan_repr_contains_nested_basic_plan():
     inner = BasicPlan(name="inner_fn", inputs={"x": 1}, outputs={"y": 2})
-    outer = SerialPlan(steps=[inner])
-    r = repr(outer)
-    assert "SerialPlan" in r
+    node_id = uuid1()
+    plan = DagPlan(nodes={node_id: inner}, edges=set(), inputs=set(), outputs=set())
+    r = repr(plan)
+    assert "DagPlan" in r
     assert "BasicPlan" in r
     assert "inner_fn" in r

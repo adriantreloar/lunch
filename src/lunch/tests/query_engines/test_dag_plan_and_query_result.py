@@ -11,7 +11,7 @@ from src.lunch.model.star_schema import StarSchema
 from src.lunch.mvcc.version import Version
 from src.lunch.plans.basic_plan import BasicPlan
 from src.lunch.queries.fully_specified_fact_query import FullySpecifiedFactQuery
-from src.lunch.query_engines.dag_plan import DagPlan
+from src.lunch.plans.dag_plan import DagPlan
 from src.lunch.query_engines.query_result import QueryResult
 
 # ---------------------------------------------------------------------------

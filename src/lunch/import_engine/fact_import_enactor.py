@@ -1,5 +1,4 @@
 from typing import Any
-from uuid import UUID
 
 from src.lunch.base_classes.conductor import Conductor
 from src.lunch.import_engine.transformers.fact_dataframe_transformer import (
@@ -8,7 +7,6 @@ from src.lunch.import_engine.transformers.fact_dataframe_transformer import (
 from src.lunch.mvcc.version import Version
 from src.lunch.plans.basic_plan import BasicPlan
 from src.lunch.plans.plan import Plan
-from src.lunch.plans.serial_plan import SerialPlan
 from src.lunch.storage.fact_data_store import FactDataStore
 
 
@@ -33,16 +31,6 @@ class FactImportEnactor(Conductor):
         )
 
 
-def _resolve_inputs(inputs: dict, output_store: dict) -> dict:
-    return {k: output_store[v] if isinstance(v, UUID) else v for k, v in inputs.items()}
-
-
-def _collect_outputs(outputs: dict, result: dict, output_store: dict) -> None:
-    for key, handle in outputs.items():
-        if isinstance(handle, UUID) and key in result:
-            output_store[handle] = result[key]
-
-
 async def _enact_plan(
     append_plan: Plan,
     data: Any,
@@ -50,21 +38,9 @@ async def _enact_plan(
     write_version: Version,
     fact_data_store: FactDataStore,
 ) -> dict:
-    if isinstance(append_plan, SerialPlan):
-        output_store: dict = {}
-        for step in append_plan.steps:
-            if isinstance(step, BasicPlan):
-                resolved = BasicPlan(
-                    name=step.name,
-                    inputs=_resolve_inputs(step.inputs, output_store),
-                    outputs=step.outputs,
-                )
-            else:
-                resolved = step
-            result = await _enact_plan(resolved, data, read_version, write_version, fact_data_store)
-            _collect_outputs(step.outputs, result, output_store)
-        return {}
-    elif isinstance(append_plan, BasicPlan) and append_plan.name == "_import_fact_append_locally_from_dataframe":
+    # Only BasicPlan is supported at this stage. Complex plan types (SerialPlan,
+    # ParallelPlan, RemotePlan) are not needed for the fact import pipeline yet.
+    if isinstance(append_plan, BasicPlan) and append_plan.name == "_import_fact_append_locally_from_dataframe":
         return await _import_fact_append_locally_from_dataframe(
             data=data,
             read_version=read_version,

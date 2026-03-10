@@ -118,6 +118,13 @@ FactImportEnactor
 
 *Base class:* ``Conductor``.
 
+.. note::
+
+   ``FactImportEnactor`` currently handles only ``BasicPlan`` instances.
+   Complex plan types (``SerialPlan``, ``ParallelPlan``, ``RemotePlan``) are
+   not needed for the fact import pipeline at this stage and are not
+   implemented.
+
 ``enact_plan`` dispatches on the plan name.  For
 ``_import_fact_append_locally_from_dataframe`` it calls the private function
 ``_import_fact_append_locally_from_dataframe``, which:
